@@ -26,3 +26,25 @@
 
 注意：现有 demo 的 fake external 返回空列表，reporter 只拼接文本；它没有展示真实外部证据或真实报告。
 历史记录中的“接口已完成”不等于 Phase 1 端到端验收完成。
+
+## Phase 1.12 — 真实运行入口准备（2026-09-12）
+
+| 子步骤 | 状态 | 结果/验收 |
+| --- | --- | --- |
+| 1. 凭据检查 | 完成 | WSL 环境及项目 .env 未配置 OPENAI_API_KEY / TAVILY_API_KEY；未输出密钥 |
+| 2. 空证据处理 | 完成 | 无 evidence 不构造 reporter，避免 upstream 空 ext_context 回退到旧 context |
+| 3. Live factory | 已实现、待真实验证 | 显式 role/agent，quick_search + write_report，不运行 conduct_research 或 Deep Research |
+| 4. 归档入口 | 完成离线验证 | 每次独立目录，report.md / sources.json / run.json；失败也存状态 |
+| 5. 指标口径 | 完成 | 保存 latency、上游报告 cost；未取得的 tokens/search cost 为 null，不伪装总费用 |
+| 6. 测试 | 完成 | 28 项项目测试通过，包括 Hybrid 双来源归档、空证据和失败记录 |
+| 7. 真实 External/Hybrid | 待凭据 | 尚未消耗 API token，尚无真实报告或引用正确性结果 |
+
+准备本地 .env 的 OPENAI_API_KEY 和 TAVILY_API_KEY（不要写入 Git 或聊天），然后执行：
+
+```sh
+.venv/bin/python -m deepresearch_kb.run_research 'SQLite' --mode hybrid --kb KB_ID
+```
+
+该命令按当前 upstream 配置使用模型，默认输出 data/runs/<run_id>。
+第一轮建议一个明确问题、一次 quick_search 和一次报告合成，不运行 Deep Research。
+还需完善普通问句的 FTS 输入处理、旧数据库回填、真实 usage 回调和固定评测；不能宣称 Phase 1 已完成。

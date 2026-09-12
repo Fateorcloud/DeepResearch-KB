@@ -30,6 +30,10 @@ class ResearchOrchestrator:
         self.knowledge_store, self.external_research = knowledge_store, external_research
     async def research(self, query: str, *, mode: ResearchMode, knowledge_base_ids=None, limit: int = 5) -> list[Evidence]:
         if mode not in ("internal", "external", "hybrid"): raise ValueError("mode must be internal, external, or hybrid")
+        if not query.strip() or limit < 1:
+            raise ValueError("non-empty query and positive limit required")
+        if mode != "external" and not knowledge_base_ids:
+            raise ValueError("internal/hybrid requires explicit knowledge_base_ids")
         internal = self.knowledge_store.retrieve(knowledge_base_ids or [], query, limit=limit) if mode != "external" else []
         if mode == "internal": return internal
         if self.external_research is None: raise ValueError("external_research is required for external or hybrid mode")
@@ -40,6 +44,8 @@ class ResearchOrchestrator:
                            limit: int = 5, **report_options) -> tuple[str, list[Evidence]]:
         """Run explicit evidence collection, then delegate synthesis upstream."""
         evidence = await self.research(query, mode=mode, knowledge_base_ids=knowledge_base_ids, limit=limit)
+        if not evidence:
+            return "No source evidence was retrieved; report generation skipped.", []
         researcher = researcher_factory(query)
         report = await researcher.write_report(ext_context=render_evidence_context(evidence), **report_options)
         return report, evidence
