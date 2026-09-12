@@ -38,3 +38,5 @@ Hybrid 两路独立规划后拼接。`document/document.py` 输出 raw_content/u
 Hybrid 只做 internal-first 合并，不宣称具备自适应研究或冲突裁决。
 2026-09-12：新增 Evidence context renderer；只生成供上游 prompt 使用的带 provenance 文本，
 尚未自动调用 `write_report()`，也未验证 citation correctness。
+2026-09-12：新增项目层 report delegation Adapter；fake researcher 已验证传入带 provenance 的
+`ext_context`，未调用真实 LLM，未声称报告 citation correctness 已验证。

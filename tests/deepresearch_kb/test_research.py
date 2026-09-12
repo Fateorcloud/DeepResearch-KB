@@ -29,3 +29,14 @@ class ResearchTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("External Source", rendered)
         self.assertIn("Version: 2", rendered)
         self.assertIn("https://example.test", rendered)
+
+    async def test_report_adapter_delegates_rendered_context_upstream(self):
+        researcher = SimpleNamespace(write_report=AsyncMock(return_value="report"))
+        external = SimpleNamespace(search=AsyncMock(return_value=[]))
+        report, evidence = await ResearchOrchestrator(self.store, external).write_report(
+            "architecture", mode="internal", knowledge_base_ids=["kb1"],
+            researcher_factory=lambda query: researcher)
+        self.assertEqual(report, "report")
+        self.assertEqual(len(evidence), 1)
+        kwargs = researcher.write_report.await_args.kwargs
+        self.assertIn("Internal Source", kwargs["ext_context"])

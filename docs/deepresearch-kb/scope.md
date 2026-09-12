@@ -69,6 +69,8 @@ python3 -B -m unittest discover -s tests/deepresearch_kb -p 'test_knowledge.py' 
   `internal`、`external`、`hybrid` 三路统一返回 Evidence，Hybrid 固定 internal-first。
 - Phase 1.8（已完成）：新增 `render_evidence_context()`，供 upstream synthesis 使用；
   渲染结果显式区分 Internal/External Source，并保留 source URI、logical path、version。
+- Phase 1.9（已完成）：新增 `ResearchOrchestrator.write_report()` 薄 Adapter，将统一 evidence context
+  传入 upstream `write_report(ext_context=...)`；不复制 prompt，不改 upstream report generator。
 
 接下来：为 External/Hybrid 研究新增独立 Adapter（仍不修改 GPTResearcher 主流程）→
 固定 corpus 对照 → 显式 External/Hybrid 调用 upstream。自动 source planning、充分性判断、

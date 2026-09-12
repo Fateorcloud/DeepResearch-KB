@@ -34,3 +34,12 @@ class ResearchOrchestrator:
         if mode == "internal": return internal
         if self.external_research is None: raise ValueError("external_research is required for external or hybrid mode")
         return (internal + (await self.external_research.search(query))[:limit])[:limit * 2]
+
+    async def write_report(self, query: str, *, mode: ResearchMode,
+                           researcher_factory, knowledge_base_ids=None,
+                           limit: int = 5, **report_options) -> tuple[str, list[Evidence]]:
+        """Run explicit evidence collection, then delegate synthesis upstream."""
+        evidence = await self.research(query, mode=mode, knowledge_base_ids=knowledge_base_ids, limit=limit)
+        researcher = researcher_factory(query)
+        report = await researcher.write_report(ext_context=render_evidence_context(evidence), **report_options)
+        return report, evidence
