@@ -1,6 +1,7 @@
 """Optional LangChain vector-index Adapter for persisted KB chunks."""
 
 from typing import Any
+from contextlib import closing
 
 from .models import Evidence
 
@@ -9,9 +10,12 @@ def chunk_documents(store, knowledge_base_ids: list[str] | None = None):
     """Export active chunks as LangChain Documents with complete provenance."""
     from langchain_core.documents import Document
 
-    ids = knowledge_base_ids or [kb.id for kb in store.list_knowledge_bases()]
+    ids = ([kb.id for kb in store.list_knowledge_bases()]
+           if knowledge_base_ids is None else knowledge_base_ids)
+    if not ids:
+        return []
     placeholders = ",".join("?" for _ in ids)
-    with store._connect() as db:
+    with closing(store._connect()) as db:
         rows = db.execute(f"""
             SELECT c.id, c.text, c.document_id, c.version, d.knowledge_base_id,
                    d.logical_path, v.source_type, v.source_uri

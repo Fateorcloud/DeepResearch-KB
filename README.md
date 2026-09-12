@@ -9,8 +9,10 @@
 已实现：SQLite KB/document/version 持久化、统一单文件 ingest、来源 metadata、
 内容 hash、重复导入幂等、版本历史与本地 CLI。默认复用 upstream DocumentLoader。
 
-尚未实现：Chunk/持久化向量索引、KB 检索、项目级 Hybrid 编排、证据充分性判断、
-自适应研究。上游已有的 Web/Local/Hybrid/Deep Research 不属于本项目新增贡献。
+已追加：Chunk/FTS5、显式研究 Adapter，以及基于 LangChain 的本地向量快照。
+离线测试已覆盖索引重建与恢复；真实 External/Hybrid 报告、固定对照评测、证据充分性判断和
+自适应研究尚未验收。上游已有的 Web/Local/Hybrid/Deep Research 不属于本项目新增贡献。
+每阶段子步骤见 [变更记录](docs/deepresearch-kb/CHANGELOG.md)。
 
 ## 本地运行（WSL，Python 3.12）
 

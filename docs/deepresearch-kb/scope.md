@@ -1,5 +1,7 @@
 # 当前切片：持久化 metadata + 统一 ingest
 
+逐步骤变更与最新验收见 [CHANGELOG.md](CHANGELOG.md)。
+
 以根目录 PROJECT_CHARTER.md 为准；不改 upstream core，不启动
 backend/frontend/multi_agents/deep_agents，不新增空 research/planner 模块。
 
