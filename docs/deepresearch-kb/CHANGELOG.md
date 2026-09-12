@@ -27,6 +27,15 @@
 注意：现有 demo 的 fake external 返回空列表，reporter 只拼接文本；它没有展示真实外部证据或真实报告。
 历史记录中的“接口已完成”不等于 Phase 1 端到端验收完成。
 
+## Phase 1.12.8 — 外部与 Hybrid 真实验证（2026-09-12）
+
+- External Quick Search + DeepSeek report synthesis succeeded for “What is SQLite?”；输出 5 条外部来源，耗时约 41.39 秒。
+- 上游报告成本显示 0.12757 USD，但 DeepSeek 使用 OpenAI-compatible endpoint，旧计价不可靠；真实 token 未采集。
+- Hybrid first run exposed FTS punctuation bug (`?` in natural-language query) and was stopped before report generation。
+- 修复后需重新运行 Hybrid；本记录只保留失败原因，不把首次失败算作完成。
+- 修复 FTS 后 Hybrid 首次完成，但内部证据未命中：自然语言 query 的 `AND` 约束过严（内部文档没有 “what/is”）。
+  已改为安全 token `OR`，下一轮需确认内外部 evidence 同时落盘；这是证据覆盖失败案例，不计作最终指标。
+
 ## Phase 1.12 — 真实运行入口准备（2026-09-12）
 
 | 子步骤 | 状态 | 结果/验收 |
@@ -48,3 +57,21 @@
 该命令按当前 upstream 配置使用模型，默认输出 data/runs/<run_id>。
 第一轮建议一个明确问题、一次 quick_search 和一次报告合成，不运行 Deep Research。
 还需完善普通问句的 FTS 输入处理、旧数据库回填、真实 usage 回调和固定评测；不能宣称 Phase 1 已完成。
+
+## Phase 1.12.7 — 首次真实 Internal 合成验证（2026-09-12）
+
+- DeepSeek 模型与 API Key 配置有效；TAVILY_API_KEY 仍为空，未执行 External/Hybrid。
+- 导入无敏感信息的合成 TXT 文档，查询 SQLite，命中 1 条内部证据并调用真实报告合成。
+- run ID：00b7cf7e29ea4db8b9444373f80b6051；本地 data/smoke/runs/ 下保存报告、sources.json、run.json。
+- 耗时 15.42 秒，报告包含内部文件 URI 引用。仅完成连通性与引用存在检查，非引用正确性评测。
+- 上游显示费用 0.044475 USD，但本路径使用 OpenAI-compatible DeepSeek，旧计价可能不适用；
+  不作为真实费用，真实 token 数未采集。已消耗模型 API token，未运行搜索/embedding/Deep Research。
+- 发现记录问题：run.json 的 research_path 固定写 quick_search，Internal 实际没有搜索；后续修正。
+- 保留烟雾测试输入与数据库用于复查；均在 Git 忽略的 data/ 内。下一步等待搜索凭据或选择仅内部评测。
+
+## Phase 1.12.8 — External/Hybrid 真实验证（2026-09-12）
+
+- TAVILY_API_KEY 已配置；External Quick Search + DeepSeek synthesis 成功，5 条 external evidence，约 41.39 秒。
+- 首次 Hybrid 暴露 FTS `?` 语法错误；随后暴露自然语言 `AND` 过严导致内部 evidence 丢失。
+- 改为安全 token `OR` 后 Hybrid 重跑成功：run `55d106ebf2f94420a4ec90314117d9da`，1 条 internal + 5 条 external，约 34.62 秒。
+- 上游估算费用 0.11491 USD，不代表 DeepSeek 实际账单；准确 token 数仍为 null。未运行 Deep Research。

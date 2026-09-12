@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import re
 import sqlite3
 from contextlib import closing
 from datetime import datetime, timezone
@@ -227,6 +228,13 @@ class KnowledgeStore:
         """
         if not knowledge_base_ids or not query.strip() or limit < 1:
             return []
+        # FTS5 MATCH is a query language; natural-language punctuation such as
+        # '?' must not be passed through as syntax. Quoting each token also
+        # prevents operators in a user query from changing retrieval semantics.
+        tokens = re.findall(r"[\w]+", query, flags=re.UNICODE)
+        if not tokens:
+            return []
+        fts_query = " OR ".join(f'"{token.replace(chr(34), chr(34) * 2)}"' for token in tokens)
         placeholders = ",".join("?" for _ in knowledge_base_ids)
         with closing(self._connect()) as db:
             rows = db.execute(f"""
@@ -238,7 +246,7 @@ class KnowledgeStore:
                 JOIN document_version v ON v.document_id = c.document_id AND v.version = c.version
                 WHERE d.knowledge_base_id IN ({placeholders}) AND v.status = 'active'
                   AND chunk_fts MATCH ?
-            """, [*knowledge_base_ids, query])
+            """, [*knowledge_base_ids, fts_query])
             scored = []
             for row in rows:
                 scored.append((-float(row["rank"]), row))
