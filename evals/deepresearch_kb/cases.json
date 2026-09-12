@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "documents": [
+    {"kb": "project", "path": "architecture.txt", "text": "SQLite stores legacymarker metadata."},
+    {"kb": "project", "path": "architecture.txt", "text": "SQLite stores currentmarker metadata."},
+    {"kb": "other", "path": "architecture.txt", "text": "SQLite stores confidentialmarker metadata."},
+    {"kb": "project", "path": "operations.txt", "text": "The office is open on Monday."}
+  ],
+  "cases": [
+    {"id": "internal-fact", "kb": "project", "query": "SQLite", "expected": [["architecture.txt", 2]]},
+    {"id": "natural-question", "kb": "project", "query": "What is SQLite?", "expected": [["architecture.txt", 2]]},
+    {"id": "stale-version", "kb": "project", "query": "legacymarker", "expected": []},
+    {"id": "kb-isolation", "kb": "project", "query": "confidentialmarker", "expected": []},
+    {"id": "no-evidence", "kb": "project", "query": "quantumxyz", "expected": []},
+    {"id": "punctuation", "kb": "project", "query": "?!", "expected": []}
+  ]
+}

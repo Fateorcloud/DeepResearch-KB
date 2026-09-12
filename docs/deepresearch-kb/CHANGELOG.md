@@ -75,3 +75,16 @@
 - 首次 Hybrid 暴露 FTS `?` 语法错误；随后暴露自然语言 `AND` 过严导致内部 evidence 丢失。
 - 改为安全 token `OR` 后 Hybrid 重跑成功：run `55d106ebf2f94420a4ec90314117d9da`，1 条 internal + 5 条 external，约 34.62 秒。
 - 上游估算费用 0.11491 USD，不代表 DeepSeek 实际账单；准确 token 数仍为 null。未运行 Deep Research。
+
+## Phase 1.13 — 固定检索评测准备
+
+| 子步骤 | 状态 | 验收/结果 |
+| --- | --- | --- |
+| 1. 固定语料与 gold | 完成 | 2 个 KB、当前/历史文档、干扰文档，6 个固定查询 |
+| 2. 可复现 runner | 完成 | 重建临时 DB、重开后检索；记录输入 hash、commit、dirty 状态，失败返回非零 |
+| 3. 独立评分 | 完成 | precision/recall 与精确集合匹配；未知分母为 null |
+| 4. 首次运行 | 已运行，有失败 | 5/6 通过；自然语言问题被公共词 is 污染，precision 0.5 |
+| 5. 报告级对照 | 未开始 | 仍需 upstream/KB-only/Hybrid 固定输入、引用支持检查和可信 usage |
+
+本轮无 API 调用。失败保存在 data/evals/retrieval.json。下一步按失败驱动改善词法查询，
+同时增加保留关键词/专名的反例，避免只针对单个问题调参。
