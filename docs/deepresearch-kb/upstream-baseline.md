@@ -30,3 +30,5 @@ Hybrid 两路独立规划后拼接。`document/document.py` 输出 raw_content/u
 复用评测候选：`evals/simple_evals/`、`evals/hallucination_eval/`、
 `deep_agents/hybrid_benchmark.py` 和 `deep_agents/benchmark_data/`。
 现有仓库结果不能作为本次开发的实测结果；需冻结案例、模型/配置、原始报告/来源、失败记录与计费口径。
+2026-09-12：新增可选 `LangChainVectorIndex` Adapter，使用注入的 vector store 做 similarity search；
+未改变 upstream vector wrapper，也未验证真实 embedding/provider。

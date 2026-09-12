@@ -61,7 +61,9 @@ python3 -B -m unittest discover -s tests/deepresearch_kb -p 'test_knowledge.py' 
   active version filtering、KB scope 和版本替换测试已覆盖。
 - Phase 1.4（已完成）：接入 SQLite FTS5 持久化检索 Adapter；进程重启后索引仍可用，
   返回仍统一为 Evidence。它是词法检索，不是向量语义检索；未来 LangChain vector index 可替换该 Adapter。
+- Phase 1.5（已完成）：新增可选 `LangChainVectorIndex` Adapter。它只适配调用者注入的
+  `similarity_search()`，规范化 metadata 为 Evidence，并支持 KB 过滤；不创建、不持久化外部向量库。
 
-接下来：可选 LangChain vector index Adapter → KB retrieve evidence 格式扩展 →
+接下来：将 ingest chunks 映射到 LangChain vector metadata（仍由调用者选择持久化 vector store）→
 固定 corpus 对照 → 显式 External/Hybrid 调用 upstream。自动 source planning、充分性判断、
 自适应升级和上传界面均未实现。此切片只证明持久化/版本身份契约，不证明研究质量提升。

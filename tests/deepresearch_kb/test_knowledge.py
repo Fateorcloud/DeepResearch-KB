@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 from deepresearch_kb.knowledge import KnowledgeStore, _load_upstream
+from deepresearch_kb.vector_index import LangChainVectorIndex
 
 
 class KnowledgeTests(unittest.IsolatedAsyncioTestCase):
@@ -159,6 +160,21 @@ class KnowledgeTests(unittest.IsolatedAsyncioTestCase):
         evidence = reopened.retrieve([self.kb.id], 'architecture')
         self.assertEqual(len(evidence), 1)
         self.assertEqual(evidence[0].version, 1)
+
+    def test_langchain_adapter_normalizes_metadata_and_filters_kb(self):
+        class Doc:
+            page_content = "internal evidence"
+            metadata = {"chunk_id": "c1", "knowledge_base_id": "kb1",
+                        "source_type": "local_import", "source_uri": "file:///a",
+                        "logical_path": "a.md", "document_id": "d1", "version": 2}
+
+        class Store:
+            def similarity_search(self, query, k):
+                return [Doc()]
+
+        adapter = LangChainVectorIndex(Store())
+        self.assertEqual(adapter.search("evidence", knowledge_base_ids=["kb1"])[0].version, 2)
+        self.assertEqual(adapter.search("evidence", knowledge_base_ids=["other"]), [])
 
 
 if __name__ == "__main__":
