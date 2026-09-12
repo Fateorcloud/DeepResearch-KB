@@ -81,6 +81,19 @@ class KnowledgeStore:
                     UNIQUE(document_id, version, ordinal),
                     FOREIGN KEY(document_id, version) REFERENCES document_version(document_id, version)
                 );
+                CREATE VIRTUAL TABLE IF NOT EXISTS chunk_fts USING fts5(
+                    text, content='chunk', content_rowid='rowid'
+                );
+                CREATE TRIGGER IF NOT EXISTS chunk_ai AFTER INSERT ON chunk BEGIN
+                    INSERT INTO chunk_fts(rowid, text) VALUES (new.rowid, new.text);
+                END;
+                CREATE TRIGGER IF NOT EXISTS chunk_ad AFTER DELETE ON chunk BEGIN
+                    INSERT INTO chunk_fts(chunk_fts, rowid, text) VALUES ('delete', old.rowid, old.text);
+                END;
+                CREATE TRIGGER IF NOT EXISTS chunk_au AFTER UPDATE ON chunk BEGIN
+                    INSERT INTO chunk_fts(chunk_fts, rowid, text) VALUES ('delete', old.rowid, old.text);
+                    INSERT INTO chunk_fts(rowid, text) VALUES (new.rowid, new.text);
+                END;
             """)
 
     def _connect(self):
@@ -214,23 +227,21 @@ class KnowledgeStore:
         """
         if not knowledge_base_ids or not query.strip() or limit < 1:
             return []
-        terms = {term.casefold() for term in query.split() if term.strip()}
         placeholders = ",".join("?" for _ in knowledge_base_ids)
         with closing(self._connect()) as db:
             rows = db.execute(f"""
                 SELECT c.id, c.text, v.source_type, v.source_uri, d.logical_path,
-                       d.id AS document_id, c.version
+                       d.id AS document_id, c.version, bm25(chunk_fts) AS rank
                 FROM chunk c
+                JOIN chunk_fts ON chunk_fts.rowid = c.rowid
                 JOIN document d ON d.id = c.document_id
                 JOIN document_version v ON v.document_id = c.document_id AND v.version = c.version
                 WHERE d.knowledge_base_id IN ({placeholders}) AND v.status = 'active'
-            """, knowledge_base_ids)
+                  AND chunk_fts MATCH ?
+            """, [*knowledge_base_ids, query])
             scored = []
             for row in rows:
-                words = set(row["text"].casefold().split())
-                score = sum(1 for term in terms if term in words)
-                if score:
-                    scored.append((score, row))
+                scored.append((-float(row["rank"]), row))
         scored.sort(key=lambda item: (-item[0], item[1]["logical_path"], item[1]["version"], item[1]["id"]))
         return [Evidence(chunk_id=row["id"], text=row["text"], source_type=row["source_type"],
                          source_uri=row["source_uri"], logical_path=row["logical_path"],

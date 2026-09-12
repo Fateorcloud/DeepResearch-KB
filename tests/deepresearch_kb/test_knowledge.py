@@ -153,6 +153,13 @@ class KnowledgeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.store.retrieve(["missing"], "architecture"), [])
         self.assertEqual(self.store.retrieve([self.kb.id], "unknown"), [])
 
+    async def test_fts_index_survives_restart(self):
+        await self.ingest()
+        reopened = KnowledgeStore(self.store.database, loader=self.loader)
+        evidence = reopened.retrieve([self.kb.id], 'architecture')
+        self.assertEqual(len(evidence), 1)
+        self.assertEqual(evidence[0].version, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

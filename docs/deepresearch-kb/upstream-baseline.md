@@ -18,7 +18,8 @@
 已有 pytest 配置项和 LangChain 弃用警告未在本次修改。
 
 2026-09-12 后续切片：新增 SQLite chunk lineage 和确定性 lexical retrieve；测试覆盖 active-version
-过滤、KB scope、版本更新和空查询。向量索引 Adapter 尚未实现。
+过滤、KB scope、版本更新和空查询。2026-09-12 已加入 SQLite FTS5 持久化检索；
+不将其描述为向量或语义检索，LangChain vector index Adapter 尚未实现。
 
 源码事实：`agent.py` → `skills/researcher.py` → `actions/query_processing.py` /
 `skills/context_manager.py` → `skills/writer.py`。Local/VectorStore 的 planner 仍会搜索；
