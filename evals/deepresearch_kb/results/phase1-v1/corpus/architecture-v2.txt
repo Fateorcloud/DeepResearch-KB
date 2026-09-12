@@ -1,0 +1,1 @@
+Boreal architecture version 2. CURRENT. Boreal uses SQLite for metadata. Its approved deployment budget is one writer. This replaces version 1. Synthetic evaluation data, not actual production documentation.

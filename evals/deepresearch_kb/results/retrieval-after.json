@@ -1,0 +1,85 @@
+{
+  "evaluation": "fixed-retrieval-regression-v1",
+  "dataset_sha256": "eed5be9b5af26be314e74dd22bced1b3f7dd272cb7767103dcf0e02545909a2b",
+  "passed": 6,
+  "total": 6,
+  "results": [
+    {
+      "id": "internal-fact",
+      "query": "SQLite",
+      "expected": [
+        [
+          "architecture.txt",
+          2
+        ]
+      ],
+      "actual": [
+        [
+          "architecture.txt",
+          2
+        ]
+      ],
+      "passed": true,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "id": "natural-question",
+      "query": "What is SQLite?",
+      "expected": [
+        [
+          "architecture.txt",
+          2
+        ]
+      ],
+      "actual": [
+        [
+          "architecture.txt",
+          2
+        ]
+      ],
+      "passed": true,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "id": "stale-version",
+      "query": "legacymarker",
+      "expected": [],
+      "actual": [],
+      "passed": true,
+      "recall": null,
+      "precision": null
+    },
+    {
+      "id": "kb-isolation",
+      "query": "confidentialmarker",
+      "expected": [],
+      "actual": [],
+      "passed": true,
+      "recall": null,
+      "precision": null
+    },
+    {
+      "id": "no-evidence",
+      "query": "quantumxyz",
+      "expected": [],
+      "actual": [],
+      "passed": true,
+      "recall": null,
+      "precision": null
+    },
+    {
+      "id": "punctuation",
+      "query": "?!",
+      "expected": [],
+      "actual": [],
+      "passed": true,
+      "recall": null,
+      "precision": null
+    }
+  ],
+  "scope": "Real SQLite FTS; synthetic text loader; no LLM/search/provider; no report scores",
+  "git_commit": "b5316448fb02ebf6058e9d3a0376cdfd5512b4e3",
+  "worktree_dirty": true
+}

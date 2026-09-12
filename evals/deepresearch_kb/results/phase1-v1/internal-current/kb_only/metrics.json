@@ -1,0 +1,44 @@
+{
+  "case_id": "internal-current",
+  "arm": "kb_only",
+  "status": "completed",
+  "actual_cost_usd": null,
+  "live_search_calls": 0,
+  "models": {
+    "smart_llm_model": "deepseek-flash",
+    "strategic_llm_model": "deepseek-flash",
+    "smart_token_limit": 2500,
+    "max_iterations": 1
+  },
+  "fact_mentions": {
+    "engine": true,
+    "writers": true
+  },
+  "citation_links": [
+    "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+    "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+    "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+    "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+    "kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1",
+    "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7"
+  ],
+  "unknown_citation_links": [],
+  "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+  "latency_seconds": 7.336567118007224,
+  "llm_calls_started": 1,
+  "llm_calls_failed": 0,
+  "llm_calls_completed": 1,
+  "llm_tokens": {
+    "input_tokens": 407,
+    "output_tokens": 1661
+  },
+  "usage_records": [
+    {
+      "input_tokens": 407,
+      "output_tokens": 1661
+    }
+  ],
+  "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+  "retriever_calls": 0,
+  "upstream_estimate_usd_not_billing": 0.02695
+}

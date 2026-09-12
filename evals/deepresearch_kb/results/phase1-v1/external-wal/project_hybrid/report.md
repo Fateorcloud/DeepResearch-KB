@@ -1,0 +1,5 @@
+- **No.** SQLite is an in-process, self-contained, serverless, zero-configuration, embedded engine; it does not have a separate server process. [External SQLite About](https://sqlite.org/about.html)
+- **Yes.** WAL provides more concurrency: readers do not block writers and a writer does not block readers; reading and writing can proceed concurrently. [External SQLite WAL](https://sqlite.org/wal.html)
+- **No.** WAL does not work over a network filesystem; all processes using the database must be on the same host computer. [External SQLite WAL](https://sqlite.org/wal.html)
+- **Internal current decision.** Boreal architecture v2 is CURRENT (replacing v1) and states Boreal uses SQLite for metadata with an approved deployment budget of one writer; it is synthetic evaluation data, not production documentation. [Internal architecture v2](kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7)
+- **Internal non-architecture.** office.txt v1 is administrative and does not describe database architecture. [Internal office v1](kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1)

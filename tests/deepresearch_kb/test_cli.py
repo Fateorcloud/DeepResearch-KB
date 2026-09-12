@@ -24,3 +24,8 @@ class CLITests(unittest.TestCase):
             self.assertEqual(run("list"), [kb])
             version = run("ingest", kb["id"], str(source), "--logical-path", "design.txt")
             self.assertEqual(run("versions", kb["id"], "design.txt"), [version])
+            hits = run("retrieve", "What is SQLite?", "--kb", kb["id"])
+            self.assertEqual(len(hits), 1)
+            hit = hits[0]
+            reference = f"kb://{hit['document_id']}/versions/{hit['version']}/chunks/{hit['chunk_id']}"
+            self.assertEqual(run("resolve", reference)["text"], hit["text"])

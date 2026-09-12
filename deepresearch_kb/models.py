@@ -38,3 +38,6 @@ class Evidence:
     document_id: str
     version: int
     score: float
+    knowledge_base_id: str | None = None
+    content_hash: str | None = None
+    updated_at: str | None = None

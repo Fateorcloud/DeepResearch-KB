@@ -11,6 +11,8 @@ from uuid import uuid4
 
 from .knowledge import KnowledgeStore
 from .research import ResearchOrchestrator, UpstreamExternalResearch
+from .research import render_evidence_context
+from .metrics import UsageCollector, attach_usage
 
 
 def live_factory(query):
@@ -28,21 +30,36 @@ async def run(store, query, *, mode, kb_ids, output_dir, researcher_factory=live
     directory = Path(output_dir) / uuid4().hex
     directory.mkdir(parents=True, exist_ok=False)
     instances = []
+    usage = UsageCollector()
 
     def factory(question):
         instance = researcher_factory(question)
+        if hasattr(instance, "cfg"):
+            attach_usage(instance, usage)
         instances.append(instance)
         return instance
 
     start = time.perf_counter()
     manifest = {"query": query, "mode": mode, "knowledge_base_ids": kb_ids,
                 "status": "running", "llm_tokens": None, "search_cost_usd": None,
-                "research_path": "quick_search + synthesis; no deep research"}
+                "actual_cost_usd": None,
+                "research_path": {"internal": "KB retrieval + synthesis", "external": "quick_search + synthesis",
+                                  "hybrid": "KB retrieval + quick_search + synthesis"}[mode],
+                "search_calls": 0, "deep_research_calls": 0}
     try:
-        orchestrator = ResearchOrchestrator(store, UpstreamExternalResearch(factory))
-        report, evidence = await orchestrator.write_report(
-            query, mode=mode, knowledge_base_ids=kb_ids, researcher_factory=factory,
-        )
+        class External(UpstreamExternalResearch):
+            async def search(self, question):
+                manifest["search_calls"] += 1
+                return await super().search(question)
+        orchestrator = ResearchOrchestrator(store, External(factory))
+        evidence = await orchestrator.research(query, mode=mode, knowledge_base_ids=kb_ids)
+        context = render_evidence_context(evidence)
+        # Preserve collected evidence even if synthesis fails.
+        (directory / "context.txt").write_text(context, encoding="utf-8")
+        (directory / "sources.json").write_text(
+            json.dumps([asdict(item) for item in evidence], ensure_ascii=False, indent=2), encoding="utf-8")
+        report = (await factory(query).write_report(ext_context=context) if evidence else
+                  "No source evidence was retrieved; report generation skipped.")
         if evidence and not report.strip():
             raise ValueError("upstream returned empty report")
         (directory / "report.md").write_text(report, encoding="utf-8")
@@ -50,15 +67,16 @@ async def run(store, query, *, mode, kb_ids, output_dir, researcher_factory=live
             json.dumps([asdict(item) for item in evidence], ensure_ascii=False, indent=2), encoding="utf-8")
         manifest["status"] = "completed" if evidence else "no_evidence"
         manifest["evidence_count"] = len(evidence)
-    except Exception as exc:
+    except BaseException as exc:
         manifest["status"] = "failed"
         manifest["error_type"] = type(exc).__name__  # exception text can contain credentials
         raise
     finally:
         manifest["latency_seconds"] = time.perf_counter() - start
+        manifest.update(usage.summary())
         costs = [item.get_costs() for item in instances if hasattr(item, "get_costs")]
         manifest["upstream_reported_cost_usd"] = sum(costs) if costs else None
-        manifest["cost_note"] = "Upstream-reported only; not total billing. Unknown metrics remain null."
+        manifest["cost_note"] = "Upstream estimate, NOT actual billing; especially invalid for DeepSeek via OpenAI pricing."
         (directory / "run.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return directory
 

@@ -1,0 +1,5 @@
+- Current metadata engine: SQLite ([architecture-v2.txt](architecture-v2.txt)). This is a current internal Boreal decision.
+- Current approved deployment budget: one writer ([architecture-v2.txt](architecture-v2.txt)). This is a current internal Boreal decision.
+- Deprecated history: v1 used PostgreSQL with eight concurrent writers ([architecture-v1.txt](architecture-v1.txt)); v1 is DEPRECATED, superseded by v2, and not current design ([architecture-v1.txt](architecture-v1.txt)).
+- External, non-Boreal facts: SQLite is embedded/serverless/zero-configuration ([https://sqlite.org/about.html](https://sqlite.org/about.html)); WAL permits concurrent readers/writers but same-host only, not network filesystems ([https://sqlite.org/wal.html](https://sqlite.org/wal.html)).
+- The v2 document says it is synthetic evaluation data, not actual production documentation ([architecture-v2.txt](architecture-v2.txt)).

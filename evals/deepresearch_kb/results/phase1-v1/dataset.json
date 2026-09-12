@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "description": "Synthetic Boreal project; frozen official SQLite excerpts; three-arm controlled evidence replay.",
+  "documents": [
+    {
+      "file": "architecture-v1.txt",
+      "logical_path": "architecture.txt",
+      "text": "Boreal architecture version 1. DEPRECATED, superseded by version 2. Boreal previously used PostgreSQL for metadata with eight concurrent writers. Do not use this as the current design."
+    },
+    {
+      "file": "architecture-v2.txt",
+      "logical_path": "architecture.txt",
+      "text": "Boreal architecture version 2. CURRENT. Boreal uses SQLite for metadata. Its approved deployment budget is one writer. This replaces version 1. Synthetic evaluation data, not actual production documentation."
+    },
+    {
+      "file": "office.txt",
+      "logical_path": "office.txt",
+      "text": "The Boreal office is open on Monday. This is an administrative document and does not describe database architecture."
+    }
+  ],
+  "external": [
+    {
+      "url": "https://sqlite.org/about.html",
+      "accessed_at": "2026-09-12",
+      "raw_content": "SQLite is an in-process library that implements a self-contained, serverless, zero-configuration, transactional SQL database engine. SQLite is an embedded SQL database engine. Unlike most other SQL databases, SQLite does not have a separate server process."
+    },
+    {
+      "url": "https://sqlite.org/wal.html",
+      "accessed_at": "2026-09-12",
+      "raw_content": "WAL provides more concurrency as readers do not block writers and a writer does not block readers. Reading and writing can proceed concurrently. All processes using a database must be on the same host computer; WAL does not work over a network filesystem."
+    }
+  ],
+  "cases": [
+    {
+      "id": "internal-current",
+      "kind": "internal",
+      "query": "For the synthetic Boreal project, what are the current metadata engine and approved writer budget? Distinguish deprecated history from current facts.",
+      "facts": [
+        {
+          "id": "engine",
+          "type": "internal",
+          "statement": "Current Boreal metadata engine is SQLite, not the superseded PostgreSQL design.",
+          "pattern": "SQLite",
+          "source": "architecture-v2.txt"
+        },
+        {
+          "id": "writers",
+          "type": "internal",
+          "statement": "Current Boreal deployment budget is one writer.",
+          "pattern": "one writer|single.writer|1 writer",
+          "source": "architecture-v2.txt"
+        }
+      ]
+    },
+    {
+      "id": "external-wal",
+      "kind": "external",
+      "query": "Does SQLite require a separate database server, and does SQLite WAL let readers and writers proceed concurrently? Is WAL supported over a network filesystem?",
+      "facts": [
+        {
+          "id": "serverless",
+          "type": "external",
+          "statement": "SQLite has no separate server process.",
+          "pattern": "serverless|no separate|not require.*server|does not.*server",
+          "source": "https://sqlite.org/about.html"
+        },
+        {
+          "id": "concurrent",
+          "type": "external",
+          "statement": "WAL permits readers and a writer to proceed concurrently.",
+          "pattern": "concurrent|do not block|not block",
+          "source": "https://sqlite.org/wal.html"
+        },
+        {
+          "id": "network",
+          "type": "external",
+          "statement": "WAL does not work over network filesystems.",
+          "pattern": "network",
+          "source": "https://sqlite.org/wal.html"
+        }
+      ]
+    },
+    {
+      "id": "hybrid-choice",
+      "kind": "hybrid",
+      "query": "For Boreal, combine the current metadata engine and approved writer budget with the official SQLite facts about serverless deployment and the WAL network-filesystem limitation. Separate internal decisions from external capabilities.",
+      "facts": [
+        {
+          "id": "engine",
+          "type": "internal",
+          "statement": "Current Boreal metadata engine is SQLite.",
+          "pattern": "SQLite",
+          "source": "architecture-v2.txt"
+        },
+        {
+          "id": "writers",
+          "type": "internal",
+          "statement": "Current Boreal budget is one writer.",
+          "pattern": "one writer|single.writer|1 writer",
+          "source": "architecture-v2.txt"
+        },
+        {
+          "id": "serverless",
+          "type": "external",
+          "statement": "SQLite is serverless.",
+          "pattern": "serverless|no separate|not require.*server|does not.*server",
+          "source": "https://sqlite.org/about.html"
+        },
+        {
+          "id": "network",
+          "type": "external",
+          "statement": "WAL does not work on network filesystems.",
+          "pattern": "network",
+          "source": "https://sqlite.org/wal.html"
+        }
+      ]
+    }
+  ]
+}

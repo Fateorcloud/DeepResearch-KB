@@ -10,8 +10,10 @@
 内容 hash、重复导入幂等、版本历史与本地 CLI。默认复用 upstream DocumentLoader。
 
 已追加：Chunk/FTS5、显式研究 Adapter，以及基于 LangChain 的本地向量快照。
-离线测试已覆盖索引重建与恢复；真实 External/Hybrid 报告、固定对照评测、证据充分性判断和
-自适应研究尚未验收。上游已有的 Web/Local/Hybrid/Deep Research 不属于本项目新增贡献。
+Phase 1 三组收尾已完成：检索/旧数据兼容、固定报告对照、指标与可重复演示。
+真实 External/Hybrid 已连通；三案例九报告对照已归档。证据充分性判断与自适应研究仍未实现。
+上游已有的 Web/Local/Hybrid/Deep Research 不属于本项目新增贡献。
+结果、限制和完整演示见 [Phase 1 验收](docs/deepresearch-kb/PHASE1_ACCEPTANCE.md)。
 每阶段子步骤见 [变更记录](docs/deepresearch-kb/CHANGELOG.md)。
 
 ## 本地运行（WSL，Python 3.12）
@@ -25,6 +27,9 @@ uv pip install --python .venv/bin/python -e '.[test]'
 .venv/bin/python -m deepresearch_kb ingest KB_ID /path/to/design.txt --logical-path architecture/design.txt
 .venv/bin/python -m deepresearch_kb versions KB_ID architecture/design.txt
 GPTR_BLOCK_NETWORK=1 .venv/bin/python -m pytest tests/deepresearch_kb -q
+.venv/bin/python -m deepresearch_kb.demo
+.venv/bin/python -m evals.deepresearch_kb.run_retrieval
+.venv/bin/python -m evals.deepresearch_kb.summarize_reports
 ```
 
 默认数据库为 `data/kb.sqlite`（不提交 Git），可用 `--database` 指定。

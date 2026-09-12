@@ -14,3 +14,4 @@ class RetrievalEvalTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["total"], 6)
         self.assertEqual(result["passed"], sum(row["passed"] for row in result["results"]))
         self.assertEqual(len(result["dataset_sha256"]), 64)
+        self.assertEqual(result["passed"], 6)

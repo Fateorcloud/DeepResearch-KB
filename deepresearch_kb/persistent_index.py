@@ -72,5 +72,7 @@ class PersistentVectorIndex:
             meta = doc.metadata
             evidence.append(Evidence(meta["chunk_id"], doc.page_content, meta["source_type"],
                                      meta["source_uri"], meta["logical_path"],
-                                     meta["document_id"], meta["version"], score))
+                                     meta["document_id"], meta["version"], score,
+                                     knowledge_base_id=meta["knowledge_base_id"],
+                                     content_hash=meta["content_hash"], updated_at=meta["updated_at"]))
         return evidence

@@ -1,0 +1,6 @@
+- Current internal decision: architecture.txt v2 is CURRENT and replaces v1; it states Boreal uses SQLite for metadata and the approved deployment budget is one writer ([Source 2](kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7)).
+- No v1 text is supplied, so deprecated details are unavailable ([Source 2](kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7)).
+- Source 2 says it is synthetic evaluation data, not actual production documentation ([Source 2](kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7)).
+- office.txt says the office is open Monday and does not describe database architecture ([Source 1](kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1)).
+- The requested external SQLite facts—whether SQLite requires a separate server, whether WAL lets readers and writers proceed concurrently, and whether WAL is supported over a network filesystem—are not stated in either supplied source ([Source 1](kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1); [Source 2](kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7)).
+- Therefore, those facts are unavailable from this context.

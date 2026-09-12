@@ -1,0 +1,53 @@
+{
+  "case_id": "internal-current",
+  "arm": "upstream_hybrid_replay",
+  "status": "completed",
+  "actual_cost_usd": null,
+  "live_search_calls": 0,
+  "models": {
+    "smart_llm_model": "deepseek-flash",
+    "strategic_llm_model": "deepseek-flash",
+    "smart_token_limit": 2500,
+    "max_iterations": 1
+  },
+  "fact_mentions": {
+    "engine": true,
+    "writers": true
+  },
+  "citation_links": [
+    "architecture-v2.txt",
+    "architecture-v2.txt",
+    "architecture-v1.txt",
+    "architecture-v1.txt",
+    "https://sqlite.org/about.html",
+    "https://sqlite.org/wal.html",
+    "architecture-v2.txt"
+  ],
+  "unknown_citation_links": [],
+  "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+  "latency_seconds": 16.225473407001118,
+  "llm_calls_started": 3,
+  "llm_calls_failed": 0,
+  "llm_calls_completed": 3,
+  "llm_tokens": {
+    "input_tokens": 1717,
+    "output_tokens": 3183
+  },
+  "usage_records": [
+    {
+      "input_tokens": 515,
+      "output_tokens": 243
+    },
+    {
+      "input_tokens": 515,
+      "output_tokens": 432
+    },
+    {
+      "input_tokens": 687,
+      "output_tokens": 2508
+    }
+  ],
+  "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+  "retriever_calls": 4,
+  "upstream_estimate_usd_not_billing": 0.056330000000000005
+}

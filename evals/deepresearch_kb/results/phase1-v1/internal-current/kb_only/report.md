@@ -1,0 +1,6 @@
+- Current metadata engine: SQLite ([Source: architecture.txt v2](kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7)).
+- Current approved writer/deployment budget: one writer ([Source: architecture.txt v2](kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7)).
+- Version 2 is marked CURRENT and replaces version 1 ([Source: architecture.txt v2](kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7)).
+- Deprecated version 1’s specific metadata engine and writer budget are not provided in the supplied context; only that v1 is replaced ([Source: architecture.txt v2](kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7)).
+- The office document is administrative and does not describe database architecture ([Source: office.txt v1](kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1)).
+- The architecture source is synthetic evaluation data, not actual production documentation ([Source: architecture.txt v2](kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7)).

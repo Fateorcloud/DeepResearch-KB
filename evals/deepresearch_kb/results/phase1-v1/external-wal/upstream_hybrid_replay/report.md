@@ -1,0 +1,5 @@
+- External fact: SQLite is an in-process, serverless, embedded engine and does not require a separate server process ([sqlite.org/about.html](https://sqlite.org/about.html)).
+- External fact: WAL lets readers and writers proceed concurrently; readers do not block writers and a writer does not block readers ([sqlite.org/wal.html](https://sqlite.org/wal.html)).
+- External fact: WAL does not work over a network filesystem; all processes must be on the same host computer ([sqlite.org/wal.html](https://sqlite.org/wal.html)).
+- Internal/current decision: architecture-v2 (CURRENT) says Boreal uses SQLite for metadata with an approved budget of one writer ([architecture-v2.txt](architecture-v2.txt)).
+- Internal/deprecated decision: architecture-v1 (DEPRECATED) says Boreal previously used PostgreSQL with eight concurrent writers, but it is superseded ([architecture-v1.txt](architecture-v1.txt)).

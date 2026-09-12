@@ -88,3 +88,26 @@
 
 本轮无 API 调用。失败保存在 data/evals/retrieval.json。下一步按失败驱动改善词法查询，
 同时增加保留关键词/专名的反例，避免只针对单个问题调参。
+
+## Phase 1 三组收尾 — 最终验收
+
+| 子步骤 | 状态 | 结果 |
+| --- | --- | --- |
+| A1 公共词噪声修复 | 完成 | 原 gold 不变，5/6 → 6/6；引号短语与大写缩写保留 |
+| A2 旧版本数据库回填 | 完成 | 缺 Chunk/缺 FTS 两种旧结构均恢复；失败回滚可重试；版本历史不丢 |
+| A3 索引同步 | 完成 | 向量快照重建幂等，检索前用当前 SQLite 版本过滤；新内容显式 rebuild |
+| A4 不可变引用回查 | 完成 | kb:// 指向 document/version/chunk；CLI resolve 支持已被替代版本 |
+| B1 固定输入与 gold | 完成 | 3 个研究问题、当前/废弃方案/干扰文档、2 个已核对官方摘录 |
+| B2 真实三组运行 | 完成 | upstream Hybrid 回放、KB-only、项目 Hybrid 各 3 份报告，无 Deep Research |
+| B3 事实/引用支持核对 | 完成 | 目标事实支持 9/9、4/9、9/9；KB-only 缺 5 条外部事实时明确不可答 |
+| B4 留档 | 完成 | 9 份 report/context/sources/metrics，语料 hash、依赖快照、Codex 人工 review 均保存 |
+| C1 指标口径 | 完成 | provider usage、调用数、延迟；actual cost 未知为 null，旧估算不作为账单 |
+| C2 执行路径与失败 | 完成 | Internal 不再标为 quick_search；失败留存已收集来源；空证据不调用模型 |
+| C3 演示与文档 | 完成 | 离线双来源 fixture、真实网络命令、报告对照回放、引用回查均有说明 |
+
+验证命令及最终结果见 PHASE1_ACCEPTANCE.md。合并上游测试时曾出现 sys.modules stub 串扰，
+使用上游 CI 同样的 --forked 隔离后相关测试通过；没有为此改 upstream。
+最终验证：38 项项目测试 + 3 项相关 upstream 回归，共 41 passed；原固定检索集 6/6。
+真实对照消耗 8285 input + 21078 output = 29363 provider tokens；没有 Tavily 付费调用。
+主张限制：upstream 和项目 Hybrid 在本组 gold 均正确；不宣称质量超越上游或完成自适应研究。
+仍有长问句/项目名召回干扰文档、英文 FTS 分词边界，作为 Phase 2 的问题输入保留。

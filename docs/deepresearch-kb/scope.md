@@ -1,6 +1,8 @@
-# 当前切片：持久化 metadata + 统一 ingest
+# Phase 1 范围与历史步骤
 
 逐步骤变更与最新验收见 [CHANGELOG.md](CHANGELOG.md)。
+**三组收尾已完成，当前状态以 [PHASE1_ACCEPTANCE.md](PHASE1_ACCEPTANCE.md) 为准。**
+下列“Phase 1.x 已完成”记录的是历史接口步骤，不代表当时整个阶段已验收。
 
 以根目录 PROJECT_CHARTER.md 为准；不改 upstream core，不启动
 backend/frontend/multi_agents/deep_agents，不新增空 research/planner 模块。
@@ -29,7 +31,8 @@ ingested_at 单独记录入库时间。版本号反映导入顺序，不代表�
 SQLite 保存原始字节快照、解析结果以及 metadata；解析前 staging 快照确保 hash 与解析输入一致，
 临时文件自动清理。小型语料阶段同步文件/SQLite 操作可接受，未声称适合大文件或高并发服务器。
 每次写入是事务，失败不覆盖已有版本。原始 parser 返回字段保存在 pages 中；
-upstream 已丢弃的页码等信息不能凭空恢复，尚未建立页级 citation/Chunk/vector index。
+upstream 已丢弃的页码等信息不能凭空恢复。现已建立 Chunk/vector snapshot 与版本级引用；
+未声称页码级 citation 已恢复。
 
 ## 使用（需在已有 upstream 依赖环境中运行默认解析器）
 
@@ -76,6 +79,6 @@ python3 -B -m unittest discover -s tests/deepresearch_kb -p 'test_knowledge.py' 
 - Phase 1.10（已完成）：新增完全离线 `deepresearch_kb.demo`，演示真实 KB ingest、Hybrid evidence
   收集和 report delegation；使用 fake external/reporter，不产生 API 成本。
 
-接下来：为 External/Hybrid 研究新增独立 Adapter（仍不修改 GPTResearcher 主流程）→
-固定 corpus 对照 → 显式 External/Hybrid 调用 upstream。自动 source planning、充分性判断、
-自适应升级和上传界面均未实现。此切片只证明持久化/版本身份契约，不证明研究质量提升。
+上述接口之后的索引验证、真实 External/Hybrid 连通、固定报告对照及三组收尾已完成，见验收文档。
+自动 source planning、充分性判断、自适应升级和上传界面仍未实现；不得把持久化工程或
+本次小样本对照宣传为普遍的研究质量提升。

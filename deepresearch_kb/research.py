@@ -1,14 +1,22 @@
 """Explicit internal/external evidence orchestration."""
 from typing import Any, Literal
+import hashlib
 from .models import Evidence
 ResearchMode = Literal["internal", "external", "hybrid"]
+
+def citation_uri(item: Evidence) -> str:
+    if item.source_type == "external_web":
+        return item.source_uri
+    return f"kb://{item.document_id}/versions/{item.version}/chunks/{item.chunk_id}"
 
 def render_evidence_context(evidence: list[Evidence]) -> str:
     """Render evidence for upstream synthesis without losing provenance."""
     blocks = []
     for index, item in enumerate(evidence, 1):
         label = "Internal Source" if item.source_type in ("local_import", "web_upload") else "External Source"
-        blocks.append(f"[{index}] {label}\nSource: {item.source_uri}\nDocument: {item.logical_path}\nVersion: {item.version}\nContent:\n{item.text}")
+        provenance = (f"\nVersion: {item.version}\nChunk: {item.chunk_id}"
+                      if label == "Internal Source" else "")
+        blocks.append(f"[{index}] {label}\nSource: {citation_uri(item)}\nOrigin URI: {item.source_uri}\nDocument: {item.logical_path}{provenance}\nContent:\n{item.text}")
     return "\n\n---\n\n".join(blocks)
 def _external_evidence(results: list[dict[str, Any]]) -> list[Evidence]:
     output = []
@@ -16,8 +24,9 @@ def _external_evidence(results: list[dict[str, Any]]) -> list[Evidence]:
         if not isinstance(result, dict): continue
         text = result.get("body") or result.get("content") or result.get("raw_content") or ""
         uri = result.get("href") or result.get("url") or ""
-        if str(text).strip() and str(uri).strip():
-            output.append(Evidence(f"external-{index}", str(text), "external_web", str(uri), str(uri), "", 1, 0.0))
+        if isinstance(text, str) and isinstance(uri, str) and text.strip() and uri.startswith(("https://", "http://")):
+            identity = hashlib.sha256((uri + "\n" + text).encode()).hexdigest()[:20]
+            output.append(Evidence(f"external-{identity}", text, "external_web", uri, uri, "", 1, 0.0))
     return output
 class UpstreamExternalResearch:
     def __init__(self, researcher_factory): self.researcher_factory = researcher_factory

@@ -1,0 +1,37 @@
+[1] Internal Source
+Source: kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7
+Origin URI: fixture://boreal/architecture-v2.txt
+Document: architecture.txt
+Version: 2
+Chunk: d38f573f983e41c7ada09be269818ee7
+Content:
+Boreal architecture version 2. CURRENT. Boreal uses SQLite for metadata. Its approved deployment budget is one writer. This replaces version 1. Synthetic evaluation data, not actual production documentation.
+
+---
+
+[2] Internal Source
+Source: kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1
+Origin URI: fixture://boreal/office.txt
+Document: office.txt
+Version: 1
+Chunk: 699240a1bf3647d8aeac9395378707a1
+Content:
+The Boreal office is open on Monday. This is an administrative document and does not describe database architecture.
+
+---
+
+[3] External Source
+Source: https://sqlite.org/about.html
+Origin URI: https://sqlite.org/about.html
+Document: https://sqlite.org/about.html
+Content:
+SQLite is an in-process library that implements a self-contained, serverless, zero-configuration, transactional SQL database engine. SQLite is an embedded SQL database engine. Unlike most other SQL databases, SQLite does not have a separate server process.
+
+---
+
+[4] External Source
+Source: https://sqlite.org/wal.html
+Origin URI: https://sqlite.org/wal.html
+Document: https://sqlite.org/wal.html
+Content:
+WAL provides more concurrency as readers do not block writers and a writer does not block readers. Reading and writing can proceed concurrently. All processes using a database must be on the same host computer; WAL does not work over a network filesystem.

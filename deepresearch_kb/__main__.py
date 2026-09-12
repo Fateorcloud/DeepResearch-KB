@@ -24,6 +24,12 @@ def main():
     versions = commands.add_parser("versions")
     versions.add_argument("kb_id")
     versions.add_argument("logical_path")
+    retrieve = commands.add_parser("retrieve")
+    retrieve.add_argument("query")
+    retrieve.add_argument("--kb", action="append", required=True)
+    retrieve.add_argument("--limit", type=int, default=5)
+    resolve = commands.add_parser("resolve")
+    resolve.add_argument("reference")
     args = parser.parse_args()
     store = KnowledgeStore(args.database)
     try:
@@ -36,6 +42,10 @@ def main():
                 args.kb_id, args.file, logical_path=args.logical_path,
                 source_type=args.source_type, source_uri=args.source_uri,
             )))
+        elif args.command == "retrieve":
+            result = [asdict(e) for e in store.retrieve(args.kb, args.query, limit=args.limit)]
+        elif args.command == "resolve":
+            result = asdict(store.resolve_reference(args.reference))
         else:
             result = [asdict(v) for v in store.list_versions(args.kb_id, args.logical_path)]
     except (ValueError, KeyError, OSError) as exc:

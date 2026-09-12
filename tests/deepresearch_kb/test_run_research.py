@@ -35,6 +35,9 @@ class RunTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(manifest["status"], "completed")
             self.assertEqual(manifest["upstream_reported_cost_usd"], 0.2)
             self.assertIsNone(manifest["llm_tokens"])
+            self.assertIsNone(manifest["actual_cost_usd"])
+            self.assertEqual(manifest["search_calls"], 1)
+            self.assertEqual(manifest["deep_research_calls"], 0)
 
     async def test_failure_record_does_not_leak_exception_message(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -44,3 +47,17 @@ class RunTests(unittest.IsolatedAsyncioTestCase):
             content = next(Path(directory).glob("*/run.json")).read_text()
             self.assertNotIn("secret-token", content)
             self.assertEqual(json.loads(content)["status"], "failed")
+
+    async def test_internal_path_and_failure_preserve_sources(self):
+        evidence = Evidence("c", "internal", "local_import", "file:///a", "a", "d", 1, 1.0)
+        store = SimpleNamespace(retrieve=Mock(return_value=[evidence]))
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(RuntimeError):
+                await run(store, "query", mode="internal", kb_ids=["kb"], output_dir=directory,
+                          researcher_factory=lambda q: SimpleNamespace(
+                              write_report=AsyncMock(side_effect=RuntimeError("failed"))))
+            folder = next(Path(directory).iterdir())
+            self.assertEqual(len(json.loads((folder / "sources.json").read_text())), 1)
+            record = json.loads((folder / "run.json").read_text())
+            self.assertNotIn("quick_search", record["research_path"])
+            self.assertEqual(record["search_calls"], 0)

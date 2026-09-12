@@ -6,4 +6,6 @@ class DemoTests(unittest.IsolatedAsyncioTestCase):
         output = await run_demo()
         self.assertIn("Internal Source", output)
         self.assertIn("architecture/current.txt", output)
-        self.assertIn("Evidence count: 1", output)
+        self.assertIn("Evidence count: 2", output)
+        self.assertIn("External Source", output)
+        self.assertIn("Version: 2", output)

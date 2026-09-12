@@ -1,0 +1,28 @@
+[
+  {
+    "chunk_id": "d38f573f983e41c7ada09be269818ee7",
+    "text": "Boreal architecture version 2. CURRENT. Boreal uses SQLite for metadata. Its approved deployment budget is one writer. This replaces version 1. Synthetic evaluation data, not actual production documentation.",
+    "source_type": "local_import",
+    "source_uri": "fixture://boreal/architecture-v2.txt",
+    "logical_path": "architecture.txt",
+    "document_id": "832e6f3aae9b4100abbd9270a450a167",
+    "version": 2,
+    "score": 2.4058271084460143,
+    "knowledge_base_id": "c191fa6219c04e09a300405fe6e5578c",
+    "content_hash": "d3cebef3b89ce1011d6be9e5bd92a582f0e07594a40a3daeb1aed948a205ec44",
+    "updated_at": "2026-09-12T15:15:13.489253+00:00"
+  },
+  {
+    "chunk_id": "699240a1bf3647d8aeac9395378707a1",
+    "text": "The Boreal office is open on Monday. This is an administrative document and does not describe database architecture.",
+    "source_type": "local_import",
+    "source_uri": "fixture://boreal/office.txt",
+    "logical_path": "office.txt",
+    "document_id": "ad7282e7e5234b7f9e21e67881e2908d",
+    "version": 1,
+    "score": 1.1191637630662022e-06,
+    "knowledge_base_id": "c191fa6219c04e09a300405fe6e5578c",
+    "content_hash": "4692bee59d565d5841c738276cb372863b54daa4a044f41ec9013e72a12611ee",
+    "updated_at": "2026-09-12T15:15:13.493490+00:00"
+  }
+]

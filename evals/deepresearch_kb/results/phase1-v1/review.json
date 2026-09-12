@@ -1,0 +1,133 @@
+{
+  "reviewer": "Codex manual source comparison, not an independent blinded judge",
+  "unit": "Predeclared target facts; mentions alone are not coverage",
+  "rows": [
+    {
+      "case_id": "internal-current",
+      "arm": "upstream_hybrid_replay",
+      "correct_supported": [
+        "engine",
+        "writers"
+      ],
+      "unavailable": [],
+      "incorrect": [],
+      "stale_current_errors": 0,
+      "citation_review": "Read report and frozen context; affirmative target facts are supported by cited sources. Statements of missing evidence are not counted as covered facts.",
+      "limitations": "Answers include some unrequested background; no superiority claim."
+    },
+    {
+      "case_id": "internal-current",
+      "arm": "kb_only",
+      "correct_supported": [
+        "engine",
+        "writers"
+      ],
+      "unavailable": [],
+      "incorrect": [],
+      "stale_current_errors": 0,
+      "citation_review": "Read report and frozen context; affirmative target facts are supported by cited sources. Statements of missing evidence are not counted as covered facts.",
+      "limitations": "External facts explicitly unavailable; irrelevant internal background remains."
+    },
+    {
+      "case_id": "internal-current",
+      "arm": "project_hybrid",
+      "correct_supported": [
+        "engine",
+        "writers"
+      ],
+      "unavailable": [],
+      "incorrect": [],
+      "stale_current_errors": 0,
+      "citation_review": "Read report and frozen context; affirmative target facts are supported by cited sources. Statements of missing evidence are not counted as covered facts.",
+      "limitations": "Answers include some unrequested background; no superiority claim."
+    },
+    {
+      "case_id": "external-wal",
+      "arm": "upstream_hybrid_replay",
+      "correct_supported": [
+        "serverless",
+        "concurrent",
+        "network"
+      ],
+      "unavailable": [],
+      "incorrect": [],
+      "stale_current_errors": 0,
+      "citation_review": "Read report and frozen context; affirmative target facts are supported by cited sources. Statements of missing evidence are not counted as covered facts.",
+      "limitations": "Answers include some unrequested background; no superiority claim."
+    },
+    {
+      "case_id": "external-wal",
+      "arm": "kb_only",
+      "correct_supported": [],
+      "unavailable": [
+        "serverless",
+        "concurrent",
+        "network"
+      ],
+      "incorrect": [],
+      "stale_current_errors": 0,
+      "citation_review": "Read report and frozen context; affirmative target facts are supported by cited sources. Statements of missing evidence are not counted as covered facts.",
+      "limitations": "External facts explicitly unavailable; irrelevant internal background remains."
+    },
+    {
+      "case_id": "external-wal",
+      "arm": "project_hybrid",
+      "correct_supported": [
+        "serverless",
+        "concurrent",
+        "network"
+      ],
+      "unavailable": [],
+      "incorrect": [],
+      "stale_current_errors": 0,
+      "citation_review": "Read report and frozen context; affirmative target facts are supported by cited sources. Statements of missing evidence are not counted as covered facts.",
+      "limitations": "Answers include some unrequested background; no superiority claim."
+    },
+    {
+      "case_id": "hybrid-choice",
+      "arm": "upstream_hybrid_replay",
+      "correct_supported": [
+        "engine",
+        "writers",
+        "serverless",
+        "network"
+      ],
+      "unavailable": [],
+      "incorrect": [],
+      "stale_current_errors": 0,
+      "citation_review": "Read report and frozen context; affirmative target facts are supported by cited sources. Statements of missing evidence are not counted as covered facts.",
+      "limitations": "Answers include some unrequested background; no superiority claim."
+    },
+    {
+      "case_id": "hybrid-choice",
+      "arm": "kb_only",
+      "correct_supported": [
+        "engine",
+        "writers"
+      ],
+      "unavailable": [
+        "serverless",
+        "network"
+      ],
+      "incorrect": [],
+      "stale_current_errors": 0,
+      "citation_review": "Read report and frozen context; affirmative target facts are supported by cited sources. Statements of missing evidence are not counted as covered facts.",
+      "limitations": "External facts explicitly unavailable; irrelevant internal background remains."
+    },
+    {
+      "case_id": "hybrid-choice",
+      "arm": "project_hybrid",
+      "correct_supported": [
+        "engine",
+        "writers",
+        "serverless",
+        "network"
+      ],
+      "unavailable": [],
+      "incorrect": [],
+      "stale_current_errors": 0,
+      "citation_review": "Read report and frozen context; affirmative target facts are supported by cited sources. Statements of missing evidence are not counted as covered facts.",
+      "limitations": "Answers include some unrequested background; no superiority claim."
+    }
+  ]
+}

@@ -18,7 +18,7 @@ def chunk_documents(store, knowledge_base_ids: list[str] | None = None):
     with closing(store._connect()) as db:
         rows = db.execute(f"""
             SELECT c.id, c.text, c.document_id, c.version, d.knowledge_base_id,
-                   d.logical_path, v.source_type, v.source_uri
+                   d.logical_path, v.source_type, v.source_uri, v.content_hash, v.updated_at
             FROM chunk c JOIN document d ON d.id = c.document_id
             JOIN document_version v ON v.document_id = c.document_id AND v.version = c.version
             WHERE d.knowledge_base_id IN ({placeholders}) AND v.status = 'active'
@@ -29,6 +29,7 @@ def chunk_documents(store, knowledge_base_ids: list[str] | None = None):
             "document_id": row["document_id"], "version": row["version"],
             "logical_path": row["logical_path"], "source_type": row["source_type"],
             "source_uri": row["source_uri"], "source": row["source_uri"],
+            "content_hash": row["content_hash"], "updated_at": row["updated_at"],
         }) for row in rows]
 
 

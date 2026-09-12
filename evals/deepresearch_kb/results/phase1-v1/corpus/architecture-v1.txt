@@ -1,0 +1,1 @@
+Boreal architecture version 1. DEPRECATED, superseded by version 2. Boreal previously used PostgreSQL for metadata with eight concurrent writers. Do not use this as the current design.

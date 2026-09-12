@@ -1,5 +1,9 @@
 # Upstream 基线记录（尚非实测评测基线）
 
+更新：Phase 1 收尾现已完成固定材料/真实模型的 upstream Hybrid 对照，工件见
+`evals/deepresearch_kb/results/phase1-v1`，协议与限制见 `PHASE1_ACCEPTANCE.md`。
+本文以下保留早期审计和阶段性状态，不覆盖当前验收结论；尚无实时开放网络的大规模质量基线。
+
 - 审计提交：`6f998577d547b1e54ec662dac63583aa11e3b84b`。
 - 项目声明版本：0.14.7；本机 WSL 系统 Python：3.12.3。
 - 本切片不修改 `gpt_researcher/`、依赖清单或原始应用入口。

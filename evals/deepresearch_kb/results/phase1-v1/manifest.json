@@ -1,0 +1,440 @@
+{
+  "dataset_sha256": "8a6174c4a9d44c68fd6dde82983f180089944451c983bc058c7122d0ec710284",
+  "git_commit": "b5316448fb02ebf6058e9d3a0376cdfd5512b4e3",
+  "worktree_dirty": true,
+  "upstream_commit": "6f998577d547b1e54ec662dac63583aa11e3b84b",
+  "protocol": "frozen-excerpt replay; real LLM; upstream Hybrid vs KB-only vs project Hybrid",
+  "results": [
+    {
+      "case_id": "internal-current",
+      "arm": "upstream_hybrid_replay",
+      "status": "completed",
+      "actual_cost_usd": null,
+      "live_search_calls": 0,
+      "models": {
+        "smart_llm_model": "deepseek-flash",
+        "strategic_llm_model": "deepseek-flash",
+        "smart_token_limit": 2500,
+        "max_iterations": 1
+      },
+      "fact_mentions": {
+        "engine": true,
+        "writers": true
+      },
+      "citation_links": [
+        "architecture-v2.txt",
+        "architecture-v2.txt",
+        "architecture-v1.txt",
+        "architecture-v1.txt",
+        "https://sqlite.org/about.html",
+        "https://sqlite.org/wal.html",
+        "architecture-v2.txt"
+      ],
+      "unknown_citation_links": [],
+      "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+      "latency_seconds": 16.225473407001118,
+      "llm_calls_started": 3,
+      "llm_calls_failed": 0,
+      "llm_calls_completed": 3,
+      "llm_tokens": {
+        "input_tokens": 1717,
+        "output_tokens": 3183
+      },
+      "usage_records": [
+        {
+          "input_tokens": 515,
+          "output_tokens": 243
+        },
+        {
+          "input_tokens": 515,
+          "output_tokens": 432
+        },
+        {
+          "input_tokens": 687,
+          "output_tokens": 2508
+        }
+      ],
+      "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+      "retriever_calls": 4,
+      "upstream_estimate_usd_not_billing": 0.056330000000000005
+    },
+    {
+      "case_id": "internal-current",
+      "arm": "kb_only",
+      "status": "completed",
+      "actual_cost_usd": null,
+      "live_search_calls": 0,
+      "models": {
+        "smart_llm_model": "deepseek-flash",
+        "strategic_llm_model": "deepseek-flash",
+        "smart_token_limit": 2500,
+        "max_iterations": 1
+      },
+      "fact_mentions": {
+        "engine": true,
+        "writers": true
+      },
+      "citation_links": [
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7"
+      ],
+      "unknown_citation_links": [],
+      "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+      "latency_seconds": 7.336567118007224,
+      "llm_calls_started": 1,
+      "llm_calls_failed": 0,
+      "llm_calls_completed": 1,
+      "llm_tokens": {
+        "input_tokens": 407,
+        "output_tokens": 1661
+      },
+      "usage_records": [
+        {
+          "input_tokens": 407,
+          "output_tokens": 1661
+        }
+      ],
+      "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+      "retriever_calls": 0,
+      "upstream_estimate_usd_not_billing": 0.02695
+    },
+    {
+      "case_id": "internal-current",
+      "arm": "project_hybrid",
+      "status": "completed",
+      "actual_cost_usd": null,
+      "live_search_calls": 0,
+      "models": {
+        "smart_llm_model": "deepseek-flash",
+        "strategic_llm_model": "deepseek-flash",
+        "smart_token_limit": 2500,
+        "max_iterations": 1
+      },
+      "fact_mentions": {
+        "engine": true,
+        "writers": true
+      },
+      "citation_links": [
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1",
+        "https://sqlite.org/about.html",
+        "https://sqlite.org/wal.html"
+      ],
+      "unknown_citation_links": [],
+      "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+      "latency_seconds": 8.544525363002322,
+      "llm_calls_started": 1,
+      "llm_calls_failed": 0,
+      "llm_calls_completed": 1,
+      "llm_tokens": {
+        "input_tokens": 591,
+        "output_tokens": 1754
+      },
+      "usage_records": [
+        {
+          "input_tokens": 591,
+          "output_tokens": 1754
+        }
+      ],
+      "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+      "retriever_calls": 1,
+      "upstream_estimate_usd_not_billing": 0.028305
+    },
+    {
+      "case_id": "external-wal",
+      "arm": "upstream_hybrid_replay",
+      "status": "completed",
+      "actual_cost_usd": null,
+      "live_search_calls": 0,
+      "models": {
+        "smart_llm_model": "deepseek-flash",
+        "strategic_llm_model": "deepseek-flash",
+        "smart_token_limit": 2500,
+        "max_iterations": 1
+      },
+      "fact_mentions": {
+        "serverless": true,
+        "concurrent": true,
+        "network": true
+      },
+      "citation_links": [
+        "https://sqlite.org/about.html",
+        "https://sqlite.org/wal.html",
+        "https://sqlite.org/wal.html",
+        "architecture-v2.txt",
+        "architecture-v1.txt"
+      ],
+      "unknown_citation_links": [],
+      "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+      "latency_seconds": 7.078707086999202,
+      "llm_calls_started": 3,
+      "llm_calls_failed": 0,
+      "llm_calls_completed": 3,
+      "llm_tokens": {
+        "input_tokens": 1747,
+        "output_tokens": 1626
+      },
+      "usage_records": [
+        {
+          "input_tokens": 527,
+          "output_tokens": 260
+        },
+        {
+          "input_tokens": 527,
+          "output_tokens": 302
+        },
+        {
+          "input_tokens": 693,
+          "output_tokens": 1064
+        }
+      ],
+      "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+      "retriever_calls": 4,
+      "upstream_estimate_usd_not_billing": 0.033125
+    },
+    {
+      "case_id": "external-wal",
+      "arm": "kb_only",
+      "status": "completed",
+      "actual_cost_usd": null,
+      "live_search_calls": 0,
+      "models": {
+        "smart_llm_model": "deepseek-flash",
+        "strategic_llm_model": "deepseek-flash",
+        "smart_token_limit": 2500,
+        "max_iterations": 1
+      },
+      "fact_mentions": {
+        "serverless": false,
+        "concurrent": true,
+        "network": true
+      },
+      "citation_links": [
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1",
+        "kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7"
+      ],
+      "unknown_citation_links": [],
+      "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+      "latency_seconds": 9.96743669299758,
+      "llm_calls_started": 1,
+      "llm_calls_failed": 0,
+      "llm_calls_completed": 1,
+      "llm_tokens": {
+        "input_tokens": 413,
+        "output_tokens": 2097
+      },
+      "usage_records": [
+        {
+          "input_tokens": 413,
+          "output_tokens": 2097
+        }
+      ],
+      "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+      "retriever_calls": 0,
+      "upstream_estimate_usd_not_billing": 0.03352
+    },
+    {
+      "case_id": "external-wal",
+      "arm": "project_hybrid",
+      "status": "completed",
+      "actual_cost_usd": null,
+      "live_search_calls": 0,
+      "models": {
+        "smart_llm_model": "deepseek-flash",
+        "strategic_llm_model": "deepseek-flash",
+        "smart_token_limit": 2500,
+        "max_iterations": 1
+      },
+      "fact_mentions": {
+        "serverless": true,
+        "concurrent": true,
+        "network": true
+      },
+      "citation_links": [
+        "https://sqlite.org/about.html",
+        "https://sqlite.org/wal.html",
+        "https://sqlite.org/wal.html",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1"
+      ],
+      "unknown_citation_links": [],
+      "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+      "latency_seconds": 10.31699101299455,
+      "llm_calls_started": 1,
+      "llm_calls_failed": 0,
+      "llm_calls_completed": 1,
+      "llm_tokens": {
+        "input_tokens": 597,
+        "output_tokens": 2255
+      },
+      "usage_records": [
+        {
+          "input_tokens": 597,
+          "output_tokens": 2255
+        }
+      ],
+      "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+      "retriever_calls": 1,
+      "upstream_estimate_usd_not_billing": 0.03585
+    },
+    {
+      "case_id": "hybrid-choice",
+      "arm": "upstream_hybrid_replay",
+      "status": "completed",
+      "actual_cost_usd": null,
+      "live_search_calls": 0,
+      "models": {
+        "smart_llm_model": "deepseek-flash",
+        "strategic_llm_model": "deepseek-flash",
+        "smart_token_limit": 2500,
+        "max_iterations": 1
+      },
+      "fact_mentions": {
+        "engine": true,
+        "writers": true,
+        "serverless": true,
+        "network": true
+      },
+      "citation_links": [
+        "architecture-v2.txt",
+        "architecture-v1.txt",
+        "https://sqlite.org/about.html",
+        "https://sqlite.org/wal.html",
+        "architecture-v2.txt",
+        "https://sqlite.org/about.html",
+        "https://sqlite.org/wal.html"
+      ],
+      "unknown_citation_links": [],
+      "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+      "latency_seconds": 14.800220160002937,
+      "llm_calls_started": 3,
+      "llm_calls_failed": 0,
+      "llm_calls_completed": 3,
+      "llm_tokens": {
+        "input_tokens": 1787,
+        "output_tokens": 3687
+      },
+      "usage_records": [
+        {
+          "input_tokens": 543,
+          "output_tokens": 501
+        },
+        {
+          "input_tokens": 543,
+          "output_tokens": 612
+        },
+        {
+          "input_tokens": 701,
+          "output_tokens": 2574
+        }
+      ],
+      "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+      "retriever_calls": 4,
+      "upstream_estimate_usd_not_billing": 0.06423999999999999
+    },
+    {
+      "case_id": "hybrid-choice",
+      "arm": "kb_only",
+      "status": "completed",
+      "actual_cost_usd": null,
+      "live_search_calls": 0,
+      "models": {
+        "smart_llm_model": "deepseek-flash",
+        "strategic_llm_model": "deepseek-flash",
+        "smart_token_limit": 2500,
+        "max_iterations": 1
+      },
+      "fact_mentions": {
+        "engine": true,
+        "writers": true,
+        "serverless": true,
+        "network": true
+      },
+      "citation_links": [
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1"
+      ],
+      "unknown_citation_links": [],
+      "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+      "latency_seconds": 6.846494832003373,
+      "llm_calls_started": 1,
+      "llm_calls_failed": 0,
+      "llm_calls_completed": 1,
+      "llm_tokens": {
+        "input_tokens": 421,
+        "output_tokens": 1482
+      },
+      "usage_records": [
+        {
+          "input_tokens": 421,
+          "output_tokens": 1482
+        }
+      ],
+      "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+      "retriever_calls": 0,
+      "upstream_estimate_usd_not_billing": 0.024335
+    },
+    {
+      "case_id": "hybrid-choice",
+      "arm": "project_hybrid",
+      "status": "completed",
+      "actual_cost_usd": null,
+      "live_search_calls": 0,
+      "models": {
+        "smart_llm_model": "deepseek-flash",
+        "strategic_llm_model": "deepseek-flash",
+        "smart_token_limit": 2500,
+        "max_iterations": 1
+      },
+      "fact_mentions": {
+        "engine": true,
+        "writers": false,
+        "serverless": true,
+        "network": true
+      },
+      "citation_links": [
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1",
+        "https://sqlite.org/about.html",
+        "https://sqlite.org/wal.html",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "https://sqlite.org/about.html",
+        "https://sqlite.org/wal.html",
+        "kb://832e6f3aae9b4100abbd9270a450a167/versions/2/chunks/d38f573f983e41c7ada09be269818ee7",
+        "kb://ad7282e7e5234b7f9e21e67881e2908d/versions/1/chunks/699240a1bf3647d8aeac9395378707a1"
+      ],
+      "unknown_citation_links": [],
+      "metric_note": "Keyword mentions and URI membership, not factual correctness or citation support.",
+      "latency_seconds": 14.424558631988475,
+      "llm_calls_started": 1,
+      "llm_calls_failed": 0,
+      "llm_calls_completed": 1,
+      "llm_tokens": {
+        "input_tokens": 605,
+        "output_tokens": 3333
+      },
+      "usage_records": [
+        {
+          "input_tokens": 605,
+          "output_tokens": 3333
+        }
+      ],
+      "usage_note": "Provider-reported completed calls only; missing/error billing is not inferred.",
+      "retriever_calls": 1,
+      "upstream_estimate_usd_not_billing": 0.05206
+    }
+  ]
+}
