@@ -2,7 +2,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from deepresearch_kb.models import Evidence
-from deepresearch_kb.research import ResearchOrchestrator, UpstreamExternalResearch
+from deepresearch_kb.research import ResearchOrchestrator, UpstreamExternalResearch, render_evidence_context
 class ResearchTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.internal = Evidence("c1", "internal architecture", "local_import", "file:///a", "a.md", "d1", 2, 1.0)
@@ -21,3 +21,11 @@ class ResearchTests(unittest.IsolatedAsyncioTestCase):
         researcher = SimpleNamespace(quick_search=AsyncMock(return_value=[{"body": "web fact", "href": "https://x"}, {"body": "missing"}]))
         result = await UpstreamExternalResearch(lambda query: researcher).search("fact")
         self.assertEqual(len(result), 1); self.assertEqual(result[0].source_type, "external_web")
+
+    def test_context_renderer_keeps_source_type_and_lineage(self):
+        external = Evidence("e1", "release fact", "external_web", "https://example.test", "https://example.test", "", 1, 0.0)
+        rendered = render_evidence_context([self.internal, external])
+        self.assertIn("Internal Source", rendered)
+        self.assertIn("External Source", rendered)
+        self.assertIn("Version: 2", rendered)
+        self.assertIn("https://example.test", rendered)

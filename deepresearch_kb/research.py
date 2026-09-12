@@ -2,6 +2,14 @@
 from typing import Any, Literal
 from .models import Evidence
 ResearchMode = Literal["internal", "external", "hybrid"]
+
+def render_evidence_context(evidence: list[Evidence]) -> str:
+    """Render evidence for upstream synthesis without losing provenance."""
+    blocks = []
+    for index, item in enumerate(evidence, 1):
+        label = "Internal Source" if item.source_type in ("local_import", "web_upload") else "External Source"
+        blocks.append(f"[{index}] {label}\nSource: {item.source_uri}\nDocument: {item.logical_path}\nVersion: {item.version}\nContent:\n{item.text}")
+    return "\n\n---\n\n".join(blocks)
 def _external_evidence(results: list[dict[str, Any]]) -> list[Evidence]:
     output = []
     for index, result in enumerate(results):
