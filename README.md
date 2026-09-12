@@ -1,6 +1,7 @@
 # DeepResearch-KB
 
-基于 [GPT Researcher](https://github.com/assafelovic/gpt-researcher) 的知识增强研究扩展。
+本项目明确是基于 [GPT Researcher](https://github.com/assafelovic/gpt-researcher) 的二次开发，
+新增持久化知识层和研究编排实验；上游能力与本项目贡献边界见 [PROJECT_CHARTER.md](PROJECT_CHARTER.md)。
 产品目标和贡献边界见 [PROJECT_CHARTER.md](PROJECT_CHARTER.md)。
 
 ## 当前状态

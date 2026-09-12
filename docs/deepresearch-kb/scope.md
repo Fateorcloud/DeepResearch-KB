@@ -63,7 +63,9 @@ python3 -B -m unittest discover -s tests/deepresearch_kb -p 'test_knowledge.py' 
   返回仍统一为 Evidence。它是词法检索，不是向量语义检索；未来 LangChain vector index 可替换该 Adapter。
 - Phase 1.5（已完成）：新增可选 `LangChainVectorIndex` Adapter。它只适配调用者注入的
   `similarity_search()`，规范化 metadata 为 Evidence，并支持 KB 过滤；不创建、不持久化外部向量库。
+- Phase 1.6（已完成）：新增 `chunk_documents()` 与 `LangChainVectorIndexBuilder`，将 active chunks
+  以完整 KB/document/version/source metadata 导入调用者提供的 vector store；导入数量和 lineage 已测试。
 
-接下来：将 ingest chunks 映射到 LangChain vector metadata（仍由调用者选择持久化 vector store）→
+接下来：为 External/Hybrid 研究新增独立 Adapter（仍不修改 GPTResearcher 主流程）→
 固定 corpus 对照 → 显式 External/Hybrid 调用 upstream。自动 source planning、充分性判断、
 自适应升级和上传界面均未实现。此切片只证明持久化/版本身份契约，不证明研究质量提升。

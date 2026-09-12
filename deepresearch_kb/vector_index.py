@@ -5,6 +5,44 @@ from typing import Any
 from .models import Evidence
 
 
+def chunk_documents(store, knowledge_base_ids: list[str] | None = None):
+    """Export active chunks as LangChain Documents with complete provenance."""
+    from langchain_core.documents import Document
+
+    ids = knowledge_base_ids or [kb.id for kb in store.list_knowledge_bases()]
+    placeholders = ",".join("?" for _ in ids)
+    with store._connect() as db:
+        rows = db.execute(f"""
+            SELECT c.id, c.text, c.document_id, c.version, d.knowledge_base_id,
+                   d.logical_path, v.source_type, v.source_uri
+            FROM chunk c JOIN document d ON d.id = c.document_id
+            JOIN document_version v ON v.document_id = c.document_id AND v.version = c.version
+            WHERE d.knowledge_base_id IN ({placeholders}) AND v.status = 'active'
+            ORDER BY d.logical_path, c.version, c.ordinal
+        """, ids)
+        return [Document(page_content=row["text"], metadata={
+            "chunk_id": row["id"], "knowledge_base_id": row["knowledge_base_id"],
+            "document_id": row["document_id"], "version": row["version"],
+            "logical_path": row["logical_path"], "source_type": row["source_type"],
+            "source_uri": row["source_uri"], "source": row["source_uri"],
+        }) for row in rows]
+
+
+class LangChainVectorIndexBuilder:
+    """Index active KB chunks into an injected LangChain vector store."""
+
+    def __init__(self, vector_store):
+        if not hasattr(vector_store, "add_documents"):
+            raise TypeError("vector_store must provide add_documents")
+        self.vector_store = vector_store
+
+    def index(self, store, *, knowledge_base_ids: list[str] | None = None) -> int:
+        documents = chunk_documents(store, knowledge_base_ids)
+        if documents:
+            self.vector_store.add_documents(documents)
+        return len(documents)
+
+
 class LangChainVectorIndex:
     """Adapt a caller-owned LangChain vector store to the KB Evidence seam.
 

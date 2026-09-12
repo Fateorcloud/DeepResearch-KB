@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 from deepresearch_kb.knowledge import KnowledgeStore, _load_upstream
-from deepresearch_kb.vector_index import LangChainVectorIndex
+from deepresearch_kb.vector_index import LangChainVectorIndex, LangChainVectorIndexBuilder, chunk_documents
 
 
 class KnowledgeTests(unittest.IsolatedAsyncioTestCase):
@@ -175,6 +175,20 @@ class KnowledgeTests(unittest.IsolatedAsyncioTestCase):
         adapter = LangChainVectorIndex(Store())
         self.assertEqual(adapter.search("evidence", knowledge_base_ids=["kb1"])[0].version, 2)
         self.assertEqual(adapter.search("evidence", knowledge_base_ids=["other"]), [])
+
+    async def test_export_and_index_include_active_lineage_metadata(self):
+        await self.ingest()
+        documents = chunk_documents(self.store, [self.kb.id])
+        self.assertEqual(documents[0].metadata["logical_path"], "architecture/current.txt")
+        self.assertEqual(documents[0].metadata["version"], 1)
+        indexed = []
+
+        class Store:
+            def add_documents(self, docs):
+                indexed.extend(docs)
+
+        self.assertEqual(LangChainVectorIndexBuilder(Store()).index(self.store), 1)
+        self.assertEqual(indexed[0].metadata["document_id"], documents[0].metadata["document_id"])
 
 
 if __name__ == "__main__":
