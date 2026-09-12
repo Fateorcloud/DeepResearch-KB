@@ -13,7 +13,7 @@ backend/frontend/multi_agents/deep_agents，不新增空 research/planner 模块
 
 | 字段 | 定义 |
 | --- | --- |
-| source_type | `local_import` 或 `web_upload`，表示导入渠道；两者都是内部知识，不是 internal/external 证据分类 |
+| source_type | ingest 使用 `local_import` 或 `web_upload`；研究证据另用 `external_web` 表示外部互联网来源 |
 | source_uri | 来源标识；本地默认原文件 file URI，上传必须由调用者传稳定标识，不用临时文件路径 |
 | logical_path | KB 内 POSIX 相对路径，例如 `architecture/current.md`；与 KB ID 一起确定文档身份 |
 | content_hash | 原始文件字节的 SHA-256，不是解析文本 hash，也不是文档 ID |
@@ -65,6 +65,8 @@ python3 -B -m unittest discover -s tests/deepresearch_kb -p 'test_knowledge.py' 
   `similarity_search()`，规范化 metadata 为 Evidence，并支持 KB 过滤；不创建、不持久化外部向量库。
 - Phase 1.6（已完成）：新增 `chunk_documents()` 与 `LangChainVectorIndexBuilder`，将 active chunks
   以完整 KB/document/version/source metadata 导入调用者提供的 vector store；导入数量和 lineage 已测试。
+- Phase 1.7（已完成）：新增显式 `ResearchOrchestrator` 与 `UpstreamExternalResearch` Adapter；
+  `internal`、`external`、`hybrid` 三路统一返回 Evidence，Hybrid 固定 internal-first。
 
 接下来：为 External/Hybrid 研究新增独立 Adapter（仍不修改 GPTResearcher 主流程）→
 固定 corpus 对照 → 显式 External/Hybrid 调用 upstream。自动 source planning、充分性判断、

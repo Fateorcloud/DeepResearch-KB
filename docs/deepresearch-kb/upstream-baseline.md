@@ -34,3 +34,5 @@ Hybrid 两路独立规划后拼接。`document/document.py` 输出 raw_content/u
 未改变 upstream vector wrapper，也未验证真实 embedding/provider。
 2026-09-12：新增 chunk 到注入 vector store 的导出/构建 Adapter，保留完整 provenance；
 未声称向量数据库由本项目创建或管理。
+2026-09-12：新增独立 External/Hybrid Adapter，调用 upstream `quick_search()` 并规范化外部结果；
+Hybrid 只做 internal-first 合并，不宣称具备自适应研究或冲突裁决。

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-SourceType = Literal["local_import", "web_upload"]
+SourceType = Literal["local_import", "web_upload", "external_web"]
 
 
 @dataclass(frozen=True)
