@@ -17,6 +17,9 @@
 最后一次验证：项目测试 11 项 + upstream DocumentLoader/VectorStore guard 2 项，共 13 项通过。
 已有 pytest 配置项和 LangChain 弃用警告未在本次修改。
 
+2026-09-12 后续切片：新增 SQLite chunk lineage 和确定性 lexical retrieve；测试覆盖 active-version
+过滤、KB scope、版本更新和空查询。向量索引 Adapter 尚未实现。
+
 源码事实：`agent.py` → `skills/researcher.py` → `actions/query_processing.py` /
 `skills/context_manager.py` → `skills/writer.py`。Local/VectorStore 的 planner 仍会搜索；
 Hybrid 两路独立规划后拼接。`document/document.py` 输出 raw_content/url，url 只保留 basename；

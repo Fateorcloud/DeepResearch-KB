@@ -53,6 +53,14 @@ python3 -B -m unittest discover -s tests/deepresearch_kb -p 'test_knowledge.py' 
 
 真实 TXT DocumentLoader 冒烟验证已通过，独立 CLI 已加入（见根目录 README）。
 完整项目测试：`GPTR_BLOCK_NETWORK=1 .venv/bin/python -m pytest tests/deepresearch_kb -q`。
-接下来：Chunk 与持久化向量索引 → KB retrieve →
+### 阶段进度记录
+
+- Phase 1.1（已完成）：定义 KB/document/version 元数据和四个 provenance 字段；8 项离线契约测试。
+- Phase 1.2（已完成）：统一 `KnowledgeStore.ingest()`；真实 TXT parser 冒烟、CLI workflow；13 项测试通过。
+- Phase 1.3（已完成）：在 SQLite 持久化 `chunk`（document/version/ordinal/text lineage），加入确定性的 lexical `retrieve()`；
+  active version filtering、KB scope 和版本替换测试已覆盖。
+- Phase 1.4（进行中）：接入现有向量索引 Adapter；本次 lexical retrieve 只是可重复 baseline，不声称语义检索。
+
+接下来：持久化向量索引 Adapter → KB retrieve evidence 格式扩展 →
 固定 corpus 对照 → 显式 External/Hybrid 调用 upstream。自动 source planning、充分性判断、
 自适应升级和上传界面均未实现。此切片只证明持久化/版本身份契约，不证明研究质量提升。

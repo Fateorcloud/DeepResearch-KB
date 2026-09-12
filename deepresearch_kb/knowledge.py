@@ -9,7 +9,7 @@ from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
-from .models import DocumentVersion, KnowledgeBase, SourceType
+from .models import DocumentVersion, Evidence, KnowledgeBase, SourceType
 
 
 def _now() -> str:
@@ -72,6 +72,15 @@ class KnowledgeStore:
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS one_active_version
                     ON document_version(document_id) WHERE status = 'active';
+                CREATE TABLE IF NOT EXISTS chunk (
+                    id TEXT PRIMARY KEY,
+                    document_id TEXT NOT NULL,
+                    version INTEGER NOT NULL,
+                    ordinal INTEGER NOT NULL,
+                    text TEXT NOT NULL,
+                    UNIQUE(document_id, version, ordinal),
+                    FOREIGN KEY(document_id, version) REFERENCES document_version(document_id, version)
+                );
             """)
 
     def _connect(self):
@@ -183,4 +192,47 @@ class KnowledgeStore:
                            (document_id, version, source_type, source_uri, digest,
                             updated_at.astimezone(timezone.utc).isoformat(), _now(),
                             "active", raw_bytes, pages_json))
+                # Deterministic lexical chunks are the Phase 1 retrieval seam.
+                # A future vector adapter can replace this implementation while
+                # retaining the document/version/chunk lineage.
+                chunks = []
+                for page in pages:
+                    text = page["raw_content"].strip()
+                    for start in range(0, len(text), 1000):
+                        chunks.append(text[start:start + 1000])
+                db.executemany("INSERT INTO chunk VALUES (?, ?, ?, ?, ?)", [
+                    (uuid4().hex, document_id, version, ordinal, text)
+                    for ordinal, text in enumerate(chunks) if text
+                ])
         return self.list_versions(knowledge_base_id, logical_path)[-1]
+
+    def retrieve(self, knowledge_base_ids: list[str], query: str, *, limit: int = 5) -> list[Evidence]:
+        """Return active-version evidence ranked by simple lexical overlap.
+
+        This is intentionally deterministic and dependency-free. It is a
+        baseline retrieval implementation, not a claim of semantic search.
+        """
+        if not knowledge_base_ids or not query.strip() or limit < 1:
+            return []
+        terms = {term.casefold() for term in query.split() if term.strip()}
+        placeholders = ",".join("?" for _ in knowledge_base_ids)
+        with closing(self._connect()) as db:
+            rows = db.execute(f"""
+                SELECT c.id, c.text, v.source_type, v.source_uri, d.logical_path,
+                       d.id AS document_id, c.version
+                FROM chunk c
+                JOIN document d ON d.id = c.document_id
+                JOIN document_version v ON v.document_id = c.document_id AND v.version = c.version
+                WHERE d.knowledge_base_id IN ({placeholders}) AND v.status = 'active'
+            """, knowledge_base_ids)
+            scored = []
+            for row in rows:
+                words = set(row["text"].casefold().split())
+                score = sum(1 for term in terms if term in words)
+                if score:
+                    scored.append((score, row))
+        scored.sort(key=lambda item: (-item[0], item[1]["logical_path"], item[1]["version"], item[1]["id"]))
+        return [Evidence(chunk_id=row["id"], text=row["text"], source_type=row["source_type"],
+                         source_uri=row["source_uri"], logical_path=row["logical_path"],
+                         document_id=row["document_id"], version=row["version"], score=float(score))
+                for score, row in scored[:limit]]

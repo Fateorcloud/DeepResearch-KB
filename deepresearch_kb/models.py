@@ -26,3 +26,15 @@ class DocumentVersion:
     ingested_at: str
     status: str
     pages: tuple[dict, ...]
+
+
+@dataclass(frozen=True)
+class Evidence:
+    chunk_id: str
+    text: str
+    source_type: SourceType
+    source_uri: str
+    logical_path: str
+    document_id: str
+    version: int
+    score: float

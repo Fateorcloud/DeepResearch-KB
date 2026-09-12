@@ -127,6 +127,32 @@ class KnowledgeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(calls, [[str(self.file)]])
         self.assertEqual(result[0]["raw_content"], "parsed")
 
+    async def test_chunks_are_persisted_and_retrieved_from_active_versions(self):
+        await self.ingest()
+        results = self.store.retrieve([self.kb.id], "architecture", limit=2)
+        self.assertEqual(len(results), 1)
+        self.assertIn("architecture", results[0].text)
+        self.assertEqual(results[0].logical_path, "architecture/current.txt")
+        self.assertEqual(results[0].version, 1)
+        self.file.write_bytes(b"old architecture SQLite")
+        await self.ingest()
+        self.file.write_bytes(b"new architecture Postgres")
+        await self.ingest()
+        results = self.store.retrieve([self.kb.id], "SQLite")
+        self.assertEqual(results, [])
+        results = self.store.retrieve([self.kb.id], "Postgres")
+        self.assertEqual(results[0].version, 3)
+
+    async def test_retrieve_scopes_knowledge_bases_and_is_deterministic(self):
+        first = await self.ingest()
+        other = self.store.create_knowledge_base("Other")
+        other_result = await self.store.ingest(other.id, self.file,
+                                               logical_path="architecture/current.txt")
+        self.assertEqual(self.store.retrieve([other.id], "architecture")[0].document_id,
+                         other_result.document_id)
+        self.assertEqual(self.store.retrieve(["missing"], "architecture"), [])
+        self.assertEqual(self.store.retrieve([self.kb.id], "unknown"), [])
+
 
 if __name__ == "__main__":
     unittest.main()
