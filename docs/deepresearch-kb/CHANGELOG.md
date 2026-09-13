@@ -135,6 +135,18 @@
 
 本轮仍不接 upstream planner/LLM；计划由透明规则或未来人工/LLM Adapter 产生。
 
+## Phase 2.4 — 来源策略执行评测（2026-09-13）
+
+| 子步骤 | 状态 | 结果 |
+| --- | --- | --- |
+| 1. Adapter 调用计数 | 完成 | fake internal/external Adapter 统计每道子问题的实际调用 |
+| 2. policy-call gold | 完成 | internal=KB only、external=Web only、hybrid=两者 |
+| 3. 路由评测 | 完成 | 5/5 案例调用矩阵通过；无 LLM、无网络、无 token 消耗 |
+| 4. 研究级接入 | 未开始 | 仍需把 upstream 生成的 sub-query 映射到计划，保留原始 query planner |
+
+当前已证明 source_policy 会改变 Adapter 调用，但尚未证明规划器能正确分解真实复杂任务；
+下一步接入 upstream sub-query 作为计划输入，再评估 source policy 对证据覆盖和无关调用的影响。
+
 ## Phase 2.3 — 按子问题归属渲染报告上下文（2026-09-13）
 
 | 子步骤 | 状态 | 结果 |
