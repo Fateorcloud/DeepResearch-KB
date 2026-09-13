@@ -43,7 +43,7 @@ class RuleBasedSourcePlanner:
             # "current project" is an internal state; only temporal language
             # that implies the outside world activates the external branch.
             asks_current = any(word in lowered for word in ("latest", "today", "now", "recent"))
-            asks_internal = any(word in lowered for word in ("our ", "internal", "project", "team", "architecture", "constraint"))
+            asks_internal = any(word in lowered for word in ("our ", "internal", "project", "team", "constraint"))
             if asks_current and asks_internal:
                 policy, rationale = "hybrid", "current external facts plus project/internal constraints"
             elif asks_internal:
@@ -54,3 +54,8 @@ class RuleBasedSourcePlanner:
         if not planned:
             raise ValueError("at least one non-blank question is required")
         return ResearchPlan(query.strip(), tuple(planned))
+
+
+def plan_from_upstream_subqueries(query: str, subqueries: list[str]) -> ResearchPlan:
+    """Wrap sub-queries produced by upstream without reimplementing generation."""
+    return RuleBasedSourcePlanner().plan(query, subqueries)

@@ -147,6 +147,28 @@
 当前已证明 source_policy 会改变 Adapter 调用，但尚未证明规划器能正确分解真实复杂任务；
 下一步接入 upstream sub-query 作为计划输入，再评估 source policy 对证据覆盖和无关调用的影响。
 
+## Phase 2.5 — 接入 upstream sub-query（2026-09-13）
+
+| 子步骤 | 状态 | 结果 |
+| --- | --- | --- |
+| 1. 输入 Adapter | 完成 | `plan_from_upstream_subqueries()` 接收上游字符串列表，不重复生成 sub-query |
+| 2. 策略标注 | 完成 | 项目规则只负责给上游子问题添加 source_policy/rationale |
+| 3. 计划执行 | 已完成 | Phase 2.2 的 `execute_plan()` 逐题分流并保留 PlannedEvidence |
+| 4. 回归测试 | 完成 | 验证原始 query 不被替换、子问题顺序和策略保持 |
+| 5. 真实 upstream planner | 待运行 | 需要模型调用；运行后记录 planner 输出、策略误判与 token |
+
+这一步的边界是“复用上游分解、扩展来源需求”；不把规则分类器包装成通用语义理解。
+
+## Phase 2.5.5 — 真实 upstream planner 验证（2026-09-13）
+
+- 入口 `evals/deepresearch_kb/run_upstream_planner.py` 只执行一次 upstream `plan_research()`，不收集证据、不写报告。
+- 运行前检查 DeepSeek/Tavily 凭据；输出 subqueries、规则策略标注、耗时和上游成本估算。
+- 尚未运行；待本轮代码提交后执行，执行结果写入 Git 忽略的 `data/evals/`。
+- 实际运行一次后发现首个子查询因“production architecture”误标 Hybrid；规则将泛化 architecture 当作内部信号。
+  已收紧为明确项目归属词（our/project/team/internal/constraint），保留该失败作为 Phase 2 误标案例。
+- 重跑 upstream planner 后 3 个子查询均正确标为 external；约 6.32 秒，上游成本估算 0.01746 USD。
+  结果保存为 `data/evals/upstream-planner-v2.json`（Git 忽略）；这是策略标注验证，不是研究质量结果。
+
 ## Phase 2.3 — 按子问题归属渲染报告上下文（2026-09-13）
 
 | 子步骤 | 状态 | 结果 |
