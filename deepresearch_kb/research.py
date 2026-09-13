@@ -19,6 +19,15 @@ def render_evidence_context(evidence: list[Evidence]) -> str:
                       if label == "Internal Source" else "")
         blocks.append(f"[{index}] {label}\nSource: {citation_uri(item)}\nOrigin URI: {item.source_uri}\nDocument: {item.logical_path}{provenance}\nContent:\n{item.text}")
     return "\n\n---\n\n".join(blocks)
+
+
+def render_planned_context(planned: list[PlannedEvidence]) -> str:
+    """Render planned evidence grouped by sub-question and declared policy."""
+    blocks = []
+    for index, item in enumerate(planned, 1):
+        block = render_evidence_context([item.evidence])
+        blocks.append(f"## Planned Question {index}\nQuestion: {item.question}\nSource Policy: {item.source_policy}\n\n{block}")
+    return "\n\n=== SUB-QUESTION ===\n\n".join(blocks)
 def _external_evidence(results: list[dict[str, Any]]) -> list[Evidence]:
     output = []
     for index, result in enumerate(results):
@@ -57,6 +66,17 @@ class ResearchOrchestrator:
                                            knowledge_base_ids=knowledge_base_ids, limit=limit)
             output.extend(PlannedEvidence(item.question, item.source_policy, entry) for entry in evidence)
         return output
+
+    async def write_planned_report(self, plan: ResearchPlan, *, researcher_factory,
+                                   knowledge_base_ids=None, limit: int = 5,
+                                   **report_options) -> tuple[str, list[PlannedEvidence]]:
+        """Execute a plan and delegate grouped evidence to upstream synthesis."""
+        planned = await self.execute_plan(plan, knowledge_base_ids=knowledge_base_ids, limit=limit)
+        if not planned:
+            return "No source evidence was retrieved; report generation skipped.", []
+        researcher = researcher_factory(plan.query)
+        report = await researcher.write_report(ext_context=render_planned_context(planned), **report_options)
+        return report, planned
 
     async def write_report(self, query: str, *, mode: ResearchMode,
                            researcher_factory, knowledge_base_ids=None,

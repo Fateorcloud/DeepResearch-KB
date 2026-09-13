@@ -134,3 +134,14 @@
 | 4. 失败边界 | 完成 | internal/hybrid 缺少显式 KB ID 直接报错，避免隐式全库查询 |
 
 本轮仍不接 upstream planner/LLM；计划由透明规则或未来人工/LLM Adapter 产生。
+
+## Phase 2.3 — 按子问题归属渲染报告上下文（2026-09-13）
+
+| 子步骤 | 状态 | 结果 |
+| --- | --- | --- |
+| 1. 计划上下文渲染 | 完成 | `render_planned_context()` 按子问题分组，保留 Source Policy 与 provenance |
+| 2. 上游报告委托 | 完成 | `write_planned_report()` 只传 `ext_context`，不修改 upstream writer |
+| 3. 空证据处理 | 完成 | 无命中时不构造 reporter，返回明确 skipped 结果 |
+| 4. 离线验证 | 完成 | 覆盖 question/policy 不丢失、空上下文和报告委托 |
+
+当前仍是透明规则 planner；尚未让 upstream planner 自动决定来源策略。
