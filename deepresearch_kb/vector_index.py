@@ -6,7 +6,7 @@ from contextlib import closing
 from .models import Evidence
 
 
-def chunk_documents(store, knowledge_base_ids: list[str] | None = None):
+def chunk_documents(store, knowledge_base_ids: list[str] | None = None, *, include_all_versions=False):
     """Export active chunks as LangChain Documents with complete provenance."""
     from langchain_core.documents import Document
 
@@ -15,13 +15,14 @@ def chunk_documents(store, knowledge_base_ids: list[str] | None = None):
     if not ids:
         return []
     placeholders = ",".join("?" for _ in ids)
+    version_filter = "" if include_all_versions else "AND v.status = 'active'"
     with closing(store._connect()) as db:
         rows = db.execute(f"""
             SELECT c.id, c.text, c.document_id, c.version, d.knowledge_base_id,
                    d.logical_path, v.source_type, v.source_uri, v.content_hash, v.updated_at
             FROM chunk c JOIN document d ON d.id = c.document_id
             JOIN document_version v ON v.document_id = c.document_id AND v.version = c.version
-            WHERE d.knowledge_base_id IN ({placeholders}) AND v.status = 'active'
+            WHERE d.knowledge_base_id IN ({placeholders}) {version_filter}
             ORDER BY d.logical_path, c.version, c.ordinal
         """, ids)
         return [Document(page_content=row["text"], metadata={

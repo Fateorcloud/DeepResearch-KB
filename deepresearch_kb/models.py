@@ -41,3 +41,8 @@ class Evidence:
     knowledge_base_id: str | None = None
     content_hash: str | None = None
     updated_at: str | None = None
+    effective_at: str | None = None
+    status: str | None = None
+    authority: int = 0
+    version_selection_reason: str | None = None
+    effective_at_inferred: bool | None = None

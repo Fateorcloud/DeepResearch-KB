@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import json
 from dataclasses import asdict
+from datetime import datetime
 
 from .knowledge import KnowledgeStore
 
@@ -28,6 +29,16 @@ def main():
     retrieve.add_argument("query")
     retrieve.add_argument("--kb", action="append", required=True)
     retrieve.add_argument("--limit", type=int, default=5)
+    retrieve.add_argument("--governed", action="store_true")
+    retrieve.add_argument("--as-of", help="ISO timestamp with timezone")
+    retrieve.add_argument("--include-superseded", action="store_true")
+    retrieve.add_argument("--include-deprecated", action="store_true")
+    govern = commands.add_parser("govern", help="Set explicit version validity metadata")
+    govern.add_argument("document_id")
+    govern.add_argument("version", type=int)
+    govern.add_argument("--effective-at", required=True)
+    govern.add_argument("--deprecated-at")
+    govern.add_argument("--authority", type=int, default=0)
     resolve = commands.add_parser("resolve")
     resolve.add_argument("reference")
     args = parser.parse_args()
@@ -43,7 +54,20 @@ def main():
                 source_type=args.source_type, source_uri=args.source_uri,
             )))
         elif args.command == "retrieve":
-            result = [asdict(e) for e in store.retrieve(args.kb, args.query, limit=args.limit)]
+            if args.governed or args.as_of or args.include_superseded or args.include_deprecated:
+                from .governance import VersionGovernance
+                hits = VersionGovernance(store).retrieve(args.kb, args.query, limit=args.limit,
+                    as_of=datetime.fromisoformat(args.as_of) if args.as_of else None,
+                    include_superseded=args.include_superseded, include_deprecated=args.include_deprecated)
+            else:
+                hits = store.retrieve(args.kb, args.query, limit=args.limit)
+            result = [asdict(e) for e in hits]
+        elif args.command == "govern":
+            from .governance import VersionGovernance
+            VersionGovernance(store).set_metadata(args.document_id, args.version,
+                effective_at=datetime.fromisoformat(args.effective_at), authority=args.authority,
+                deprecated_at=datetime.fromisoformat(args.deprecated_at) if args.deprecated_at else None)
+            result = {"document_id": args.document_id, "version": args.version, "updated": True}
         elif args.command == "resolve":
             result = asdict(store.resolve_reference(args.reference))
         else:

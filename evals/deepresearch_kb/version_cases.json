@@ -1,0 +1,1 @@
+{"cases":[{"id":"current","as_of":"2026-01-01T00:00:00+00:00","expected":1},{"id":"history","as_of":"2024-06-01T00:00:00+00:00","expected":2},{"id":"future","as_of":"2028-06-01T00:00:00+00:00","expected":3},{"id":"deprecated","as_of":"2029-01-01T00:00:00+00:00","expected":null}]}

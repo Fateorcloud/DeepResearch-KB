@@ -11,6 +11,19 @@ from deepresearch_kb.run_research import run
 
 
 class RunTests(unittest.IsolatedAsyncioTestCase):
+    async def test_conflict_unknown_is_archived_and_shown_to_reporter(self):
+        evidence = Evidence("c", "internal", "local_import", "file:///a", "a", "d", 1, 1.0)
+        store = SimpleNamespace(retrieve=Mock(return_value=[evidence]))
+        checker = SimpleNamespace(check=AsyncMock(return_value={"status": "unknown", "pairs": []}))
+        reporter = SimpleNamespace(write_report=AsyncMock(return_value="uncertain report"))
+        with tempfile.TemporaryDirectory() as directory:
+            output = await run(store, "query", mode="internal", kb_ids=["kb"], output_dir=directory,
+                researcher_factory=lambda q: reporter, conflict_checker=checker)
+            record = json.loads((output / "conflicts.json").read_text())
+            self.assertEqual(record["semantic"]["status"], "unknown")
+            self.assertIn("Unknown is not conflict-free", reporter.write_report.await_args.kwargs["ext_context"])
+            checker.check.assert_awaited_once()
+
     async def test_empty_evidence_never_constructs_reporter(self):
         factory = Mock(side_effect=AssertionError("must not call"))
         store = SimpleNamespace(retrieve=Mock(return_value=[]))

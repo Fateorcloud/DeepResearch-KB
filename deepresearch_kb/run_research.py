@@ -6,6 +6,7 @@ import json
 import os
 import time
 from dataclasses import asdict
+from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -25,12 +26,27 @@ def live_factory(query):
     )
 
 
-async def run(store, query, *, mode, kb_ids, output_dir, researcher_factory=live_factory):
+async def run(store, query, *, mode, kb_ids, output_dir, researcher_factory=live_factory,
+              governed=False, as_of=None, include_superseded=False, include_deprecated=False,
+              conflict_checker=None, check_conflicts=False):
     """Save only an allowlisted manifest, never environment or provider kwargs."""
+    policy = None
+    if governed or as_of is not None or include_superseded or include_deprecated:
+        if mode == "external":
+            raise ValueError("version governance applies to internal evidence, not live external search")
+        from .governance import GovernedKnowledge
+        store = GovernedKnowledge(store, as_of=as_of, include_superseded=include_superseded,
+                                  include_deprecated=include_deprecated)
+        policy = {"as_of": store.as_of.isoformat(), "include_superseded": include_superseded,
+                  "include_deprecated": include_deprecated,
+                  "external_temporality": "live external evidence is not historical as-of evidence"}
     directory = Path(output_dir) / uuid4().hex
     directory.mkdir(parents=True, exist_ok=False)
     instances = []
     usage = UsageCollector()
+    if check_conflicts and conflict_checker is None:
+        from .conflicts import configured_conflict_checker
+        conflict_checker = configured_conflict_checker(usage)
 
     def factory(question):
         instance = researcher_factory(question)
@@ -45,7 +61,7 @@ async def run(store, query, *, mode, kb_ids, output_dir, researcher_factory=live
                 "actual_cost_usd": None,
                 "research_path": {"internal": "KB retrieval + synthesis", "external": "quick_search + synthesis",
                                   "hybrid": "KB retrieval + quick_search + synthesis"}[mode],
-                "search_calls": 0, "deep_research_calls": 0}
+                "search_calls": 0, "deep_research_calls": 0, "version_policy": policy}
     try:
         class External(UpstreamExternalResearch):
             async def search(self, question):
@@ -53,7 +69,23 @@ async def run(store, query, *, mode, kb_ids, output_dir, researcher_factory=live
                 return await super().search(question)
         orchestrator = ResearchOrchestrator(store, External(factory))
         evidence = await orchestrator.research(query, mode=mode, knowledge_base_ids=kb_ids)
+        from .conflicts import inspect_version_overlap
+        warnings = [asdict(w) for w in inspect_version_overlap(evidence)]
+        semantic = (await conflict_checker.check(evidence) if conflict_checker is not None else
+                    {"status": "not_evaluated", "pairs": []})
+        conflict_record = {"version_warnings": warnings, "semantic": semantic}
+        (directory / "conflicts.json").write_text(json.dumps(
+            conflict_record, ensure_ascii=False, indent=2), encoding="utf-8")
+        manifest["semantic_conflict_status"] = semantic["status"]
         context = render_evidence_context(evidence)
+        if warnings:
+            context += "\n\nVersion warnings (not factual verdicts):\n" + json.dumps(warnings, ensure_ascii=False)
+        if conflict_checker is not None:
+            context += ("\n\nFallible conflict review: preserve uncertainty; do not choose a winner "
+                        "without supporting evidence. Unknown is not conflict-free.\n" +
+                        json.dumps(semantic, ensure_ascii=False))
+        if policy:
+            context = "Internal version selection policy: " + json.dumps(policy) + "\n\n" + context
         # Preserve collected evidence even if synthesis fails.
         (directory / "context.txt").write_text(context, encoding="utf-8")
         (directory / "sources.json").write_text(
@@ -90,6 +122,11 @@ def main():
     parser.add_argument("--kb", action="append", default=[])
     parser.add_argument("--database", default="data/kb.sqlite")
     parser.add_argument("--output", default="data/runs")
+    parser.add_argument("--governed", action="store_true")
+    parser.add_argument("--as-of", type=datetime.fromisoformat)
+    parser.add_argument("--include-superseded", action="store_true")
+    parser.add_argument("--include-deprecated", action="store_true")
+    parser.add_argument("--check-conflicts", action="store_true", help="Additional model call; records uncertainty, never adjudicates")
     args = parser.parse_args()
     if args.mode != "external" and not args.kb:
         parser.error("internal/hybrid requires --kb")
@@ -99,7 +136,9 @@ def main():
     if missing:
         parser.error("Missing local credentials: " + ", ".join(missing))
     print(asyncio.run(run(KnowledgeStore(args.database), args.query, mode=args.mode,
-                         kb_ids=args.kb, output_dir=args.output)))
+                         kb_ids=args.kb, output_dir=args.output, governed=args.governed,
+                         as_of=args.as_of, include_superseded=args.include_superseded,
+                         include_deprecated=args.include_deprecated, check_conflicts=args.check_conflicts)))
 
 
 if __name__ == "__main__":

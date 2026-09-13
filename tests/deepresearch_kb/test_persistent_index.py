@@ -18,6 +18,37 @@ class OfflineEmbeddings(Embeddings):
 
 
 class PersistentIndexTests(unittest.IsolatedAsyncioTestCase):
+    async def test_governed_history_and_metadata_changes_without_reembedding(self):
+        from datetime import datetime, timezone
+        from deepresearch_kb.governance import VersionGovernance
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            async def loader(path):
+                return [{"raw_content": path.read_text(), "url": path.name}]
+            store = KnowledgeStore(root / "db", loader=loader)
+            kb = store.create_knowledge_base("history")
+            file = root / "a.txt"
+            file.write_text("SQLite")
+            first = await store.ingest(kb.id, file, logical_path="a.txt")
+            file.write_text("Postgres")
+            await store.ingest(kb.id, file, logical_path="a.txt")
+            governance = VersionGovernance(store)
+            for version, year in ((1,2025),(2,2024)):
+                governance.set_metadata(first.document_id, version,
+                    effective_at=datetime(year,1,1,tzinfo=timezone.utc))
+            index = PersistentVectorIndex(root / "index.json", OfflineEmbeddings(), embedding_id="test")
+            index.rebuild(store)
+            with self.assertRaises(ValueError):
+                index.search_governed(store, "SQLite", knowledge_base_ids=[kb.id])
+            index.rebuild(store, include_all_versions=True)
+            reopened = PersistentVectorIndex(root / "index.json", OfflineEmbeddings(), embedding_id="test")
+            current = reopened.search_governed(store, "Postgres", knowledge_base_ids=[kb.id])
+            self.assertEqual(current[0].version, 1)
+            self.assertFalse(current[0].effective_at_inferred)
+            historic = reopened.search_governed(store, "SQLite", knowledge_base_ids=[kb.id],
+                as_of=datetime(2024,6,1,tzinfo=timezone.utc))
+            self.assertEqual(historic[0].version, 2)
+
     async def test_reload_idempotency_scope_and_stale_versions(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -17,6 +17,10 @@ def render_evidence_context(evidence: list[Evidence]) -> str:
         label = "Internal Source" if item.source_type in ("local_import", "web_upload") else "External Source"
         provenance = (f"\nVersion: {item.version}\nChunk: {item.chunk_id}"
                       if label == "Internal Source" else "")
+        if item.version_selection_reason is not None:
+            provenance += (f"\nEffective at: {item.effective_at}\nStatus: {item.status}"
+                           f"\nAuthority: {item.authority}\nSelection: {item.version_selection_reason}"
+                           f"\nEffective time inferred: {item.effective_at_inferred}")
         blocks.append(f"[{index}] {label}\nSource: {citation_uri(item)}\nOrigin URI: {item.source_uri}\nDocument: {item.logical_path}{provenance}\nContent:\n{item.text}")
     return "\n\n---\n\n".join(blocks)
 

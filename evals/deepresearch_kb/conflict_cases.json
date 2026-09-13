@@ -1,0 +1,10 @@
+{
+  "scope": "Synthetic evidence pairs; not a general factuality benchmark",
+  "cases": [
+    {"id":"same-time-conflict","expected":"conflict","left":"As of 2025-01-01, Boreal production has exactly one approved database writer.","right":"As of 2025-01-01, Boreal production has exactly eight approved database writers."},
+    {"id":"different-times","expected":"compatible","left":"In 2024, Boreal used PostgreSQL for metadata.","right":"In 2025, Boreal replaced PostgreSQL with SQLite for metadata."},
+    {"id":"different-subjects","expected":"compatible","left":"Boreal uses SQLite for metadata.","right":"Aurora uses PostgreSQL for metadata."},
+    {"id":"paraphrase","expected":"compatible","left":"SQLite does not require a separate server process.","right":"SQLite is a serverless embedded database engine."},
+    {"id":"insufficient-scope","expected":"unknown","left":"The service supports eight writers.","right":"Boreal production currently allows only one writer."}
+  ]
+}

@@ -1,5 +1,115 @@
 # 阶段变更与验收记录
 
+## Phase 3.9 — 版本治理报告层验收（进行中）
+
+- 固定 current/history/future/deprecated 四时点案例，验证 governed evidence context 的版本与 Selection 字段。
+- 离线 runner 与测试已加入；无 LLM、无 token。冲突真实评测另行归档。
+
+## Phase 3 最终验收（2026-09-13）
+
+版本治理固定对照 6/6，报告 provenance 4/4，真实冲突 reviewer 5/5；Phase 3 专项与全量项目回归通过。
+已完成 effective time/status/authority、current/as-of、向量/词法一致、CLI/研究入口、冲突 unknown 契约。
+Phase 4 的充分性判断、自适应 Quick→Deep 仍未实现，不能把本阶段描述为自适应研究系统。
+
+## Phase 3.8.5 — 固定语义反例集（待真实运行）
+
+- 固定五对合成内部/外部证据：同时间矛盾、跨时间变化、不同主体、同义表述、范围不明。
+- gold 在运行前写入 conflict_cases.json；评测区分 valid unknown 与解析失败 unknown。
+- runner 每完成一对就保存结果和 provider usage，不覆盖旧结果。
+- 尚未执行模型调用；不能据接口测试宣称 conflict recall 达标。
+
+## Phase 3.8.6 — 真实语义冲突评测（2026-09-13）
+
+- 五对固定证据使用已配置 DeepSeek reviewer，覆盖 conflict、跨时间 compatible、不同主体、paraphrase、unknown。
+- 5/5 valid review 且 prediction 与 gold 一致；每对均有 grounded quotes/references。
+- Provider usage：1350 input + 1708 output tokens；无 Tavily 调用；结果在 Git 忽略的 data/evals/phase3-conflicts-v1.json。
+- 这是固定小样本的冲突契约验证，不代表通用 conflict recall；unknown 仍是合法不确定结果。
+
+## Phase 3.8.4 — 显式真实 reviewer 入口（进行中）
+
+- configured_conflict_checker 复用 upstream Config/GenericLLMProvider，不另建模型客户端。
+- run_research --check-conflicts 显式开启附加模型检查，usage 与报告合成共用采集器。
+- 默认关闭，未执行真实调用；后续固定矛盾/兼容/时间不同案例需验证模型输出与引用。
+
+## Phase 3.8.3 — 冲突结果进入报告
+
+- run 接受显式 conflict_checker，保存 conflicts.json 并把结构化结论传入 synthesis context。
+- reviewer 的 unknown 状态进入 manifest/context，明确不能视为无冲突；不自动裁决来源真假。
+- 离线测试验证 unknown 归档及报告委托；真实模型 reviewer 工厂和固定反例仍待完成。
+
+## Phase 3.8.2 — 语义冲突检查契约（进行中）
+
+- 新增可注入异步 reviewer 的 SemanticConflictChecker，逐证据对返回 conflict/compatible/unknown。
+- 强制引用原文子串、有效证据编号、完整 pair 覆盖和理由；无效输出归为 unknown，不冒充无冲突。
+- 提示词要求比较同主体、时间和适用范围；不裁决真伪、不因 authority 隐藏矛盾。
+- 本轮只验证契约，真实模型反例、报告接入和冲突 recall 评测尚未完成。
+
+## Phase 3.8 — 冲突检查基础（进行中，非完整冲突检测）
+
+- 新增同文档多版本共选提示，保留所有版本引用；同版本多个 chunk 不误报。
+- run_research 保存 conflicts.json，并把结构提示传给报告，不作事实裁决。
+- semantic_conflict_status 明确为 not_evaluated；不能将不同文本/不同版本直接算作事实矛盾。
+- 尚需语义冲突 Adapter、内外部矛盾/非矛盾案例、报告层对照与全阶段验收。
+
+## Phase 3.7 — 固定版本选择对照（进行中）
+
+- 同一文件按“当前→历史→未来”导入，固定六个时点/状态预期，不根据实现调整 gold。
+- 比较原 KnowledgeStore.retrieve 与治理 retrieve；重开数据库后执行。
+- 只评版本选择，不把通过数写成报告正确率、冲突检测效果或通用 stale error 改善。
+- 全阶段仍需冲突提示、报告层比较及逐项完成审计。
+
+## Phase 3.6 补充 — 排序与来源一致性
+
+- 修复治理向量结果遗漏 effective_at_inferred 的问题，避免将推断时间展示成明确时间。
+- authority 排序增加反例：未来高权威文档、无关高权威文档均不能挤掉有效相关来源。
+- 版本标识拒绝 bool/非整数，避免 Python bool 被当作版本 1。
+- 本轮仍为工程验证，不宣称语义冲突检测或 Phase 3 对照已完成。
+
+## Phase 3.6 — 向量时间选择统一（进行中）
+
+- chunk 导出与向量重建新增 include_all_versions；保留原默认 active 快照供 Phase 2 对照。
+- search_governed 复用 VersionGovernance.select，再做向量相似度与 authority 排序。
+- 历史所需 chunk 缺失时明确要求全版本重建，不以空结果冒充没有历史证据。
+- 测试涵盖重开、迟到版本、历史时点与无需重新 embedding 的 metadata 选择。
+- 冲突提示、固定对照和最终验收尚未完成。
+
+## Phase 3.5 — 研究入口治理策略（进行中）
+
+- GovernedKnowledge 为一个研究任务绑定固定查询时点，复用既有 retrieve 接口。
+- run_research 支持 --governed/--as-of/历史与废弃包含开关，manifest 保存完整选择参数。
+- Hybrid 历史内部证据与 live external 时间语义明确分开；不把实时网页冒充历史快照。
+- 离线报告测试验证实际选择历史版本、context 中状态及 sources/run 工件。
+- 尚未完成向量选择统一、冲突检测与全阶段对照，Phase 3 保持进行中。
+
+## Phase 3.4 — CLI 治理入口（进行中）
+
+- govern 设置指定 document/version 的 effective_at/deprecated_at/authority。
+- retrieve --governed / --as-of / --include-superseded / --include-deprecated 接入治理选择。
+- 未带治理参数的 retrieve 暂保留 Phase 2 行为用于对照；不静默改变既有演示。
+- CLI 测试覆盖设置、历史时点、废弃时点以及显式显示废弃证据；向量和研究入口仍待接入。
+
+## Phase 3.3 — 治理词法检索与 Evidence（进行中）
+
+- VersionGovernance.retrieve 先确定时间有效版本，再匹配 FTS，迟到旧版不能因关键词命中进入结果。
+- 合格匹配内按显式 authority、相关性排序；未用 authority 覆盖时间选择。
+- Evidence/context 增加 effective_at、status、authority、选择理由及推断时间标记。
+- 现有默认 KnowledgeStore.retrieve 尚保持 Phase 2 baseline；后续 CLI/研究入口需显式接线并统一向量策略。
+
+## Phase 3.2 — 治理 metadata 持久化（进行中）
+
+- 新增 version_governance 附属表，不重写原始 document_version/Chunk/引用身份。
+- 旧版本以 ingested_at 回填生效时间并标记 effective_at_inferred=1；显式修正后设为 0。
+- metadata 校验与写入使用事务，支持重开恢复、迟到历史版本和 KB 隔离测试。
+- 当前只接 metadata/版本选择；现有 retrieve/向量/报告尚未切换，不能宣称时效治理已端到端生效。
+
+## Phase 3.1 — 版本选择语义（进行中）
+
+- 已核对 Charter 与现有 SQLite：原 active 只表示最后导入，不能表示事实生效。
+- 新增 PHASE3_PLAN.md，列出全阶段验收条件；未把范围缩为 metadata 字段扩展。
+- 新增独立 version_policy：带时区有效时间、历史包含开关、废弃后不回退、同时间修订选择。
+- 首批测试覆盖迟到旧文档、未来文档、历史时间、废弃边界、重复身份和无时区输入。
+- 尚未接 SQLite/CLI/向量/研究流程，Phase 3 未完成；不产生 API token 消耗。
+
 以 PROJECT_CHARTER.md 为准。历史接口步骤见 scope.md；本文件从 Phase 1.11 起记录每个子步骤。
 
 ## Phase 1.11 — 本地持久化向量索引（2026-09-12）

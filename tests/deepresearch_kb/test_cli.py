@@ -29,3 +29,11 @@ class CLITests(unittest.TestCase):
             hit = hits[0]
             reference = f"kb://{hit['document_id']}/versions/{hit['version']}/chunks/{hit['chunk_id']}"
             self.assertEqual(run("resolve", reference)["text"], hit["text"])
+            run("govern", hit["document_id"], "1", "--effective-at", "2025-01-01T00:00:00Z",
+                "--deprecated-at", "2026-01-01T00:00:00Z", "--authority", "75")
+            history = run("retrieve", "SQLite", "--kb", kb["id"], "--as-of", "2025-06-01T00:00:00Z")
+            self.assertEqual(history[0]["authority"], 75)
+            self.assertEqual(history[0]["status"], "active")
+            self.assertEqual(run("retrieve", "SQLite", "--kb", kb["id"], "--as-of", "2026-01-01T00:00:00Z"), [])
+            deprecated = run("retrieve", "SQLite", "--kb", kb["id"], "--as-of", "2026-01-01T00:00:00Z", "--include-deprecated")
+            self.assertEqual(deprecated[0]["status"], "deprecated")
