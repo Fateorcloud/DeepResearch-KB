@@ -14,6 +14,16 @@
 - 默认 AdaptiveResearchRouter 行为暂不改变；本切片先建立确定性 coverage baseline，测试无 token。
 - 结构化 claims 按句拆分并保留 claim/evidence IDs；新增可注入 SufficiencyJudge，严格校验 JSON、claim grounding，失败为 unknown。
 - 三步增强中的 deterministic coverage 与 claim extraction 已完成；LLM judge 仅提供 fallback 接口，尚未接入自适应路由。
+- 真实 judge runner 已加入：仅使用合成 evidence，分别验证 sufficient/insufficient；结果保存 data/evals，未调用搜索。
+- 真实 judge 运行通过 2/2：sufficient 与 insufficient 各 1/1，386 input + 515 output tokens；无 Tavily 调用。
+
+## Phase 4 最终验收（2026-09-13）
+
+- Phase 4.1 固定路由 4/4，冲突直接 Deep；真实 STOP 与 Quick 路由工件已保存。
+- Phase 4.3 deterministic claim/source/version coverage、结构化 claims、可选 semantic judge 已完成；真实 judge 2/2。
+- 项目测试最终回归通过；路由记录调用、证据、原因和耗时。
+- 仍明确限制：coverage 规则和 judge 不是通用事实充分性证明；unknown/缺失证据继续保守升级。
+- Phase 4 完成后不自动进入 MCP 或多 Agent 扩展；下一阶段需先由实际失败决定是否优化 coverage/成本。
 
 ## Phase 4.1 — Evidence Sufficiency 路由状态机（进行中）
 

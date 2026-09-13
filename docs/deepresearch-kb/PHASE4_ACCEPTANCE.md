@@ -21,9 +21,11 @@
 
 ## 限制
 
-当前阈值是“证据条数”，不是事实覆盖率；它证明路由状态机成立，不证明每个问题的证据充分。
+现在支持 `EvidenceRequirement` 的 claim/source/version coverage，并可选调用 `SufficiencyJudge` 语义兜底；
+count-only 模式仍作为兼容 baseline。它证明了可解释的 coverage 路由，不证明每个问题的事实充分。
 Quick 返回任意结果即可停止，仍可能包含无关证据。没有自动冲突裁决、跨子问题充分性聚合或质量优先的停止模型。
-下一阶段应以这些失败案例为依据改进，而不是扩大 Agent 数量。
+固定 requirement 路由、真实 judge sufficient/insufficient 各 1/1 已通过（386 input + 515 output tokens，
+仅合成 evidence，无搜索）。下一阶段应以失败案例为依据改进，而不是扩大 Agent 数量。
 
 ## 演示
 

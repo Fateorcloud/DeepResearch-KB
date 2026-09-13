@@ -52,6 +52,18 @@ class SufficiencyJudge:
         except Exception as exc:
             return {"status": "unknown", "matched_claim_ids": [], "missing_claims": [], "reason": type(exc).__name__}
 
+def configured_sufficiency_judge(usage=None):
+    """Construct the optional judge through upstream's configured LLM provider."""
+    from gpt_researcher.config import Config
+    from gpt_researcher.llm_provider import GenericLLMProvider
+    cfg = Config(); options = dict(cfg.llm_kwargs)
+    options.update(model=cfg.smart_llm_model, temperature=0, max_tokens=1800, timeout=60, max_retries=0)
+    if usage is not None: options["callbacks"] = [usage]
+    provider = GenericLLMProvider.from_provider(cfg.smart_llm_provider, **options)
+    async def reviewer(prompt):
+        return await provider.get_chat_response([{"role":"user","content":prompt}], stream=False)
+    return SufficiencyJudge(reviewer)
+
 def assess_requirements(requirements: list[EvidenceRequirement], evidence: list[Evidence]):
     results = []
     for requirement in requirements:
