@@ -169,6 +169,29 @@
 - 重跑 upstream planner 后 3 个子查询均正确标为 external；约 6.32 秒，上游成本估算 0.01746 USD。
   结果保存为 `data/evals/upstream-planner-v2.json`（Git 忽略）；这是策略标注验证，不是研究质量结果。
 
+## Phase 2.6 — 计划驱动运行入口（2026-09-13）
+
+| 子步骤 | 状态 | 结果 |
+| --- | --- | --- |
+| 1. Planner seam | 完成 | `run_planned()` 调用 upstream `research_conductor.plan_research()`，不复制 query generation |
+| 2. Policy execution | 完成 | 复用 `execute_plan()`，逐子问题调用声明的 internal/external Adapter |
+| 3. Artifact output | 完成 | 保存 `plan.json`、`evidence.json`、`report.md`；空 evidence 明确跳过报告 |
+| 4. Offline integration | 完成 | fake upstream planner/reporter 验证计划顺序、策略和报告委托 |
+| 5. Real planned run | 待运行 | 需要一次 DeepSeek/Tavily 调用；运行后记录策略误标、token 和 evidence coverage |
+
+Phase 2 仍未完成：还需真实计划驱动运行与固定评测；不在此阶段加入 sufficiency/自适应升级。
+
+## Phase 2.6.5 — 真实计划驱动运行（2026-09-13）
+
+- 新增 `run_planned_live.py`，执行一次 upstream planner，再按项目 source policy 分流，最后统一合成。
+- 使用 DeepSeek + Tavily，需本机凭据；不调用 Deep Research，仅 planner + quick search + synthesis。
+- 本次运行结果待完成后写入 Git 忽略的 `data/evals/`；任何策略误标或外部失败原样记录。
+- 首次运行已完成并写入 `data/evals/planned-live-v1/`：upstream 生成 3 个子查询并完成报告。
+  发现规则缺陷：`production` 被字符串包含误判为 `project`，一个外部题误标 internal；
+  已改用词边界匹配，必须重新验证后才能宣称该入口正确。
+- 修正规则后再次运行 upstream planner：3 个子查询均标为 external，约 6.93 秒，上游成本估算 0.019905 USD。
+  结果写入 `data/evals/upstream-planner-v3.json`；策略误标问题在该样例上已消除，但规则仍不是通用语义分类器。
+
 ## Phase 2.3 — 按子问题归属渲染报告上下文（2026-09-13）
 
 | 子步骤 | 状态 | 结果 |

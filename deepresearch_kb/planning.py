@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Literal
+import re
 from .models import Evidence
 
 SourcePolicy = Literal["internal", "external", "hybrid"]
@@ -43,7 +44,8 @@ class RuleBasedSourcePlanner:
             # "current project" is an internal state; only temporal language
             # that implies the outside world activates the external branch.
             asks_current = any(word in lowered for word in ("latest", "today", "now", "recent"))
-            asks_internal = any(word in lowered for word in ("our ", "internal", "project", "team", "constraint"))
+            words = set(re.findall(r"[a-z0-9]+", lowered))
+            asks_internal = bool(words & {"internal", "project", "team", "constraint"}) or "our" in words
             if asks_current and asks_internal:
                 policy, rationale = "hybrid", "current external facts plus project/internal constraints"
             elif asks_internal:
