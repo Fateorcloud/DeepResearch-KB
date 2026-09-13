@@ -123,3 +123,14 @@
 
 当前只验证来源策略表达和可归因分类，不证明 LLM planner 质量，不执行检索或报告生成。
 失败记录：将“current”同时当作项目状态和外部时效会造成不必要 External 路径；已拆分语义并保留该反例。
+
+## Phase 2.2 — 按计划执行来源（2026-09-13）
+
+| 子步骤 | 状态 | 结果 |
+| --- | --- | --- |
+| 1. 子问题执行接口 | 完成 | `ResearchOrchestrator.execute_plan()` 逐题使用声明的 source_policy |
+| 2. 归属结果模型 | 完成 | `PlannedEvidence` 保留 question、policy 和 Evidence provenance |
+| 3. 来源隔离测试 | 完成 | internal 题不调用 external；external 题不调用 KB；混合计划逐题分流 |
+| 4. 失败边界 | 完成 | internal/hybrid 缺少显式 KB ID 直接报错，避免隐式全库查询 |
+
+本轮仍不接 upstream planner/LLM；计划由透明规则或未来人工/LLM Adapter 产生。

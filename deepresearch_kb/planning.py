@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Literal
+from .models import Evidence
 
 SourcePolicy = Literal["internal", "external", "hybrid"]
 
@@ -17,6 +18,13 @@ class PlannedQuestion:
 class ResearchPlan:
     query: str
     questions: tuple[PlannedQuestion, ...]
+
+
+@dataclass(frozen=True)
+class PlannedEvidence:
+    question: str
+    source_policy: SourcePolicy
+    evidence: Evidence
 
 
 class RuleBasedSourcePlanner:

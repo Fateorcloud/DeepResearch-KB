@@ -2,6 +2,7 @@
 from typing import Any, Literal
 import hashlib
 from .models import Evidence
+from .planning import PlannedEvidence, ResearchPlan
 ResearchMode = Literal["internal", "external", "hybrid"]
 
 def citation_uri(item: Evidence) -> str:
@@ -47,6 +48,15 @@ class ResearchOrchestrator:
         if mode == "internal": return internal
         if self.external_research is None: raise ValueError("external_research is required for external or hybrid mode")
         return (internal + (await self.external_research.search(query))[:limit])[:limit * 2]
+
+    async def execute_plan(self, plan: ResearchPlan, *, knowledge_base_ids=None, limit: int = 5) -> list[PlannedEvidence]:
+        """Execute each planned question with its declared source policy."""
+        output = []
+        for item in plan.questions:
+            evidence = await self.research(item.question, mode=item.source_policy,
+                                           knowledge_base_ids=knowledge_base_ids, limit=limit)
+            output.extend(PlannedEvidence(item.question, item.source_policy, entry) for entry in evidence)
+        return output
 
     async def write_report(self, query: str, *, mode: ResearchMode,
                            researcher_factory, knowledge_base_ids=None,
