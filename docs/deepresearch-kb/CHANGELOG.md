@@ -111,3 +111,15 @@
 真实对照消耗 8285 input + 21078 output = 29363 provider tokens；没有 Tavily 付费调用。
 主张限制：upstream 和项目 Hybrid 在本组 gold 均正确；不宣称质量超越上游或完成自适应研究。
 仍有长问句/项目名召回干扰文档、英文 FTS 分词边界，作为 Phase 2 的问题输入保留。
+
+## Phase 2.1 — 结构化来源规划基线（2026-09-13）
+
+| 子步骤 | 状态 | 结果 |
+| --- | --- | --- |
+| 1. 定义计划模型 | 完成 | `ResearchPlan` / `PlannedQuestion`；每个子问题有 source_policy 与 rationale |
+| 2. 实现规划器 | 完成 | RuleBasedSourcePlanner，规则透明、无 LLM、未修改 upstream |
+| 3. 固定 gold | 完成 | 5 个 internal/external/hybrid/约束/一般问题案例 |
+| 4. 离线评测 | 完成 | 首次 4/5；`current project` 被误判 Hybrid；修正规则后 5/5，gold 未调整 |
+
+当前只验证来源策略表达和可归因分类，不证明 LLM planner 质量，不执行检索或报告生成。
+失败记录：将“current”同时当作项目状态和外部时效会造成不必要 External 路径；已拆分语义并保留该反例。

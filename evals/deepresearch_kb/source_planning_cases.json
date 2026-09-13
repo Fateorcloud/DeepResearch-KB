@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "cases": [
+    {"id": "internal", "query": "What is our current project architecture?", "policy": "internal"},
+    {"id": "external", "query": "What is the latest SQLite WAL limitation?", "policy": "external"},
+    {"id": "hybrid", "query": "What is our current architecture and the latest external SQLite limitation?", "policy": "hybrid"},
+    {"id": "internal_constraint", "query": "Which team constraint applies to this design?", "policy": "internal"},
+    {"id": "external_general", "query": "How does SQLite work?", "policy": "external"}
+  ]
+}
