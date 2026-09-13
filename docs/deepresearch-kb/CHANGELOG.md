@@ -1,5 +1,20 @@
 # 阶段变更与验收记录
 
+## Phase 4.3 — Claim coverage 与语义 judge 兜底（进行中）
+
+- `EvidenceRequirement` 检查 required claims、source types、独立来源和 current version。
+- `extract_claims` 为句子生成可追溯 claim/evidence IDs；不做隐式事实推断。
+- `SufficiencyJudge` 仅在确定性检查不足时可注入 Router，严格校验 JSON 和 grounded claim IDs；失败为 unknown。
+- Router 已支持 requirements + judge，fake judge 测试通过；真实 judge 和完整 Phase 4 对照仍待验证。
+
+## Phase 4.3 — Requirement-based Evidence Sufficiency（进行中）
+
+- 新增 EvidenceRequirement/RequirementResult：逐项检查 required claims、source types、独立来源数和 current version。
+- `extract_claims()` 只暴露可审计 evidence，不做隐式语义推断；`assess_requirements()` 未满足即明确列出缺失原因。
+- 默认 AdaptiveResearchRouter 行为暂不改变；本切片先建立确定性 coverage baseline，测试无 token。
+- 结构化 claims 按句拆分并保留 claim/evidence IDs；新增可注入 SufficiencyJudge，严格校验 JSON、claim grounding，失败为 unknown。
+- 三步增强中的 deterministic coverage 与 claim extraction 已完成；LLM judge 仅提供 fallback 接口，尚未接入自适应路由。
+
 ## Phase 4.1 — Evidence Sufficiency 路由状态机（进行中）
 
 - 新增 `EvidenceSufficiency` 与 `AdaptiveResearchRouter`：足够→STOP，不足→Quick，Quick 不足→Deep，Conflict→Deep。
