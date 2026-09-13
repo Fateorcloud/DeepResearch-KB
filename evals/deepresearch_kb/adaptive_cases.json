@@ -1,0 +1,1 @@
+{"cases":[{"id":"enough","internal":1,"quick":0,"expected":"stop"},{"id":"missing","internal":0,"quick":1,"expected":"quick"},{"id":"deep","internal":0,"quick":0,"expected":"deep"},{"id":"conflict","internal":1,"quick":0,"expected":"deep"}]}

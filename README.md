@@ -16,6 +16,7 @@ Phase 1 三组收尾已完成：检索/旧数据兼容、固定报告对照、�
 结果、限制和完整演示见 [Phase 1 验收](docs/deepresearch-kb/PHASE1_ACCEPTANCE.md)。
 Phase 2 的来源规划验收见 [Phase 2 验收](docs/deepresearch-kb/PHASE2_ACCEPTANCE.md)。
 Phase 3 的版本治理验收见 [Phase 3 验收](docs/deepresearch-kb/PHASE3_ACCEPTANCE.md)。
+Phase 4 的自适应路由验收见 [Phase 4 验收](docs/deepresearch-kb/PHASE4_ACCEPTANCE.md)。
 每阶段子步骤见 [变更记录](docs/deepresearch-kb/CHANGELOG.md)。
 
 ## 本地运行（WSL，Python 3.12）

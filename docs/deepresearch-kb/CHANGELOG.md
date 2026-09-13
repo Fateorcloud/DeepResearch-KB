@@ -1,5 +1,29 @@
 # 阶段变更与验收记录
 
+## Phase 4.1 — Evidence Sufficiency 路由状态机（进行中）
+
+- 新增 `EvidenceSufficiency` 与 `AdaptiveResearchRouter`：足够→STOP，不足→Quick，Quick 不足→Deep，Conflict→Deep。
+- 支持注入 Phase 3 conflict checker；不创建模型客户端、不修改 upstream。
+- 固定路由评测已修复冲突顺序问题并达到 4/4；本轮无 token。
+- 尚未接入真实 upstream Quick/Deep、route trace 或最终对照验收。
+
+## Phase 4.2 — 真实 Quick/Deep Adapter（待运行）
+
+- 新增 `run_adaptive_live.py`，使用已有 GPTResearcher quick_search/conduct_research 作为 Adapter。
+- 保存 route.json：最终路由、决策原因、evidence 数、Quick/Deep 调用数和耗时。
+- 运行前需凭据；限制为单问题，不自动重试循环；尚未执行，不能宣称真实路由闭环成立。
+
+## Phase 4 最终验收
+
+- 固定路由 4/4；冲突顺序失败已修复为直接 Deep。
+- 真实运行：内部充分案例 STOP（无 Quick/Deep）；内部不足案例 Quick=1 后停止；route.json 已归档。
+- 相关测试与 Phase 3 回归通过；项目仍不宣称事实充分性已解决，阈值与质量评估限制见 PHASE4_ACCEPTANCE.md。
+
+## Phase 4.1.1 — 路由顺序失败修复
+
+- 首次固定评测 3/4：冲突案例错误先走 Quick，违反 conflict→Deep 要求。
+- 修正状态机为冲突直接 Deep；保留失败记录，不调整 gold。
+
 ## Phase 3.9 — 版本治理报告层验收（进行中）
 
 - 固定 current/history/future/deprecated 四时点案例，验证 governed evidence context 的版本与 Selection 字段。
