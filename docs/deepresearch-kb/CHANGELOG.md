@@ -1,5 +1,15 @@
 # 阶段变更与验收记录
 
+## Phase 4.4 — 效果评测数据集设计（进行中）
+
+- 新增 `effect_dataset.json`：6 个可控案例，覆盖 STOP、Quick、Hybrid、Deep、Conflict、无证据。
+- 新增 `EFFECT_EVALUATION_PLAN.md`：四路对照、数据分层、指标和隐私边界。
+- 当前先跑合成 fixture；不把路由通过当作答案质量通过，不消耗 API token。
+- 新增 `run_effect_eval.py` 与测试，按六个 gold case 验证 requirements 驱动路由；待运行。
+- 首次运行 4/6：gold 使用整句自然语言改写，确定性 claim 匹配无法支持同义覆盖；已改为 evidence 中明确短 claim，
+  保留语义改写作为后续 SufficiencyJudge 的输入，不放宽 deterministic 评分。
+- 修正后效果路由 6/6；完整结论与限制见 PHASE4_EFFECTS.md。无 API token 消耗。
+
 ## Phase 4.3 — Claim coverage 与语义 judge 兜底（进行中）
 
 - `EvidenceRequirement` 检查 required claims、source types、独立来源和 current version。

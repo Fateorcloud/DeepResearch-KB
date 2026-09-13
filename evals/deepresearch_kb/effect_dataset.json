@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "purpose": "Small controlled effect evaluation for evidence-driven routing",
+  "privacy": "Synthetic facts and public frozen excerpts only; no private documents committed",
+  "arms": ["upstream_baseline", "kb_only", "fixed_hybrid", "adaptive"],
+  "cases": [
+    {
+      "id": "internal_sufficient",
+      "question": "What is the current Boreal metadata engine and writer budget?",
+      "required_claims": ["SQLite for metadata", "one writer"],
+      "internal": "Boreal architecture v2 is CURRENT. Boreal uses SQLite for metadata. The approved deployment budget is one writer.",
+      "external": "SQLite is an in-process, serverless SQL engine.",
+      "expected_route": "stop",
+      "expected_sources": ["internal"]
+    },
+    {
+      "id": "external_needed",
+      "question": "Does SQLite WAL work over a network filesystem?",
+      "required_claims": ["network filesystem"],
+      "internal": "Boreal uses SQLite for metadata. The approved deployment budget is one writer.",
+      "external": "WAL does not work over a network filesystem because all processes must share memory.",
+      "expected_route": "quick",
+      "expected_sources": ["external"]
+    },
+    {
+      "id": "hybrid_required",
+      "question": "Combine Boreal's current writer budget with the SQLite WAL network-filesystem limitation.",
+      "required_claims": ["one writer", "network filesystem"],
+      "internal": "Boreal architecture v2 is CURRENT. The approved deployment budget is one writer.",
+      "external": "WAL does not work over a network filesystem.",
+      "expected_route": "quick",
+      "expected_sources": ["internal", "external"]
+    },
+    {
+      "id": "deep_needed",
+      "question": "What are the current SQLite WAL restrictions for this production design?",
+      "required_claims": ["network filesystem", "writer concurrency restriction", "Boreal production deployment context"],
+      "internal": "Boreal architecture v2 is CURRENT. The approved deployment budget is one writer.",
+      "external": "WAL does not work over a network filesystem.",
+      "expected_route": "deep",
+      "expected_sources": ["internal", "external"]
+    },
+    {
+      "id": "conflict_escalation",
+      "question": "Which writer budget should Boreal use when two current sources disagree?",
+      "required_claims": ["writer budget"],
+      "internal": "Boreal current budget is one writer.",
+      "external": "Boreal current budget is eight writers.",
+      "expected_route": "deep",
+      "expected_sources": ["internal", "external"]
+    },
+    {
+      "id": "no_evidence",
+      "question": "What is Boreal's quantum networking policy?",
+      "required_claims": ["quantum networking policy"],
+      "internal": "Boreal architecture covers metadata storage only.",
+      "external": "SQLite is a database engine.",
+      "expected_route": "deep",
+      "expected_sources": []
+    }
+  ]
+}
