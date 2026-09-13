@@ -202,3 +202,11 @@ Phase 2 仍未完成：还需真实计划驱动运行与固定评测；不在此
 | 4. 离线验证 | 完成 | 覆盖 question/policy 不丢失、空上下文和报告委托 |
 
 当前仍是透明规则 planner；尚未让 upstream planner 自动决定来源策略。
+
+## Phase 2 最终验收（2026-09-13）
+
+Phase 2 最小目标已完成：upstream sub-query → 结构化 source policy → 按题 Adapter 执行 →
+子问题归属 Evidence → upstream synthesis。固定规划 5/5、调用矩阵 5/5、项目测试 49 passed。
+真实 planner 和计划驱动运行均已执行，结果和限制见 `PHASE2_ACCEPTANCE.md`。
+保留失败：父任务的“我们的项目”语义可能不会传播到外部子查询；当前不宣称通用策略准确率，
+也不进入 sufficiency/adaptive research。下一阶段需先解决任务级 source requirement 传播或建立人工标注评测。

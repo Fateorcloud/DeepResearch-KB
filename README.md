@@ -14,6 +14,7 @@ Phase 1 三组收尾已完成：检索/旧数据兼容、固定报告对照、�
 真实 External/Hybrid 已连通；三案例九报告对照已归档。证据充分性判断与自适应研究仍未实现。
 上游已有的 Web/Local/Hybrid/Deep Research 不属于本项目新增贡献。
 结果、限制和完整演示见 [Phase 1 验收](docs/deepresearch-kb/PHASE1_ACCEPTANCE.md)。
+Phase 2 的来源规划验收见 [Phase 2 验收](docs/deepresearch-kb/PHASE2_ACCEPTANCE.md)。
 每阶段子步骤见 [变更记录](docs/deepresearch-kb/CHANGELOG.md)。
 
 ## 本地运行（WSL，Python 3.12）
