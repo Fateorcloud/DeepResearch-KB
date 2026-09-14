@@ -46,4 +46,5 @@ Terraform、插件分发、Discord/npm 集成、根目录旧译版 README 和上
 `docs/docs/`、`docs/blog/` 仍是上游资料，非本项目已实现能力说明。
 
 项目契约：[scope](docs/deepresearch-kb/scope.md)；基线状态：[baseline](docs/deepresearch-kb/upstream-baseline.md)。
+当前项目状态：[PROJECT_STATUS](docs/deepresearch-kb/PROJECT_STATUS.md)。
 保留 upstream 历史与 MIT [LICENSE](LICENSE)，基线提交 `6f998577d547b1e54ec662dac63583aa11e3b84b`。

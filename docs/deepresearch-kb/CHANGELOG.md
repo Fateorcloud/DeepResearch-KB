@@ -1,5 +1,10 @@
 # 阶段变更与验收记录
 
+## 项目状态材料
+
+- 新增 PROJECT_STATUS.md，集中说明基于 GPT Researcher 的二次开发边界、Phase 0～4 证据和已知限制。
+- README 增加状态入口；不引入新运行时行为、不改变评测结果。
+
 ## Live requirements 示例
 
 - 新增 `live_requirement.example.json`，展示真实运行如何显式声明外部 claims/source type。
