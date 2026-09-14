@@ -26,7 +26,7 @@ def save(path, data):
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-async def run(routing_path, output, factory=live_factory):
+async def run(routing_path, output, factory=live_factory, case_ids=None, arms=None):
     raw = Path(routing_path).read_bytes()
     routing = json.loads(raw)
     dataset_raw = Path(__file__).with_name("effect_cases_v2.json").read_bytes()
@@ -45,7 +45,7 @@ async def run(routing_path, output, factory=live_factory):
                 "dirty": bool(subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()),
                 "report_prompt": PROMPT, "results": []}
     save(output / "manifest.json", manifest)
-    rows = routing["results"]
+    rows = [r for r in routing["results"] if (not case_ids or r["id"] in case_ids) and (not arms or r["arm"] in arms)]
     # Alternate arm order per pair; no adaptive prompt tuning after observations.
     ordered = []
     for i in range(0, len(rows), 2):
@@ -94,7 +94,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--routing", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--case", action="append", dest="case_ids")
+    parser.add_argument("--arm", action="append", dest="arms")
     args = parser.parse_args()
     load_dotenv()
-    result = asyncio.run(run(args.routing, args.output))
+    result = asyncio.run(run(args.routing, args.output, case_ids=args.case_ids, arms=args.arms))
     raise SystemExit(0 if all(r["status"] == "completed" for r in result["results"]) else 1)

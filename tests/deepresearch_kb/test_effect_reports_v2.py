@@ -26,3 +26,4 @@ class ReportRunnerTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(len(list((root / "reports").glob("*/*/report.md"))), 24)
             with self.assertRaises(FileExistsError):
                 await run(routing, root / "reports", factory=factory)
+            self.assertEqual(len((await run(routing, root / "subset", factory=factory, case_ids=["internal_exact"], arms=["adaptive"]))["results"]), 1)
