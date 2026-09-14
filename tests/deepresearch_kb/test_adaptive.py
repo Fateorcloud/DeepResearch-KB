@@ -22,7 +22,6 @@ class AdaptiveTests(unittest.IsolatedAsyncioTestCase):
         d=AsyncMock()
         route,_,decisions=await AdaptiveResearchRouter(quick_search=AsyncMock(return_value=[]),deep_research=d,max_deep_calls=0).run("x",internal=[])
         self.assertEqual(route,"deep"); d.assert_not_awaited(); self.assertEqual(decisions[-1].terminal_status,"insufficient")
-
     async def test_deep_completion_is_not_automatically_sufficient(self):
         requirement = EvidenceRequirement("r", ("missing key fact",))
         router = AdaptiveResearchRouter(quick_search=AsyncMock(return_value=[]),
