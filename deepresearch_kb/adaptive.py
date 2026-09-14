@@ -29,8 +29,28 @@ class AdaptiveResearchRouter:
             if all(result.satisfied for result in results): return Sufficiency("stop", "all evidence requirements satisfied", len(evidence))
             return Sufficiency("quick" if depth == 0 else "deep", "required claims remain missing", len(evidence))
         return self.sufficiency.evaluate(evidence, conflict=conflict, depth=depth)
-    async def run(self, query, *, internal, conflict=False):
-        decisions=[self._evaluate(internal, conflict=conflict)]
+    async def _reviewed_evaluate(self, evidence, *, conflict=False, depth=0, checker=None):
+        verdict = self._evaluate(evidence, conflict=conflict, depth=depth)
+        if checker is None:
+            return verdict
+        review = await checker.check(evidence)
+        if review.get("conflict_detected"):
+            return Sufficiency("deep", "review detected conflict", len(evidence), True, "conflict")
+        if (review.get("status") not in ("reviewed", "not_applicable") or
+                any(pair.get("verdict") == "unknown" for pair in review.get("pairs", []))):
+            return Sufficiency("deep", "conflict review unknown", len(evidence), False, "unknown")
+        return verdict
+
+    async def run(self, query, *, internal, conflict=False, conflict_checker=None):
+        decisions=[await self._reviewed_evaluate(internal, conflict=conflict, checker=conflict_checker)]
+        if conflict_checker is not None and decisions[0].route == "deep":
+            combined = list(internal)
+            if self.max_deep_calls:
+                combined.extend(await self.deep_research(query))
+                final = await self._reviewed_evaluate(combined, depth=2, checker=conflict_checker)
+                decisions.append(Sufficiency("deep", final.reason, len(combined), final.has_conflict,
+                    final.terminal_status or ("sufficient" if final.route == "stop" else "insufficient")))
+            return "deep", combined, decisions
         if conflict:
             if self.max_deep_calls < 1:
                 return "deep", list(internal), [Sufficiency("deep", "conflict requires deep but deep budget is zero", len(internal), True, "unknown")]
@@ -38,8 +58,9 @@ class AdaptiveResearchRouter:
             decisions.append(Sufficiency("deep", "deep executed; conflict remains unresolved without reassessment", len(combined), True, "conflict"))
             return "deep", combined, decisions
         if decisions[0].route == "stop": return decisions[0].route, internal, decisions
-        quick=await self.quick_search(query); combined=list(internal)+list(quick); decisions.append(self._evaluate(combined, depth=1))
-        if self.judge is not None and self.requirements and decisions[-1].route == "deep":
+        quick=await self.quick_search(query); combined=list(internal)+list(quick)
+        decisions.append(await self._reviewed_evaluate(combined, depth=1, checker=conflict_checker))
+        if self.judge is not None and self.requirements and decisions[-1].route == "deep" and decisions[-1].terminal_status is None:
             reviews = [await self.judge.judge(req, combined) for req in self.requirements]
             if all(grounded_judge_sufficient(req, combined, review)
                    for req, review in zip(self.requirements, reviews)):
@@ -51,9 +72,9 @@ class AdaptiveResearchRouter:
             return "deep", combined, decisions
         deep=await self.deep_research(query)
         combined.extend(deep)
-        final = self._evaluate(combined, depth=2)
+        final = await self._reviewed_evaluate(combined, depth=2, checker=conflict_checker)
         decisions.append(Sufficiency("deep", "deep completed; " + final.reason, len(combined),
-                                     final.has_conflict, "sufficient" if final.route == "stop" else "insufficient"))
+                                     final.has_conflict, final.terminal_status or ("sufficient" if final.route == "stop" else "insufficient")))
         return "deep", combined, decisions
 
     async def run_with_conflict_checker(self, query, *, internal, conflict_checker=None):

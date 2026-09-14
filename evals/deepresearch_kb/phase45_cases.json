@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "protocol": "Phase 4.5 real-project-style evaluation; frozen project excerpts and frozen public external snapshots; no live search in routing run",
+  "corpus_policy": "Project excerpts are labelled project_doc; deliberately constructed enterprise notes are labelled synthetic; external text is a frozen snapshot and is not a claim about current web state.",
+  "cases": [
+    {
+      "id": "internal_architecture",
+      "split": "development",
+      "category": "internal-only",
+      "question": "What database does our project use for persistent knowledge-base metadata?",
+      "subquestion": "What does our project use for persistent knowledge-base metadata?",
+      "required_claims": ["DeepResearch-KB persists knowledge-base metadata in SQLite"],
+      "answerable": true,
+      "expected_route": "stop",
+      "internal_versions": [{"logical_path": "README.md", "source_uri": "repo://README.md", "effective_at": "2026-01-01T00:00:00+00:00", "text": "DeepResearch-KB persists knowledge-base metadata in SQLite."}],
+      "quick": [],
+      "deep": []
+    },
+    {
+      "id": "external_serverless",
+      "split": "development",
+      "category": "external-only",
+      "question": "Does SQLite require a separate server process?",
+      "subquestion": "Does SQLite require a separate server process?",
+      "required_claims": ["SQLite does not require a separate server process"],
+      "answerable": true,
+      "expected_route": "quick",
+      "internal_versions": [],
+      "quick": [{"source_uri": "https://sqlite.org/serverless.html", "text": "SQLite does not require a separate server process."}],
+      "deep": []
+    },
+    {
+      "id": "latest_wal_limit",
+      "split": "development",
+      "category": "internal-plus-latest-external",
+      "question": "What does our project use for metadata, and what is the latest SQLite WAL network-filesystem limitation?",
+      "subquestion": "What is the latest external SQLite WAL network-filesystem limitation for our project?",
+      "required_claims": ["DeepResearch-KB persists knowledge-base metadata in SQLite", "SQLite WAL does not work over a network filesystem"],
+      "answerable": true,
+      "expected_route": "quick",
+      "internal_versions": [{"logical_path": "README.md", "source_uri": "repo://README.md", "effective_at": "2026-01-01T00:00:00+00:00", "text": "DeepResearch-KB persists knowledge-base metadata in SQLite."}],
+      "quick": [{"source_uri": "https://sqlite.org/wal.html", "text": "SQLite WAL does not work over a network filesystem."}],
+      "deep": []
+    },
+    {
+      "id": "stale_metadata_engine",
+      "split": "development",
+      "category": "stale-internal-version",
+      "question": "What is our project's current metadata engine?",
+      "subquestion": "What is the latest current metadata engine for our project?",
+      "required_claims": ["The current metadata engine is PostgreSQL"],
+      "answerable": true,
+      "expected_route": "deep",
+      "internal_versions": [
+        {"logical_path": "architecture/metadata.txt", "source_uri": "repo://architecture/metadata.txt", "effective_at": "2024-01-01T00:00:00+00:00", "text": "The historical metadata engine was SQLite."},
+        {"logical_path": "architecture/metadata.txt", "source_uri": "repo://architecture/metadata.txt", "effective_at": "2026-01-01T00:00:00+00:00", "text": "The current project document covers ingestion but does not state a metadata engine."}
+      ],
+      "quick": [],
+      "deep": [{"source_uri": "https://example.org/frozen/project-migration-2026", "text": "The current metadata engine is PostgreSQL."}]
+    },
+    {
+      "id": "conflicting_writer_budget",
+      "split": "development",
+      "category": "conflicting-evidence",
+      "question": "What is our project's approved writer budget when current project notes disagree?",
+      "subquestion": "What is the latest approved writer budget for our project when current notes disagree?",
+      "required_claims": ["The approved writer budget is one writer"],
+      "answerable": false,
+      "expected_route": "deep",
+      "conflict": true,
+      "internal_versions": [
+        {"logical_path": "design/writer-budget-a.txt", "source_uri": "repo://design/writer-budget-a.txt", "effective_at": "2026-01-01T00:00:00+00:00", "text": "The approved writer budget is one writer."},
+        {"logical_path": "design/writer-budget-b.txt", "source_uri": "repo://design/writer-budget-b.txt", "effective_at": "2026-01-01T00:00:00+00:00", "text": "The approved writer budget is eight writers."}
+      ],
+      "quick": [],
+      "deep": []
+    },
+    {
+      "id": "internal_writer_budget",
+      "split": "development",
+      "category": "internal-sufficient",
+      "question": "What writer budget does our project approve?",
+      "subquestion": "What writer budget does our project approve?",
+      "required_claims": ["The project approves one writer"],
+      "answerable": true,
+      "expected_route": "stop",
+      "internal_versions": [{"logical_path": "PROJECT_CHARTER.md", "source_uri": "repo://PROJECT_CHARTER.md", "effective_at": "2026-01-01T00:00:00+00:00", "text": "The project approves one writer for the persistent metadata store."}],
+      "quick": [],
+      "deep": []
+    },
+    {
+      "id": "quick_wal_concurrency",
+      "split": "holdout",
+      "category": "quick-sufficient",
+      "question": "Does SQLite WAL allow readers and a writer to proceed concurrently?",
+      "subquestion": "Does SQLite WAL allow readers and a writer to proceed concurrently?",
+      "required_claims": ["SQLite WAL allows readers and a writer to proceed concurrently"],
+      "answerable": true,
+      "expected_route": "quick",
+      "internal_versions": [],
+      "quick": [{"source_uri": "https://sqlite.org/wal.html", "text": "SQLite WAL allows readers and a writer to proceed concurrently."}],
+      "deep": []
+    },
+    {
+      "id": "quick_then_deep_deployment",
+      "split": "holdout",
+      "category": "quick-insufficient-deep",
+      "question": "What deployment storage rule should our project use for the production database?",
+      "subquestion": "What is the latest production deployment storage rule for our project?",
+      "required_claims": ["The production database must use local disk"],
+      "answerable": true,
+      "expected_route": "deep",
+      "internal_versions": [],
+      "quick": [{"source_uri": "https://example.org/frozen/storage-overview", "text": "The project stores metadata."}],
+      "deep": [{"source_uri": "https://example.org/frozen/storage-policy", "text": "The production database must use local disk."}]
+    },
+    {
+      "id": "unknown_quantum_policy",
+      "split": "holdout",
+      "category": "unknown-unanswerable",
+      "question": "What is our project's approved quantum networking policy?",
+      "subquestion": "What is the latest approved quantum networking policy for our project?",
+      "required_claims": ["The project has an approved quantum networking policy"],
+      "answerable": false,
+      "expected_route": "deep",
+      "internal_versions": [{"logical_path": "README.md", "source_uri": "repo://README.md", "effective_at": "2026-01-01T00:00:00+00:00", "text": "The project documents metadata storage and research orchestration, not quantum networking."}],
+      "quick": [{"source_uri": "https://sqlite.org/about.html", "text": "SQLite is a database engine."}],
+      "deep": []
+    },
+    {
+      "id": "long_multi_requirement",
+      "split": "holdout",
+      "category": "long-multi-requirement",
+      "question": "For our project, combine the current metadata engine, the approved writer budget, and the latest WAL network-filesystem restriction in one deployment recommendation.",
+      "subquestion": "What are the latest metadata engine, writer budget, and WAL network-filesystem restriction for our project?",
+      "required_claims": ["The current metadata engine is SQLite", "The approved writer budget is one writer", "SQLite WAL does not work over a network filesystem"],
+      "answerable": true,
+      "expected_route": "deep",
+      "internal_versions": [{"logical_path": "architecture/current.txt", "source_uri": "repo://architecture/current.txt", "effective_at": "2026-01-01T00:00:00+00:00", "text": "The current metadata engine is SQLite. The approved writer budget is one writer."}],
+      "quick": [{"source_uri": "https://sqlite.org/wal.html", "text": "SQLite WAL is used for transaction durability in this frozen snapshot."}],
+      "deep": [{"source_uri": "https://example.org/frozen/deployment-policy", "text": "The deployment recommendation must preserve the current SQLite engine and one-writer budget. SQLite WAL does not work over a network filesystem."}]
+    },
+    {
+      "id": "external_source_requirement",
+      "split": "holdout",
+      "category": "external-source-required",
+      "question": "Confirm from an external source whether SQLite has a separate server process in our project evaluation.",
+      "subquestion": "What is the latest external source's answer about a SQLite server process for our project?",
+      "required_claims": ["SQLite has no separate server process"],
+      "required_source_types": ["external_web"],
+      "answerable": true,
+      "expected_route": "quick",
+      "internal_versions": [{"logical_path": "README.md", "source_uri": "repo://README.md", "effective_at": "2026-01-01T00:00:00+00:00", "text": "SQLite is used for project metadata."}],
+      "quick": [{"source_uri": "https://sqlite.org/serverless.html", "text": "SQLite has no separate server process."}],
+      "deep": []
+    },
+    {
+      "id": "duplicate_source_diversity",
+      "split": "holdout",
+      "category": "duplicate-source-diversity",
+      "question": "Verify that our project requires local storage using two independent sources.",
+      "subquestion": "What is the latest local storage policy for our project from two independent sources?",
+      "required_claims": ["The project requires local storage"],
+      "minimum_distinct_sources": 2,
+      "answerable": true,
+      "expected_route": "quick",
+      "internal_versions": [
+        {"logical_path": "design/storage-a.txt", "source_uri": "repo://design/storage.txt", "effective_at": "2026-01-01T00:00:00+00:00", "text": "The project requires local storage."},
+        {"logical_path": "design/storage-b.txt", "source_uri": "repo://design/storage.txt", "effective_at": "2026-01-01T00:00:00+00:00", "text": "The project requires local storage."}
+      ],
+      "quick": [{"source_uri": "https://example.org/frozen/storage-policy", "text": "The project requires local storage."}],
+      "deep": []
+    }
+  ]
+}

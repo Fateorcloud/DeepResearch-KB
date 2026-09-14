@@ -11,24 +11,33 @@
 | Phase 2 | sub-query → source policy → 按题执行 → PlannedEvidence → upstream synthesis |
 | Phase 3 | effective time、current/as-of、deprecated、authority、版本引用和冲突提示 |
 | Phase 4 | requirement/claim coverage、STOP/Quick/Deep 路由、冲突升级、指标和效果对照 |
+| Phase 4.5a | Unified `ResearchEngine` 编排层与 SQLite 端到端集成案例 |
+| Phase 4.5 | 12 案例 Fixed Hybrid/Adaptive 对照、24 份真实模型报告、严格 judge 与失败分析已完成 |
+| Phase 5A | 独立 FastAPI、统一上传/本地 ingest、目录导入与单进程 Research task 已实现 |
+| Phase 5B | 薄 MCP facade 暴露 KB 检索与异步 Research task tools |
 
 ## 证据
 
-- 92 项项目测试通过（网络阻断、forked 隔离）。
+- 111 项项目测试通过（网络阻断、forked 隔离）。
 - 版本选择固定案例：Phase 2 baseline 2/6，治理后 6/6。
-- 来源路由固定案例：Adaptive 10/12，Fixed Hybrid 4/12；三次重复稳定。
-- 24 份真实模型报告：两组均 11/12 correct-or-unanswerable；质量持平。
-- Adaptive 的 Deep 调用更多；没有总成本下降证据。
+- Phase 4 frozen routing suite：Adaptive 10/12，Fixed Hybrid 4/12；三次重复稳定。
+- Phase 4.5 real-project suite：Adaptive route 12/12；24 份 paired reports 的 judge 结果为 Adaptive 10 correct/2 unanswerable/0 incorrect，Fixed Hybrid 7 correct/2 unanswerable/3 incorrect。
+- Adaptive 的 Deep 调用更多；本评测没有总成本下降证据。
 
 ## 当前边界
 
 - 证据充分性支持显式 claims/source/version 约束；复杂语义仍需 judge 或人工核对。
-- 当前没有自动事实裁决、Graph RAG、Multi-Agent 扩展、MCP 产品层或复杂 Web UI。
+- 当前没有自动事实裁决、Graph RAG、Multi-Agent 扩展或复杂 Web UI；MCP facade 已完成，不提供复杂 MCP product layer。
 - 真实效果数据是小型合成/冻结语料，不能外推为通用 benchmark。
 - 评测中的 provider token 可记录；DeepSeek OpenAI-compatible 路径的实际账单仍不由系统推算。
 
-## 下一步候选
+## 收尾状态
 
-优先扩大真实项目问题和未参与调参的 holdout，验证质量不下降前提下的成本变化；只有观察到明确集成需求后才考虑 MCP 或 Web/API 入口。
+功能开发已冻结。后续仅做学习、演示、面试材料和必要的事实修正，不再新增产品 Phase。
 
 详细子步骤与失败记录见 [CHANGELOG.md](CHANGELOG.md)，阶段验收见 PHASE1/PHASE2/PHASE3/PHASE4 文档。
+
+Phase 4.5a 当前代码与限制见 [PHASE4_5A_EXECUTION.md](PHASE4_5A_EXECUTION.md)。
+Phase 4.5 real-project evaluation 见 [PHASE4_5_ACCEPTANCE.md](PHASE4_5_ACCEPTANCE.md)。
+Phase 5A 产品接口闭环见 [PHASE5A_ACCEPTANCE.md](PHASE5A_ACCEPTANCE.md)。
+最终贡献边界、演示和求职材料见 [CONTRIBUTION_BOUNDARY.md](CONTRIBUTION_BOUNDARY.md)、[DEMO.md](DEMO.md) 和 [RESUME_NOTES.md](RESUME_NOTES.md)。

@@ -22,6 +22,10 @@ def main():
     ingest.add_argument("--logical-path", required=True)
     ingest.add_argument("--source-type", choices=["local_import", "web_upload"], default="local_import")
     ingest.add_argument("--source-uri")
+    ingest_dir = commands.add_parser("ingest-dir")
+    ingest_dir.add_argument("kb_id"); ingest_dir.add_argument("directory")
+    push_dir = commands.add_parser("push-dir")
+    push_dir.add_argument("directory"); push_dir.add_argument("--server", required=True); push_dir.add_argument("--kb", required=True)
     versions = commands.add_parser("versions")
     versions.add_argument("kb_id")
     versions.add_argument("logical_path")
@@ -53,6 +57,12 @@ def main():
                 args.kb_id, args.file, logical_path=args.logical_path,
                 source_type=args.source_type, source_uri=args.source_uri,
             )))
+        elif args.command == "ingest-dir":
+            from .directory import ingest_dir
+            result = asyncio.run(ingest_dir(store, args.kb_id, args.directory))
+        elif args.command == "push-dir":
+            from .directory import push_dir
+            result = push_dir(args.directory, args.server, args.kb)
         elif args.command == "retrieve":
             if args.governed or args.as_of or args.include_superseded or args.include_deprecated:
                 from .governance import VersionGovernance

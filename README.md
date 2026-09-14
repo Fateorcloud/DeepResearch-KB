@@ -4,14 +4,39 @@
 新增持久化知识层和研究编排实验；上游能力与本项目贡献边界见 [PROJECT_CHARTER.md](PROJECT_CHARTER.md)。
 产品目标和贡献边界见 [PROJECT_CHARTER.md](PROJECT_CHARTER.md)。
 
-## 当前状态
+## 项目定位
 
-已实现：SQLite KB/document/version 持久化、统一单文件 ingest、来源 metadata、
-内容 hash、重复导入幂等、版本历史与本地 CLI。默认复用 upstream DocumentLoader。
+在 GPT Researcher 的外部深度研究能力之上，增加持久化内部知识、版本治理与证据驱动的自适应研究，让已有资料与最新外部信息共同支持可追溯研究结论。
+
+Deep Research 擅长最新外部信息，但不了解项目历史和内部约束；普通 KB/RAG 能查已有资料，却不会主动判断何时需要外部研究，也容易受到旧版本污染。DeepResearch-KB 将 Persistent KB、Version Governance、Adaptive Research 和 Traceable Evidence 组合成统一执行链。上游 Web/Local/Hybrid/Deep Research 不属于本项目新增贡献。
+
+当前验证：111 tests passed；Phase 4.5 使用 12 个冻结案例完成 paired evaluation；Phase 5B 通过官方 MCP ClientSession 的真实 stdio smoke。
+
+## 主架构
+
+```text
+Local Folder / Repo -- ingest / push --┐
+Web Upload ----------------------------+--> KnowledgeService
+                                             |
+                              SQLite KnowledgeBase
+                         Document / Version / Chunk
+                                             |
+User Query --> ResearchEngine --> planning / governed retrieval
+                                  --> sufficiency / STOP / Quick / Deep
+                                  --> evidence synthesis
+                                             |
+                                  report / sources / trace / metrics
+
+CLI ---------┐
+REST --------+--> Service Layer
+MCP ---------┘
+
+Quick / Deep / DocumentLoader / synthesis / provider abstraction
+are reused from GPT Researcher upstream.
+```
 
 已追加：Chunk/FTS5、显式研究 Adapter，以及基于 LangChain 的本地向量快照。
 Phase 1 三组收尾已完成：检索/旧数据兼容、固定报告对照、指标与可重复演示。
-真实 External/Hybrid 已连通；三案例九报告对照已归档。证据充分性判断与自适应研究仍未实现。
 上游已有的 Web/Local/Hybrid/Deep Research 不属于本项目新增贡献。
 结果、限制和完整演示见 [Phase 1 验收](docs/deepresearch-kb/PHASE1_ACCEPTANCE.md)。
 Phase 2 的来源规划验收见 [Phase 2 验收](docs/deepresearch-kb/PHASE2_ACCEPTANCE.md)。
@@ -47,4 +72,12 @@ Terraform、插件分发、Discord/npm 集成、根目录旧译版 README 和上
 
 项目契约：[scope](docs/deepresearch-kb/scope.md)；基线状态：[baseline](docs/deepresearch-kb/upstream-baseline.md)。
 当前项目状态：[PROJECT_STATUS](docs/deepresearch-kb/PROJECT_STATUS.md)。
+
+统一执行入口 `deepresearch_kb.engine.ResearchEngine` 已完成受控集成验证；详见 [Phase 4.5a execution](docs/deepresearch-kb/PHASE4_5A_EXECUTION.md)。
+Phase 4.5 real-project evaluation 已完成 12 案例双臂对照与 24 份真实模型报告；详见 [Phase 4.5 验收](docs/deepresearch-kb/PHASE4_5_ACCEPTANCE.md)。
+Phase 5A 已提供独立 FastAPI、Web Upload、`ingest-dir` 与 `push-dir`；详见 [Phase 5A 验收](docs/deepresearch-kb/PHASE5A_ACCEPTANCE.md)。
+
+## MCP Integration
+
+Phase 5B 提供五个薄 MCP tools，复用现有 Service Layer；详见 [Phase 5B 验收](docs/deepresearch-kb/PHASE5B_ACCEPTANCE.md)。
 保留 upstream 历史与 MIT [LICENSE](LICENSE)，基线提交 `6f998577d547b1e54ec662dac63583aa11e3b84b`。

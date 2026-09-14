@@ -176,6 +176,26 @@ class KnowledgeStore:
             """, (knowledge_base_id, _logical_path(logical_path)))
             return [self._version(row) for row in rows]
 
+    def list_documents(self, knowledge_base_id: str) -> list[dict]:
+        with closing(self._connect()) as db:
+            if not db.execute("SELECT 1 FROM knowledge_base WHERE id = ?", (knowledge_base_id,)).fetchone():
+                raise KeyError(knowledge_base_id)
+            return [dict(row) for row in db.execute(
+                "SELECT id, knowledge_base_id, logical_path FROM document WHERE knowledge_base_id = ? ORDER BY logical_path",
+                (knowledge_base_id,))]
+
+    def list_versions_by_document(self, knowledge_base_id: str, document_id: str) -> list[DocumentVersion]:
+        with closing(self._connect()) as db:
+            rows = db.execute("""SELECT d.knowledge_base_id, d.logical_path, v.document_id,
+                       v.version, v.source_type, v.source_uri, v.content_hash,
+                       v.updated_at, v.ingested_at, v.status, v.pages_json
+                FROM document d JOIN document_version v ON d.id = v.document_id
+                WHERE d.knowledge_base_id = ? AND d.id = ? ORDER BY v.version""",
+                (knowledge_base_id, document_id)).fetchall()
+            if not rows:
+                raise KeyError(document_id)
+            return [self._version(row) for row in rows]
+
     async def ingest(
         self, knowledge_base_id: str, file_path: str | Path, *,
         logical_path: str, source_type: SourceType = "local_import",

@@ -1,5 +1,13 @@
 # 阶段变更与验收记录
 
+## Phase 4.5a — Unified Research Execution（受控集成完成，真实评测未开始）
+
+- 新增 `ResearchEngine`，串接 upstream planning、source policy、`GovernedKnowledge`、`AdaptiveResearchRouter`、upstream Quick/Deep adapter、synthesis 与统一工件。
+- 显式 requirements 支持 task broadcast、按子问题映射和顺序绑定；未实现自动 requirement generation。
+- 三个独立 Query-to-Report SQLite 集成案例通过；Phase 1～4 相关回归共 105 passed。
+- 统一工件保存 `run.json`、`plan.json`、`trace.json`、`sources.json`、`report.md`；provider usage 与注入工具调用分开记录，实际费用不推算。
+- 尚未运行真实 provider 三案例，也未开始 12～20 条 Phase 4.5 数据集；当前不能宣称报告质量或成本改善。
+
 ## 项目状态材料
 
 - 新增 PROJECT_STATUS.md，集中说明基于 GPT Researcher 的二次开发边界、Phase 0～4 证据和已知限制。
@@ -99,7 +107,7 @@ Phase 4 当前实际结论：机制、路由稳定性和小样本报告对照已
 - 空白标签是有意的：自动 URI/mention 诊断不替代事实蕴含判断；不把模型报告自行纠正路由错误算作 Adaptive 成功。
 - 运行 `.venv/bin/python -m evals.deepresearch_kb.build_review_matrix` 可生成 Git 忽略的 review-matrix.json。
 
-## Phase 4.5 — 报告级效果诊断（进行中）
+## Phase 4.5 — 报告级效果诊断（历史步骤，已完成）
 
 - 新增 `score_effect_reports.py`，对固定 24 份报告计算目标 claim 字面提及、合法/非法引用 URI、保守拒答信号。
 - 指标明确是诊断，不是 entailment、答案正确率或质量优越证明；人工复核清单仍保留。
@@ -547,3 +555,19 @@ Phase 2 最小目标已完成：upstream sub-query → 结构化 source policy �
 真实 planner 和计划驱动运行均已执行，结果和限制见 `PHASE2_ACCEPTANCE.md`。
 保留失败：父任务的“我们的项目”语义可能不会传播到外部子查询；当前不宣称通用策略准确率，
 也不进入 sufficiency/adaptive research。下一阶段需先解决任务级 source requirement 传播或建立人工标注评测。
+# Phase 4.5 — real-project evaluation (2026-09-14)
+
+- 冻结 12 案例并完成 Fixed Hybrid vs Adaptive 的 24 份 paired routing/report 工件。
+- Adaptive 路由命中 12/12；真实模型 judge 输出 Adaptive 10 correct、2 unanswerable，Fixed Hybrid 7 correct、2 unanswerable、3 incorrect。
+- 记录 provider usage、latency、fixture calls 与失败分析；结果仅适用于本冻结小型语料，不外推生产效果。
+
+# Phase 5A — product interface closure (2026-09-14)
+
+- 新增薄 Service Layer、独立 FastAPI、上传/版本查询和单进程异步 Research task。
+- 新增递归 `ingest-dir` 与 HTTP `push-dir`，共享现有 SQLite ingest contract；不实现双向同步、MCP 或分布式队列。
+- 增加上传安全、幂等、版本和目录导入集成测试。
+
+# Phase 5B — MCP integration (2026-09-14)
+
+- 新增薄 MCP facade：5 个高价值 tools，全部复用 Service Layer 与现有 task semantics。
+- 明确 upstream MCP retriever/client 不属于本项目新增能力；未引入 MCP resources、分布式队列或 Research Core 改动。
