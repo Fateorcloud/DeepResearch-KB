@@ -1,5 +1,11 @@
 # 阶段变更与验收记录
 
+## Adaptive requirements 配置
+
+- `run_adaptive_live.py` 新增 `--requirements`，从 JSON 注入 id/claims/source types/distinct sources/current version。
+- route.json 保存实际 requirement；默认无文件时继续使用兼容的 query claim。
+- 这避免真实实验把复杂问题整句当作单一 claim；未改变 upstream 或默认路由。
+
 ## 最终一致性审计（2026-09-14）
 
 - 全量项目测试：92 passed（forked、网络阻断）。
