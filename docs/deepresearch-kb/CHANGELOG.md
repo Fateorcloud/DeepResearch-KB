@@ -1,5 +1,11 @@
 # 阶段变更与验收记录
 
+## 效果对照修复 — 否定 claim 重新评测
+
+- 修正 `_claim_supported` 的否定匹配正则；原测试确认的错误提前停止现已不再发生。
+- effect-v2 的旧 routing artifact 保留作历史，测试期望改为 holdout negation 不应 sufficient。
+- 该修复只处理明确英文否定，复杂语义、双重否定和跨句关系仍需 judge/人工评估。
+
 ## 正式效果对照 — v2 真实报告合成
 
 - 新 runner 读取已冻结路由结果，校验 dataset hash，不重做路由、不修改 gold。

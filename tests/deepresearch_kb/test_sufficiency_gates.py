@@ -7,6 +7,10 @@ from deepresearch_kb.adaptive import AdaptiveResearchRouter
 
 
 class GateTests(unittest.IsolatedAsyncioTestCase):
+    def test_negated_text_does_not_support_positive_claim(self):
+        from deepresearch_kb.sufficiency import _claim_supported
+        self.assertFalse(_claim_supported("Aurora permits remote storage", "It is false that Aurora permits remote storage."))
+
     async def test_unknown_checker_is_not_silently_conflict_free(self):
         e = Evidence("i", "fact", "local_import", "file:///a", "a", "d", 1, 1)
         checker = AsyncMock()

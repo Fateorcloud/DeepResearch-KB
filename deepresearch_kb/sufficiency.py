@@ -10,7 +10,7 @@ def _claim_supported(claim: str, text: str) -> bool:
     pattern = re.escape(claim)
     if not re.search(pattern, text, re.IGNORECASE):
         return False
-    match = re.search(r"(?:not|no|never|false|isn't|doesn't|don't)\\s+(?:that\\s+)?" + pattern, text, re.IGNORECASE)
+    match = re.search(r"(?:not|no|never|false|isn't|doesn't|don't)\s+(?:that\s+)?" + pattern, text, re.IGNORECASE)
     return match is None
 
 @dataclass(frozen=True)
