@@ -1,5 +1,10 @@
 # 阶段变更与验收记录
 
+## Phase 4 成本配置一致性
+
+- `run_adaptive_live.py` 暴露 `--max-deep-calls` 并将实际值写入 route.json。
+- 实验配置不再隐式依赖路由器默认值；未改变既有默认 1 次 Deep 上限。
+
 ## Phase 4 成本边界 — Deep budget
 
 - AdaptiveResearchRouter 新增 `max_deep_calls`（默认 1）；预算为 0 时明确返回 deep/insufficient，不调用 provider。
