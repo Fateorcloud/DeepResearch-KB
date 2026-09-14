@@ -1,0 +1,7 @@
+{
+  "id": "sqlite-wal-policy",
+  "required_claims": ["WAL does not work over a network filesystem", "SQLite has no separate server process"],
+  "required_source_types": ["external_web"],
+  "minimum_distinct_sources": 1,
+  "require_current_version": false
+}

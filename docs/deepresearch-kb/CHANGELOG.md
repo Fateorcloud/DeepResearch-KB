@@ -1,5 +1,10 @@
 # 阶段变更与验收记录
 
+## Live requirements 示例
+
+- 新增 `live_requirement.example.json`，展示真实运行如何显式声明外部 claims/source type。
+- 该文件只作为模板，不包含密钥、私有数据或自动 gold；运行时使用 `--requirements` 指定副本。
+
 ## Adaptive requirements 配置
 
 - `run_adaptive_live.py` 新增 `--requirements`，从 JSON 注入 id/claims/source types/distinct sources/current version。

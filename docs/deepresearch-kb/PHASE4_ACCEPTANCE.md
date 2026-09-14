@@ -37,6 +37,9 @@ Quick 返回任意结果即可停止，仍可能包含无关证据。没有自�
 
 每次运行保存 `route.json`，包括决策原因、证据数、Quick/Deep 调用数和耗时。
 
+真实运行可通过 `--requirements evals/deepresearch_kb/live_requirement.example.json` 注入明确证据需求，
+避免把整句 query 误当作单一 claim。
+
 ## 当前效果结论（2026-09-14）
 
 冻结 v2 数据集上，Adaptive 路由匹配率 10/12，Fixed Hybrid 4/12；三次重复运行稳定。24 份真实模型报告经严格 judge 后，两组均为 11/12 correct-or-unanswerable、1/12 incorrect、0 unknown。当前可支持的结论是：Adaptive 来源路径选择更接近预期，报告质量在该小样本上持平；Adaptive 的 Deep 调用更多，尚无总成本下降证据。
