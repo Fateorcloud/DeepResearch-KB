@@ -1,5 +1,11 @@
 # 阶段变更与验收记录
 
+## 效果评测补充 — 人工复核矩阵
+
+- 新增 `build_review_matrix.py`，为 24 份固定报告生成逐 claim/citation/stale 空白复核表。
+- 空白标签是有意的：自动 URI/mention 诊断不替代事实蕴含判断；不把模型报告自行纠正路由错误算作 Adaptive 成功。
+- 运行 `.venv/bin/python -m evals.deepresearch_kb.build_review_matrix` 可生成 Git 忽略的 review-matrix.json。
+
 ## Phase 4.5 — 报告级效果诊断（进行中）
 
 - 新增 `score_effect_reports.py`，对固定 24 份报告计算目标 claim 字面提及、合法/非法引用 URI、保守拒答信号。
