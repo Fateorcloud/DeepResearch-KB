@@ -1,5 +1,11 @@
 # 阶段变更与验收记录
 
+## Phase 4 成本边界 — Deep budget
+
+- AdaptiveResearchRouter 新增 `max_deep_calls`（默认 1）；预算为 0 时明确返回 deep/insufficient，不调用 provider。
+- 冲突在预算为 0 时保留 conflict/unknown，不伪装为 STOP；避免无限或意外 Deep 消耗。
+- 离线反例已加入；正式成本实验仍需报告实际 token/latency。
+
 ## Phase 4 效果稳定性 — 三次重复路由
 
 - 新增 repeat_effect_eval.py，对冻结 v2 的 12 例重复 3 次，比较 route 和调用矩阵。

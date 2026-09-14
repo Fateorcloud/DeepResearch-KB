@@ -17,9 +17,11 @@ class EvidenceSufficiency:
         if len(evidence) >= self.minimum_evidence: return Sufficiency("stop", "minimum evidence threshold met", len(evidence))
         return Sufficiency("quick" if depth == 0 else "deep", "no sufficient evidence; try quick" if depth == 0 else "quick evidence insufficient", len(evidence))
 class AdaptiveResearchRouter:
-    def __init__(self, *, quick_search, deep_research, sufficiency=None, requirements=None, judge=None):
+    def __init__(self, *, quick_search, deep_research, sufficiency=None, requirements=None, judge=None, max_deep_calls=1):
         self.quick_search, self.deep_research = quick_search, deep_research; self.sufficiency = sufficiency or EvidenceSufficiency()
         self.requirements, self.judge = tuple(requirements or ()), judge
+        if type(max_deep_calls) is not int or max_deep_calls < 0: raise ValueError("max_deep_calls must be non-negative")
+        self.max_deep_calls = max_deep_calls
     def _evaluate(self, evidence, *, conflict=False, depth=0):
         if self.requirements:
             results = assess_requirements(self.requirements, evidence)
@@ -30,6 +32,8 @@ class AdaptiveResearchRouter:
     async def run(self, query, *, internal, conflict=False):
         decisions=[self._evaluate(internal, conflict=conflict)]
         if conflict:
+            if self.max_deep_calls < 1:
+                return "deep", list(internal), [Sufficiency("deep", "conflict requires deep but deep budget is zero", len(internal), True, "unknown")]
             deep=await self.deep_research(query); combined=list(internal)+list(deep)
             decisions.append(Sufficiency("deep", "deep executed; conflict remains unresolved without reassessment", len(combined), True, "conflict"))
             return "deep", combined, decisions
@@ -42,6 +46,9 @@ class AdaptiveResearchRouter:
                 decisions[-1] = Sufficiency("stop", "semantic judge confirmed all requirements", len(combined))
                 return "quick", combined, decisions
         if decisions[-1].route == "stop": return "quick", combined, decisions
+        if self.max_deep_calls < 1:
+            decisions.append(Sufficiency("deep", "quick evidence insufficient; deep budget exhausted", len(combined), False, "insufficient"))
+            return "deep", combined, decisions
         deep=await self.deep_research(query)
         combined.extend(deep)
         final = self._evaluate(combined, depth=2)

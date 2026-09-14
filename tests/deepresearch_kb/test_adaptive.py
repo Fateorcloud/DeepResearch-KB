@@ -18,6 +18,11 @@ class AdaptiveTests(unittest.IsolatedAsyncioTestCase):
         route,_,decisions=await AdaptiveResearchRouter(quick_search=q,deep_research=d,requirements=[req],judge=judge).run("x",internal=[])
         self.assertEqual(route,"quick"); d.assert_not_awaited(); self.assertIn("semantic judge", decisions[-1].reason)
 
+    async def test_deep_budget_zero_does_not_call_provider(self):
+        d=AsyncMock()
+        route,_,decisions=await AdaptiveResearchRouter(quick_search=AsyncMock(return_value=[]),deep_research=d,max_deep_calls=0).run("x",internal=[])
+        self.assertEqual(route,"deep"); d.assert_not_awaited(); self.assertEqual(decisions[-1].terminal_status,"insufficient")
+
     async def test_deep_completion_is_not_automatically_sufficient(self):
         requirement = EvidenceRequirement("r", ("missing key fact",))
         router = AdaptiveResearchRouter(quick_search=AsyncMock(return_value=[]),
