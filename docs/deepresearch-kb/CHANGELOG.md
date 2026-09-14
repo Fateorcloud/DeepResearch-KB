@@ -1,5 +1,12 @@
 # 阶段变更与验收记录
 
+## 最终一致性审计（2026-09-14）
+
+- 全量项目测试：92 passed（forked、网络阻断）。
+- 最新 effect-v2 routing：Fixed Hybrid 4/12，Adaptive 10/12；结果与 Phase 4 文档一致。
+- 最新 version governance：Phase 2 baseline 2/6，Phase 3 governed 6/6；结果与 Phase 3 文档一致。
+- 未新增模型调用；未修改 gold。当前仍不声称 Adaptive 报告质量或总成本优于固定 Hybrid。
+
 ## Phase 4 结论口径统一
 
 - 将最新路由与报告 judge 数字集中写入 PHASE4_ACCEPTANCE.md；结论固定为“路由更接近 gold、报告质量小样本持平、成本未证明下降”。
