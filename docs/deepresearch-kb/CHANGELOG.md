@@ -1,5 +1,11 @@
 # 阶段变更与验收记录
 
+## Phase 4 效果稳定性 — 三次重复路由
+
+- 新增 repeat_effect_eval.py，对冻结 v2 的 12 例重复 3 次，比较 route 和调用矩阵。
+- 该实验只验证确定性状态机稳定性，不把重复 fixture 运行当成独立模型样本或质量提升。
+- 无 LLM/network/token；输出 Deep trigger rate 和路由稳定性。
+
 ## Judge usage assertion fix
 
 全量回归发现测试硬编码单次模型 token 数，重跑后合理变化导致脆弱失败；改为校验 usage 结构与正值，不把单次运行 token 当固定契约。
