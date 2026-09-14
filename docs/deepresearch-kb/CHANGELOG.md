@@ -1,5 +1,11 @@
 # 阶段变更与验收记录
 
+## 记录校正（2026-09-14）
+
+文件前部保留了开发过程中的待运行/进行中记录，不能单独作为当前状态。以各阶段 acceptance 文档和本节最后状态为准。
+Phase 4 当前实际结论：机制、路由稳定性和小样本报告对照已验证；Adaptive 与 Fixed Hybrid 报告质量持平，
+不存在已证明的普遍成本下降。Phase 4 不应写成“质量提升已证明”。
+
 ## Phase 4 关键案例重跑结果
 
 - `internal_paraphrase`、`quick_missing`、`holdout_stale` 各重合成一次 Adaptive；三份均完成。
