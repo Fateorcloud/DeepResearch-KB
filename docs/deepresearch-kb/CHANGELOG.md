@@ -59,6 +59,8 @@
 - 首次运行 4/6：gold 使用整句自然语言改写，确定性 claim 匹配无法支持同义覆盖；已改为 evidence 中明确短 claim，
   保留语义改写作为后续 SufficiencyJudge 的输入，不放宽 deterministic 评分。
 - 修正后效果路由 6/6；完整结论与限制见 PHASE4_EFFECTS.md。无 API token 消耗。
+- 否定检测修复：明确 `not/no/false` 结构不再满足正向 claim；effect-v2 结果保持 Fixed Hybrid 4/12、Adaptive 9/12。
+  holdout negation 的错误提前停止已消除；其余长语义/同义覆盖仍需 judge 或人工核对。
 
 ## Phase 4.3 — Claim coverage 与语义 judge 兜底（进行中）
 

@@ -2,6 +2,16 @@
 from dataclasses import dataclass
 from typing import Literal
 from .models import Evidence
+import re
+
+
+def _claim_supported(claim: str, text: str) -> bool:
+    """Conservative lexical support: reject explicit negation of the claim."""
+    pattern = re.escape(claim)
+    if not re.search(pattern, text, re.IGNORECASE):
+        return False
+    match = re.search(r"(?:not|no|never|false|isn't|doesn't|don't)\\s+(?:that\\s+)?" + pattern, text, re.IGNORECASE)
+    return match is None
 
 @dataclass(frozen=True)
 class EvidenceRequirement:
@@ -98,8 +108,8 @@ def configured_sufficiency_judge(usage=None):
 def assess_requirements(requirements: list[EvidenceRequirement], evidence: list[Evidence]):
     results = []
     for requirement in requirements:
-        matches = [item for item in evidence if any(claim.casefold() in item.text.casefold() for claim in requirement.required_claims)]
-        missing = tuple(claim for claim in requirement.required_claims if not any(claim.casefold() in item.text.casefold() for item in evidence))
+        matches = [item for item in evidence if any(_claim_supported(claim, item.text) for claim in requirement.required_claims)]
+        missing = tuple(claim for claim in requirement.required_claims if not any(_claim_supported(claim, item.text) for item in evidence))
         source_types = {item.source_type for item in matches}
         distinct_sources = {item.source_uri for item in matches}
         current_ok = not requirement.require_current_version or all(
