@@ -1,5 +1,55 @@
 # 阶段变更与验收记录
 
+## 正式效果对照 — v2 真实报告合成
+
+- 新 runner 读取已冻结路由结果，校验 dataset hash，不重做路由、不修改 gold。
+- 12 例 × 固定 Hybrid/Adaptive 共 24 份真实模型短报告；交替执行两组，统一提示词和输出预算。
+- 保存输入/来源/输出/usage/失败，固定材料调用不计作真实搜索成本；requirements 为显式给定而非模型生成。
+- 真实质量审阅与总成本结论待报告完成后进行，不由路由准确率替代。
+- 24 份报告已生成；人工检查保留两项：negation 案例的 answerable gold 需复核，stale 案例需把治理状态传入 evidence。
+  新增 review_effect_v2.py，只生成检查清单，不自动打分或修改冻结 gold。
+
+## 正式效果对照 — v2 双组 fixture runner
+
+- 固定 Hybrid 与 Adaptive 在同一 12 例上执行，分别保存证据、需求判定、终态和工具调用矩阵。
+- 不将 fixture 次数当实际费用，不将字符串覆盖评分当答案正确率；gold 不传入路由判定。
+- 冲突标签为本层 fixture 输入，不能据此声称冲突检测效果；后续真实模型对照需分开计费。
+- 保留否定句被 substring 错误接受的留出集失败，当前仍未证明 Adaptive 质量不下降。
+
+## 正式效果对照 — 冻结 v2 数据集
+
+- 新建 effect_cases_v2.json：12 例，development/holdout 各 6；包括完整同义改写、否定、旧版、重复来源、来源要求、冲突及无证据。
+- 与旧六例关键词 smoke test 分开；不继续改写 gold 迎合 substring 实现。
+- holdout 在本轮比较中不用于调参；失败需原样报告。answerable 与 expected_route 独立标注。
+- 本次只完成语料冻结及 schema 检查，尚未执行效果对照或宣称成本改善。
+
+## 效果对照前置修复 — unknown 冲突状态
+
+- 发现 run_with_conflict_checker 将缺少 conflict_detected 的 unknown 默认为无冲突，可能提前 STOP。
+- 显式保留 unknown：执行一次 Deep 后终态仍为 unknown，不宣布充分；新增反例测试。
+- 该策略可能增加调用，正式对照必须同时记录质量与成本，不把保守升级直接称为优化。
+
+## 效果对照前置修复 — Deep 后状态
+
+- Deep 返回证据后重新执行 requirement 判断；terminal_status 区分 sufficient/insufficient。
+- 未解除的冲突保留 conflict，不因 Deep 调用结束自动视为已解决。
+- 新增“Deep 返回无关证据”和“Deep 补齐关键事实”反例测试。
+- 本轮仍不消耗 API token；正式对照尚待建立与运行。
+
+## 效果对照前置修复 — 真正的 Deep Adapter
+
+- 源码确认旧 run_adaptive_live 使用默认 research_report 且 return []，并非可用的 Deep 证据升级。
+- 新增 UpstreamDeepResearch，强制 report_type=deep；返回带 URL 的实际 source records，不把生成的报告当事实。
+- live 脚本已接线；离线测试验证 mode guard、来源归一化及丢弃无内容记录。
+- 尚需 Deep 后再次评估、固定 Hybrid/Adaptive 对照和质量指标；不由本测试宣称效果提升。
+
+## 效果对照前置修复 — judge 硬约束
+
+- 核实旧 Router 只检查 judge.status，允许语义 judge 绕过版本/来源数等硬约束。
+- 新增 grounded_judge_sufficient：必须有有效 claim IDs、无 missing claims，且所引用证据满足来源/时效/去重要求。
+- Router 和 judge 校验层同时执行；补缺外部来源、废弃证据、同 URI 重复来源与空支持反例。
+- 这是正式效果实验前的必要修复；尚未跑四路质量/成本对照，不宣称效果已经提升。
+
 ## Phase 4.4 — 效果评测数据集设计（进行中）
 
 - 新增 `effect_dataset.json`：6 个可控案例，覆盖 STOP、Quick、Hybrid、Deep、Conflict、无证据。

@@ -11,6 +11,35 @@ class EvidenceRequirement:
     minimum_distinct_sources: int = 1
     require_current_version: bool = False
 
+    def __post_init__(self):
+        if not self.id.strip() or not self.required_claims or any(not c.strip() for c in self.required_claims):
+            raise ValueError("requirement identity and non-empty claims required")
+        if type(self.minimum_distinct_sources) is not int or self.minimum_distinct_sources < 1:
+            raise ValueError("minimum_distinct_sources must be a positive integer")
+
+
+def hard_constraints_met(requirement, evidence):
+    """Semantic reviewers cannot waive provenance, source diversity or currency."""
+    return (bool(evidence)
+            and all(e.text.strip() and e.source_uri.strip() for e in evidence)
+            and set(requirement.required_source_types) <= {e.source_type for e in evidence}
+            and len({e.source_uri for e in evidence}) >= requirement.minimum_distinct_sources
+            and (not requirement.require_current_version or all(
+                e.source_type == "external_web" or e.status == "active" for e in evidence)))
+
+
+def grounded_judge_sufficient(requirement, evidence, review):
+    if review.get("status") != "sufficient" or review.get("missing_claims") != []:
+        return False
+    ids = review.get("matched_claim_ids")
+    if not isinstance(ids, list) or not ids or any(not isinstance(i, str) for i in ids):
+        return False
+    claims = {c["claim_id"]: c for c in extract_claims(evidence)}
+    if not set(ids) <= claims.keys():
+        return False
+    evidence_ids = {claims[i]["evidence_id"] for i in ids}
+    return hard_constraints_met(requirement, [e for e in evidence if e.chunk_id in evidence_ids])
+
 @dataclass(frozen=True)
 class RequirementResult:
     requirement_id: str
@@ -48,6 +77,8 @@ class SufficiencyJudge:
             valid = {c["claim_id"] for c in extract_claims(evidence)}
             if not set(result["matched_claim_ids"]) <= valid:
                 raise ValueError("ungrounded claim id")
+            if result["status"] == "sufficient" and not grounded_judge_sufficient(requirement, evidence, result):
+                raise ValueError("sufficient verdict violates hard constraints")
             return result
         except Exception as exc:
             return {"status": "unknown", "matched_claim_ids": [], "missing_claims": [], "reason": type(exc).__name__}

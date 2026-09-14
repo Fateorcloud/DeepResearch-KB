@@ -6,6 +6,7 @@ from gpt_researcher import GPTResearcher
 from deepresearch_kb.adaptive import AdaptiveResearchRouter
 from deepresearch_kb.knowledge import KnowledgeStore
 from deepresearch_kb.research import UpstreamExternalResearch
+from deepresearch_kb.deep_adapter import UpstreamDeepResearch
 
 async def main(query, database, kb, output):
     load_dotenv()
@@ -15,7 +16,8 @@ async def main(query, database, kb, output):
     external=UpstreamExternalResearch(factory); deep_calls=[]; quick_calls=[]
     async def quick(question): quick_calls.append(question); return await external.search(question)
     async def deep(question):
-        deep_calls.append(question); r=factory(question); await r.conduct_research(); return []
+        deep_calls.append(question)
+        return await UpstreamDeepResearch().search(question)
     started=time.perf_counter(); router=AdaptiveResearchRouter(quick_search=quick,deep_research=deep)
     route,evidence,decisions=await router.run(query,internal=internal)
     folder=Path(output); folder.mkdir(parents=True,exist_ok=False)

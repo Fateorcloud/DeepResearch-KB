@@ -13,7 +13,21 @@ class AdaptiveTests(unittest.IsolatedAsyncioTestCase):
         q=AsyncMock(return_value=[]); d=AsyncMock(return_value=[self.e]); route,_,_=await AdaptiveResearchRouter(quick_search=q,deep_research=d).run("x",internal=[],conflict=True); self.assertEqual(route,"deep")
 
     async def test_requirements_and_judge_can_stop_after_quick(self):
-        req=EvidenceRequirement("r", ("specific",)); judge=AsyncMock(); judge.judge.return_value={"status":"sufficient"}
+        req=EvidenceRequirement("r", ("specific",)); judge=AsyncMock(); judge.judge.return_value={"status":"sufficient", "matched_claim_ids":["e:0"], "missing_claims":[]}
         q=AsyncMock(return_value=[self.e]); d=AsyncMock()
         route,_,decisions=await AdaptiveResearchRouter(quick_search=q,deep_research=d,requirements=[req],judge=judge).run("x",internal=[])
         self.assertEqual(route,"quick"); d.assert_not_awaited(); self.assertIn("semantic judge", decisions[-1].reason)
+
+    async def test_deep_completion_is_not_automatically_sufficient(self):
+        requirement = EvidenceRequirement("r", ("missing key fact",))
+        router = AdaptiveResearchRouter(quick_search=AsyncMock(return_value=[]),
+            deep_research=AsyncMock(return_value=[self.e]), requirements=[requirement])
+        route, _, decisions = await router.run("x", internal=[])
+        self.assertEqual(route, "deep")
+        self.assertEqual(decisions[-1].terminal_status, "insufficient")
+
+    async def test_deep_new_evidence_is_reassessed(self):
+        router = AdaptiveResearchRouter(quick_search=AsyncMock(return_value=[]),
+            deep_research=AsyncMock(return_value=[self.e]), requirements=[EvidenceRequirement("r", ("fact",))])
+        _, _, decisions = await router.run("x", internal=[])
+        self.assertEqual(decisions[-1].terminal_status, "sufficient")

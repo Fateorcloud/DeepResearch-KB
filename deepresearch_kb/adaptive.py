@@ -2,11 +2,12 @@
 from dataclasses import dataclass
 from typing import Literal
 from .models import Evidence
-from .sufficiency import assess_requirements
+from .sufficiency import assess_requirements, grounded_judge_sufficient
 Route = Literal["stop", "quick", "deep"]
 @dataclass(frozen=True)
 class Sufficiency:
     route: Route; reason: str; evidence_count: int; has_conflict: bool = False
+    terminal_status: str | None = None
 class EvidenceSufficiency:
     def __init__(self, minimum_evidence=1):
         if minimum_evidence < 1: raise ValueError("minimum_evidence must be positive")
@@ -30,20 +31,31 @@ class AdaptiveResearchRouter:
         decisions=[self._evaluate(internal, conflict=conflict)]
         if conflict:
             deep=await self.deep_research(query); combined=list(internal)+list(deep)
-            decisions.append(Sufficiency("deep", "conflict escalated directly to deep research", len(combined), True))
+            decisions.append(Sufficiency("deep", "deep executed; conflict remains unresolved without reassessment", len(combined), True, "conflict"))
             return "deep", combined, decisions
         if decisions[0].route == "stop": return decisions[0].route, internal, decisions
         quick=await self.quick_search(query); combined=list(internal)+list(quick); decisions.append(self._evaluate(combined, depth=1))
         if self.judge is not None and self.requirements and decisions[-1].route == "deep":
             reviews = [await self.judge.judge(req, combined) for req in self.requirements]
-            if all(review.get("status") == "sufficient" for review in reviews):
+            if all(grounded_judge_sufficient(req, combined, review)
+                   for req, review in zip(self.requirements, reviews)):
                 decisions[-1] = Sufficiency("stop", "semantic judge confirmed all requirements", len(combined))
                 return "quick", combined, decisions
         if decisions[-1].route == "stop": return "quick", combined, decisions
-        deep=await self.deep_research(query); combined.extend(deep); decisions.append(Sufficiency("deep", "deep research executed", len(combined), conflict)); return "deep", combined, decisions
+        deep=await self.deep_research(query)
+        combined.extend(deep)
+        final = self._evaluate(combined, depth=2)
+        decisions.append(Sufficiency("deep", "deep completed; " + final.reason, len(combined),
+                                     final.has_conflict, "sufficient" if final.route == "stop" else "insufficient"))
+        return "deep", combined, decisions
 
     async def run_with_conflict_checker(self, query, *, internal, conflict_checker=None):
         conflict = False
         if conflict_checker is not None:
-            conflict = (await conflict_checker.check(internal)).get("conflict_detected", False)
+            review = await conflict_checker.check(internal)
+            if review.get("status") in ("unknown", "not_evaluated"):
+                deep = await self.deep_research(query)
+                combined = list(internal) + list(deep)
+                return "deep", combined, [Sufficiency("deep", "conflict assessment unknown; no sufficient verdict", len(combined), False, "unknown")]
+            conflict = review.get("conflict_detected", False)
         return await self.run(query, internal=internal, conflict=conflict)
