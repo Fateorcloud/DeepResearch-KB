@@ -5,3 +5,8 @@
 Requirement-based claim coverage 解决了“证据数量足够但关键 claim 缺失”的已知问题；真实 DeepSeek judge 的 sufficient/insufficient 固定案例为 2/2。真实 `adaptive-live-v1/v2` 已验证 STOP 与 Quick 路径；Deep 分支由 fake 执行器覆盖，未重复真实 Deep Research。
 
 结论仅证明可解释路由机制和调用选择，不证明答案质量或成本普遍优于固定 Hybrid。确定性 claim 依赖 gold 短语，同义改写交给可选 judge，judge 失败为 unknown。下一步需用真实项目问题扩大数据集，再评估质量不下降前提下的成本变化。
+## 严格语义报告复核
+
+修正内部 kb:// URI 后，judge-v2 对 24 份报告判定：Fixed Hybrid 与 Adaptive 均为 11/12
+correct-or-unanswerable、1/12 incorrect、0 unknown。两组质量持平，不证明 Adaptive 优于 Fixed Hybrid。
+Fixed Hybrid 的错误是 Quick 不足却停止；Adaptive 的错误是 stale 版本状态缺失导致模型将其当作当前冲突。

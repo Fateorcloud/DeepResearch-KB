@@ -1,5 +1,17 @@
 # 阶段变更与验收记录
 
+## 严格报告 judge-v2 结果
+
+- 修正内部 citation URI 归一化后重跑 24 份报告：Fixed Hybrid 与 Adaptive 均 11/12 可接受、1/12 incorrect、0 unknown。
+- 质量持平，不宣称 Adaptive 优于固定 Hybrid；错误分别是 Quick 不足停留、stale 状态缺失。
+- Provider usage：12941 input + 62446 output tokens；无 Tavily 调用。
+
+## 报告质量验证 — 严格语义 judge（待运行）
+
+- 新增 `judge_effect_reports.py`：24 份 frozen v2 报告各一次 judge，检查 required claims、证据支持、citation、过期/冲突处理和保守拒答。
+- gold answerable 与 required claims 从数据集读取；judge 不能改 gold。非法输出/异常为 unknown。
+- 结果与 provider usage 单独保存；不覆盖人工 review matrix，也不把 judge 结果当绝对真值。
+
 ## 效果评测补充 — 人工复核矩阵
 
 - 新增 `build_review_matrix.py`，为 24 份固定报告生成逐 claim/citation/stale 空白复核表。
@@ -28,6 +40,8 @@
 - 真实质量审阅与总成本结论待报告完成后进行，不由路由准确率替代。
 - 24 份报告已生成；人工检查保留两项：negation 案例的 answerable gold 需复核，stale 案例需把治理状态传入 evidence。
   新增 review_effect_v2.py，只生成检查清单，不自动打分或修改冻结 gold。
+- judge 首次运行发现内部 `kb://` 引用与原始 fixture URI 混淆，导致内部报告被错误判 citation error；
+  已在 judge 输入中加入规范化 citation_uri，旧结果保留，需用新输出目录重跑 24 份报告评估。
 
 ## 正式效果对照 — v2 双组 fixture runner
 
