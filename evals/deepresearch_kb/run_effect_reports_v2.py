@@ -54,6 +54,8 @@ async def run(routing_path, output, factory=live_factory):
         folder = output / row["id"] / row["arm"]
         folder.mkdir(parents=True)
         context = render_evidence_context([Evidence(**e) for e in row["evidence"]])
+        if any(e.get("status") == "superseded" for e in row["evidence"]):
+            context += "\n\nWARNING: Superseded internal evidence is historical and must not be presented as current."
         (folder / "context.txt").write_text(context, encoding="utf-8")
         save(folder / "sources.json", row["evidence"])
         usage = UsageCollector()

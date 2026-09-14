@@ -20,6 +20,8 @@ def evidence_for(case, stage):
         f"fixture://{case['id']}/{stage}/{0 if internal and case.get('duplicate_internal_source') else index}",
         stage, f"{case['id']}:{stage}", 1, 1.0,
         status=case.get("internal_status", "active") if internal else None,
+        effective_at="inferred-from-fixture" if internal and case.get("internal_status") else None,
+        version_selection_reason="fixture marks this internal evidence superseded" if internal and case.get("internal_status") else None,
     ) for index, text in enumerate(case[stage])]
 
 

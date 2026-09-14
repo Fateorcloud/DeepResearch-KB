@@ -1,5 +1,10 @@
 # 阶段变更与验收记录
 
+## Stale evidence replay 修复
+
+- effect replay 补齐 superseded evidence 的 inferred effective_at/selection reason。
+- report replay 对 superseded 内部证据追加历史警告；旧真实报告工件不覆盖，需显式重跑。
+
 ## 严格报告 judge-v2 结果
 
 - 修正内部 citation URI 归一化后重跑 24 份报告：Fixed Hybrid 与 Adaptive 均 11/12 可接受、1/12 incorrect、0 unknown。
