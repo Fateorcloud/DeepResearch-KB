@@ -1,5 +1,9 @@
 # Phase 4 效果验证
 
+Stale rerun follow-up: after adding the explicit superseded warning, Adaptive correctly selected the non-expired
+Deep PostgreSQL evidence; Fixed Hybrid conservatively reported that the current engine could not be established.
+The two reruns used 410 input + 1880 output provider tokens. This is a single-case improvement, not a general quality claim.
+
 使用 `evals/deepresearch_kb/effect_dataset.json` 的 6 个合成案例验证路由 gold：内部充分、外部缺失、混合需求、Quick 不足、冲突和无证据。`run_effect_eval.py` 结果为 **6/6**：internal sufficient→STOP，external/hybrid→Quick，Quick 不足或 conflict/no evidence→Deep。
 
 Requirement-based claim coverage 解决了“证据数量足够但关键 claim 缺失”的已知问题；真实 DeepSeek judge 的 sufficient/insufficient 固定案例为 2/2。真实 `adaptive-live-v1/v2` 已验证 STOP 与 Quick 路径；Deep 分支由 fake 执行器覆盖，未重复真实 Deep Research。

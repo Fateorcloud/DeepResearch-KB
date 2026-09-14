@@ -1,5 +1,16 @@
 # 阶段变更与验收记录
 
+## Stale holdout 重合成结果
+
+- 补齐 superseded 历史警告后，Adaptive 正确采用 Deep 的非过期 PostgreSQL 证据；Fixed Hybrid 保守回答无法确定。
+- 两份报告共 410 input + 1880 output tokens；旧 24 例统计保留，单案例改善不外推为总体质量提升。
+
+## Stale holdout 重合成（待运行）
+
+- 只重跑 holdout_stale 的 Fixed Hybrid/Adaptive 两份报告，使用新增历史警告，不重复整批 24 例。
+- 每份报告独立采集 provider usage/latency；结果写入 Git 忽略的 data/evals/stale-rerun。
+- 目标是验证时效信息传递是否改善模型判断，不根据结果修改 gold。
+
 ## Stale evidence replay 修复
 
 - effect replay 补齐 superseded evidence 的 inferred effective_at/selection reason。
