@@ -1,5 +1,11 @@
 # 阶段变更与验收记录
 
+## Phase 4 关键案例重跑结果
+
+- `internal_paraphrase`、`quick_missing`、`holdout_stale` 各重合成一次 Adaptive；三份均完成。
+- 同义改写仍保守升级 Deep；quick_missing 正确由 Deep 补足；stale 报告识别 superseded 状态但仍称证据矛盾。
+- 共 693 input + 2483 output tokens，无 Tavily；详见 PHASE4_REPORT_EFFECTS.md。
+
 ## Adaptive live runner consistency
 
 - live runner 现显式注入 requirement，实际路由不再使用 count-only baseline；Deep 仍强制 report_type=deep。
@@ -80,6 +86,7 @@
 - 12 例 × 固定 Hybrid/Adaptive 共 24 份真实模型短报告；交替执行两组，统一提示词和输出预算。
 - 保存输入/来源/输出/usage/失败，固定材料调用不计作真实搜索成本；requirements 为显式给定而非模型生成。
 - 真实质量审阅与总成本结论待报告完成后进行，不由路由准确率替代。
+- runner 新增 `--case/--arm`，允许只重跑关键 holdout，避免为单个修复重复消耗 24 份报告 token。
 - 24 份报告已生成；人工检查保留两项：negation 案例的 answerable gold 需复核，stale 案例需把治理状态传入 evidence。
   新增 review_effect_v2.py，只生成检查清单，不自动打分或修改冻结 gold。
 - judge 首次运行发现内部 `kb://` 引用与原始 fixture URI 混淆，导致内部报告被错误判 citation error；
