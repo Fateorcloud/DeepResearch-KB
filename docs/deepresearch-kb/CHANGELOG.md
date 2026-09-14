@@ -1,5 +1,9 @@
 # 阶段变更与验收记录
 
+## Judge usage assertion fix
+
+全量回归发现测试硬编码单次模型 token 数，重跑后合理变化导致脆弱失败；改为校验 usage 结构与正值，不把单次运行 token 当固定契约。
+
 ## Stale holdout 重合成结果
 
 - 补齐 superseded 历史警告后，Adaptive 正确采用 Deep 的非过期 PostgreSQL 证据；Fixed Hybrid 保守回答无法确定。
