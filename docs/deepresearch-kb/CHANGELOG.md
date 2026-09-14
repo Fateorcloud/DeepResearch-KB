@@ -1,5 +1,10 @@
 # 阶段变更与验收记录
 
+## Adaptive live runner consistency
+
+- live runner 现显式注入 requirement，实际路由不再使用 count-only baseline；Deep 仍强制 report_type=deep。
+- 当前 requirement 以完整 query 作为单一 claim，适合连通性演示，不代表复杂问题自动分解已解决。
+
 ## Phase 4 成本配置一致性
 
 - `run_adaptive_live.py` 暴露 `--max-deep-calls` 并将实际值写入 route.json。
