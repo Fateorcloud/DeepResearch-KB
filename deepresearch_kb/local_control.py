@@ -259,8 +259,16 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
     def styles():
         return Response(_asset("local-control.css"), media_type="text/css")
 
+    @app.get("/local-control.css")
+    def styles_relative():
+        return Response(_asset("local-control.css"), media_type="text/css")
+
     @app.get("/assets/local-control.js")
     def script():
+        return Response(_asset("local-control.js"), media_type="text/javascript")
+
+    @app.get("/local-control.js")
+    def script_relative():
         return Response(_asset("local-control.js"), media_type="text/javascript")
 
     @app.get("/api/local/status")
