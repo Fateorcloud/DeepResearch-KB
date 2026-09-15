@@ -71,7 +71,7 @@ def test_local_api_enforces_loopback_csrf_and_safe_scan(tmp_path):
     page = client.get("/")
     assert page.status_code == 200
     assert cloud_token not in page.text
-    assert client.get("/api/local/status").json()["authoritative_store"] == "cloud"
+    assert client.get("/api/local/status").json()["authoritative_store"] == "local"
     assert client.post("/api/local/scan", json={"directory": "docs"}).status_code == 403
     rejected_host = client.get(
         "/api/local/status", headers={"host": "attacker.example"})

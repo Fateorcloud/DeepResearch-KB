@@ -4,6 +4,7 @@ import asyncio
 import os
 import secrets
 import tempfile
+from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from importlib.resources import files
@@ -17,7 +18,11 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .directory import ingest_dir, push_dir, scan
+from .engine import ResearchEngine
 from .knowledge import KnowledgeStore
+from .services.research import ResearchService
+from .services.tasks import TaskService
+from .sufficiency import EvidenceRequirement
 
 
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "[::1]", "::1"}
@@ -48,6 +53,21 @@ class DirectoryInput(BaseModel):
 
 class TransferInput(DirectoryInput):
     kb_id: str = Field(min_length=1)
+
+
+class ResearchInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query: str = Field(min_length=1)
+    knowledge_base_ids: list[str] = Field(min_length=1)
+    required_claims: list[str] = Field(default_factory=list)
+    max_deep_calls: int = Field(default=1, ge=0, le=20)
+
+
+class CloudInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    server: str = Field(min_length=1)
+    token: str = Field(min_length=1)
 
 
 class AllowedRoot:
@@ -81,6 +101,13 @@ class AllowedRoot:
 
 class CloudClient:
     def __init__(self, server, token, *, client=None):
+        if not server:
+            self.server = None
+            self.token_configured = False
+            self._headers = {}
+            self._owns_client = False
+            self._client = None
+            return
         parsed = urlsplit(server)
         if (parsed.scheme not in ("http", "https") or not parsed.netloc
                 or parsed.username or parsed.password):
@@ -97,7 +124,18 @@ class CloudClient:
         if self._owns_client:
             self._client.close()
 
+    def configure(self, server, token):
+        replacement = CloudClient(server, token)
+        old = self._client
+        self.server, self.token_configured = replacement.server, replacement.token_configured
+        self._headers, self._client, self._owns_client = replacement._headers, replacement._client, True
+        if old is not None:
+            old.close()
+
     def _request(self, method, path, **kwargs):
+        if self._client is None:
+            raise LocalControlError(
+                "cloud_not_configured", "Cloud connection is not configured", 409)
         headers = {**self._headers, **kwargs.pop("headers", {})}
         try:
             response = self._client.request(method, path, headers=headers, **kwargs)
@@ -122,11 +160,17 @@ class CloudClient:
         return self._request("GET", "/api/kbs").json()
 
     def push(self, root, kb_id):
+        if self._client is None:
+            raise LocalControlError(
+                "cloud_not_configured", "Configure a cloud connection before pushing", 409)
         return push_dir(
             root, self.server, kb_id, token=None,
             client=_AuthorizedClient(self._client, self._headers))
 
     def download_backup(self, destination):
+        if self._client is None:
+            raise LocalControlError(
+                "cloud_not_configured", "Configure a cloud connection before downloading backup", 409)
         artifact = self._request("POST", "/api/backups").json()
         download_url = artifact.get("download_url")
         filename = artifact.get("filename")
@@ -173,6 +217,13 @@ class LocalControlService:
     allowed: AllowedRoot
     cloud: CloudClient
     store: KnowledgeStore
+    tasks: TaskService | None = None
+
+    def __post_init__(self):
+        if self.tasks is None:
+            self.tasks = TaskService(
+                ResearchService(ResearchEngine(store=self.store)),
+                self.store.database.with_suffix(".tasks"))
 
     def scan(self, directory):
         root = self.allowed.directory(directory)
@@ -215,8 +266,9 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
                      service=None, allowed_hosts=None, control_token=None):
     allowed = AllowedRoot(root)
     cloud = service.cloud if service else CloudClient(server, token)
-    service = service or LocalControlService(
-        allowed, cloud, KnowledgeStore(database))
+    if service is None:
+        store = KnowledgeStore(database)
+        service = LocalControlService(allowed, cloud, store)
     allowed_hosts = set(allowed_hosts or LOOPBACK_HOSTS)
     control_token = control_token or secrets.token_urlsafe(32)
     app = FastAPI(title="DeepResearch-KB Local Control", docs_url=None, redoc_url=None)
@@ -277,12 +329,25 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
             "allowed_root": str(service.allowed.root),
             "cloud_server": service.cloud.server,
             "cloud_token_configured": service.cloud.token_configured,
-            "authoritative_store": "cloud",
+            "authoritative_store": "local",
+            "local_database": str(service.store.database),
         }
 
     @app.get("/api/local/kbs")
-    async def knowledge_bases():
+    def local_knowledge_bases():
+        return [asdict(item) for item in service.store.list_knowledge_bases()]
+
+    @app.get("/api/local/cloud-kbs")
+    async def cloud_knowledge_bases():
         return await asyncio.to_thread(service.cloud.knowledge_bases)
+
+    @app.put("/api/local/cloud")
+    def configure_cloud(body: CloudInput):
+        try:
+            service.cloud.configure(body.server, body.token)
+        except (ValueError, LocalControlError):
+            raise LocalControlError("invalid_cloud_config", "Cloud connection is invalid") from None
+        return {"configured": True, "server": service.cloud.server}
 
     @app.post("/api/local/scan")
     async def scan_directory(body: DirectoryInput):
@@ -299,6 +364,43 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
     @app.post("/api/local/backups")
     async def download_backup():
         return await asyncio.to_thread(service.download_backup)
+
+    @app.post("/api/local/research")
+    def local_research(body: ResearchInput):
+        requirements = EvidenceRequirement(
+            "local-web", tuple(body.required_claims or [body.query]))
+        try:
+            task = service.tasks.create(
+                body.query, body.knowledge_base_ids,
+                requirements=requirements, max_deep_calls=body.max_deep_calls)
+        except (ValueError, KeyError):
+            raise LocalControlError(
+                "local_research_invalid", "Local research request is invalid") from None
+        return {"task_id": task.id, "status": task.status}
+
+    @app.get("/api/local/research/{task_id}")
+    def local_research_status(task_id: str):
+        try:
+            task = service.tasks.get(task_id)
+        except KeyError:
+            raise LocalControlError("task_not_found", "Research task does not exist", 404)
+        return {
+            "id": task.id, "query": task.query, "status": task.status,
+            "created_at": task.created_at, "started_at": task.started_at,
+            "completed_at": task.completed_at,
+            "error": asdict(task.error) if task.error else None,
+        }
+
+    @app.get("/api/local/research/{task_id}/report")
+    def local_research_report(task_id: str):
+        try:
+            task = service.tasks.get(task_id)
+        except KeyError:
+            raise LocalControlError("task_not_found", "Research task does not exist", 404)
+        if task.status != "completed" or not task.artifact_path:
+            raise LocalControlError("task_not_completed", "Research task is not completed", 409)
+        report = Path(task.artifact_path) / "report.md"
+        return Response(report.read_text(encoding="utf-8"), media_type="text/markdown")
 
     @app.on_event("shutdown")
     def close_cloud():

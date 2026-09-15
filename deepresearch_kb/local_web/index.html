@@ -34,6 +34,15 @@
         <article><span>CLI token</span><strong id="token-status">正在检查…</strong></article>
       </section>
 
+      <section class="panel cloud-settings">
+        <span class="eyebrow">OPTIONAL CLOUD CONNECTION</span>
+        <h2>云端连接（可选）</h2>
+        <p>不配置云端也可以使用本地 KB 和 Research。填写后可启用显式 push 与备份。</p>
+        <label>云端地址<input id="cloud-server-input" placeholder="https://research.example.com" /></label>
+        <label>CLI token<input id="cloud-token-input" type="password" placeholder="只保存在当前 Local Control 进程" /></label>
+        <button id="cloud-save" class="button secondary">保存云端连接</button>
+      </section>
+
       <div id="alert" class="alert" role="status" hidden></div>
 
       <section class="workbench">

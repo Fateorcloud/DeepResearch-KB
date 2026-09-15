@@ -38,7 +38,7 @@ async function loadStatus() {
     request("/api/local/status"), request("/api/local/kbs"),
   ]);
   byId("allowed-root").textContent = status.allowed_root;
-  byId("cloud-server").textContent = status.cloud_server;
+  byId("cloud-server").textContent = status.cloud_server || "未配置（本地模式）";
   byId("token-status").textContent = status.cloud_token_configured ? "已配置" : "未配置";
   byId("token-status").className = status.cloud_token_configured ? "ok" : "bad";
   const select = byId("kb");
@@ -64,6 +64,18 @@ byId("scan").addEventListener("click", async () => {
   } finally {
     setBusy(button, false);
   }
+});
+
+byId("cloud-save").addEventListener("click", async () => {
+  try {
+    await request("/api/local/cloud", { method: "PUT", body: JSON.stringify({
+      server: byId("cloud-server-input").value,
+      token: byId("cloud-token-input").value,
+    }) });
+    byId("cloud-token-input").value = "";
+    notify("云端连接已保存；token 不会回显。 ");
+    await loadStatus();
+  } catch (error) { notify(error.message, "error"); }
 });
 
 byId("push").addEventListener("click", async () => {
