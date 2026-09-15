@@ -1,8 +1,40 @@
 # DeepResearch-KB
 
-本项目明确是基于 [GPT Researcher](https://github.com/assafelovic/gpt-researcher) 的二次开发，
-新增持久化知识层和研究编排实验；上游能力与本项目贡献边界见 [PROJECT_CHARTER.md](PROJECT_CHARTER.md)。
-产品目标和贡献边界见 [PROJECT_CHARTER.md](PROJECT_CHARTER.md)。
+**单用户、Local-first、知识增强的深度研究工作台。** 将本地项目文档导入知识库，结合按需获取的 Web 证据，生成可以阅读、下载并追溯来源的研究报告。
+
+**选择知识 → 输入研究问题 → 设置证据要求 → 执行 Research → 阅读并审计结果。**
+
+本项目基于 [GPT Researcher](https://github.com/assafelovic/gpt-researcher) 二次开发，新增持久化知识层、版本治理、证据驱动的研究编排及 Local Web 工作台。上游能力与本项目贡献边界见 [PROJECT_CHARTER.md](PROJECT_CHARTER.md)。
+
+## 看看它如何工作
+
+### 从你的知识库发起研究
+
+选择一个或多个本地知识库，输入研究问题，并设置报告必须回答的要点、来源要求、报告语言和 `low / medium / high` 研究深度。研究历史保存在本地，重新打开页面或重启服务后仍可查看。
+
+![DeepResearch-KB 新建研究：知识库选择、研究问题、证据要求与最近研究](docs/deepresearch-kb/images/local-web-research.png)
+
+### 阅读报告，也能检查结论从哪里来
+
+结果页将报告目录、正文与 Evidence Inspector 放在一起，支持查看来源、研究流程、版本决策与运行指标。阅读宽度可调，已完成的报告可以下载为 Markdown 或 PDF。
+
+![DeepResearch-KB 研究结果：报告目录、正文、来源审计与 MD/PDF 下载](docs/deepresearch-kb/images/local-web-result.png)
+
+*以上为真实 Local Web 页面截图，报告内容用于展示阅读与审计界面，不代表结论已人工核验。*
+
+- **本地优先**：原始文件导入后成为可检索、可版本化的知识资产；Local Research 使用本机配置的模型与搜索 Provider，无需 Cloud token。
+- **证据约束**：显式声明必须回答什么、需要哪些来源、最少独立来源数和版本要求；证据不足时按预算进行外部研究。
+- **云端可选**：Local KB 与 Cloud KB 是独立工作副本，通过显式 Push/Pull 传输资料；冲突时停止覆盖，不做自动同步，Provider 密钥不随知识库传输。
+
+## 启动 Local Web
+
+安装依赖后，在仓库根目录运行：
+
+```sh
+.venv/bin/python -m deepresearch_kb --database data/local-kb.sqlite local-web --root .
+```
+
+打开 <http://127.0.0.1:8765/#/research>。首次使用时，在「设置」配置本机 Provider 与模型，在「知识库」创建知识库，再从「本地文件」导入资料，即可开始研究。默认报告语言为中文；首次安装命令见下方「本地运行」。
 
 ## 项目定位
 
@@ -10,7 +42,7 @@
 
 Deep Research 擅长最新外部信息，但不了解项目历史和内部约束；普通 KB/RAG 能查已有资料，却不会主动判断何时需要外部研究，也容易受到旧版本污染。DeepResearch-KB 将 Persistent KB、Version Governance、Adaptive Research 和 Traceable Evidence 组合成统一执行链。上游 Web/Local/Hybrid/Deep Research 不属于本项目新增贡献。
 
-当前验证：111 tests passed；Phase 4.5 使用 12 个冻结案例完成 paired evaluation；Phase 5B 通过官方 MCP ClientSession 的真实 stdio smoke。
+最近验证（2026-09-16）：知识库与研究引擎相关回归共 171 tests passed；Local Web 桌面及 390px 手机视口通过浏览器检查，中文报告 PDF 导出已验证。Phase 4.5 使用 12 个冻结案例完成 paired evaluation；Phase 5B 通过官方 MCP ClientSession 的真实 stdio smoke。Web 开发状态与限制见 [WEB_CLOUD_PLAN](docs/deepresearch-kb/WEB_CLOUD_PLAN.md)。
 
 ## 主架构
 
