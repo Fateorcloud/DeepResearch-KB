@@ -35,9 +35,14 @@ class ResearchEngine:
         self.max_deep_calls = max_deep_calls
 
     async def run(self, query, *, knowledge_base_ids, requirements=None,
-                  subquestions=None, output_dir=None, limit=5):
+                  subquestions=None, output_dir=None, limit=5, as_of=None,
+                  max_deep_calls=None):
         started = time.perf_counter()
         usage = UsageCollector()
+        task_as_of = self.as_of if as_of is None else as_of
+        task_max_deep_calls = self.max_deep_calls if max_deep_calls is None else max_deep_calls
+        if type(task_max_deep_calls) is not int or task_max_deep_calls < 0:
+            raise ValueError("max_deep_calls must be a non-negative task budget")
         folder = Path(output_dir) if output_dir is not None else None
         if folder is not None:
             folder.mkdir(parents=True, exist_ok=False)
@@ -57,7 +62,7 @@ class ResearchEngine:
             researcher = tracked_factory(query)
             subquestions = await researcher.research_conductor.plan_research(query)
         plan = self.planner.plan(query, subquestions)
-        governed = GovernedKnowledge(self.store, as_of=self.as_of,
+        governed = GovernedKnowledge(self.store, as_of=task_as_of,
             include_superseded=self.include_superseded,
             include_deprecated=self.include_deprecated)
         requirement_origin = "caller_explicit_positional_mapping"
@@ -101,7 +106,7 @@ class ResearchEngine:
                 deep_evidence.extend(entries)
                 return entries
             router = AdaptiveResearchRouter(quick_search=quick, deep_research=deep,
-                requirements=[req], max_deep_calls=max(0, self.max_deep_calls - deep_calls))
+                requirements=[req], max_deep_calls=max(0, task_max_deep_calls - deep_calls))
             conflict_reviews = []
             checker = self.conflict_checker
             class TracedChecker:
@@ -153,7 +158,7 @@ class ResearchEngine:
                 "include_deprecated": self.include_deprecated},
             "final_route_summary": [t["final_route"] for t in traces],
             "quick_calls": quick_calls, "deep_calls": deep_calls,
-            "max_deep_calls": self.max_deep_calls,
+            "max_deep_calls": task_max_deep_calls,
             "latency_seconds": time.perf_counter() - started}
         result.update(usage.summary())
         result["evidence_status"] = [

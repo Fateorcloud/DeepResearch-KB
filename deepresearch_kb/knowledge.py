@@ -158,6 +158,19 @@ class KnowledgeStore:
             return [KnowledgeBase(**dict(row)) for row in db.execute(
                 "SELECT * FROM knowledge_base ORDER BY created_at, id")]
 
+    def rename_knowledge_base(self, knowledge_base_id: str, name: str) -> KnowledgeBase:
+        if not name.strip():
+            raise ValueError("name must not be blank")
+        with closing(self._connect()) as db, db:
+            row = db.execute("SELECT created_at FROM knowledge_base WHERE id = ?",
+                             (knowledge_base_id,)).fetchone()
+            if row is None:
+                raise KeyError(knowledge_base_id)
+            cleaned = name.strip()
+            db.execute("UPDATE knowledge_base SET name = ? WHERE id = ?",
+                       (cleaned, knowledge_base_id))
+        return KnowledgeBase(knowledge_base_id, cleaned, row["created_at"])
+
     @staticmethod
     def _version(row) -> DocumentVersion:
         data = dict(row)
