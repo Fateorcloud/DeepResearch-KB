@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+import os
 from dataclasses import asdict
 from datetime import datetime
 
@@ -26,6 +27,12 @@ def main():
     ingest_dir.add_argument("kb_id"); ingest_dir.add_argument("directory")
     push_dir = commands.add_parser("push-dir")
     push_dir.add_argument("directory"); push_dir.add_argument("--server", required=True); push_dir.add_argument("--kb", required=True)
+    push_dir.add_argument("--token-env", default="DRKB_CLI_TOKEN")
+    local_web = commands.add_parser("local-web")
+    local_web.add_argument("--root", required=True)
+    local_web.add_argument("--server", required=True)
+    local_web.add_argument("--token-env", default="DRKB_CLI_TOKEN")
+    local_web.add_argument("--port", type=int, default=8765)
     versions = commands.add_parser("versions")
     versions.add_argument("kb_id")
     versions.add_argument("logical_path")
@@ -46,8 +53,17 @@ def main():
     resolve = commands.add_parser("resolve")
     resolve.add_argument("reference")
     args = parser.parse_args()
-    store = KnowledgeStore(args.database)
     try:
+        if args.command == "local-web":
+            if not 1 <= args.port <= 65535:
+                raise ValueError("port must be between 1 and 65535")
+            from .local_control import run_local_web
+            run_local_web(
+                root=args.root, server=args.server,
+                token=os.getenv(args.token_env), database=args.database,
+                port=args.port)
+            return
+        store = KnowledgeStore(args.database)
         if args.command == "create":
             result = asdict(store.create_knowledge_base(args.name))
         elif args.command == "list":
@@ -62,7 +78,9 @@ def main():
             result = asyncio.run(ingest_dir(store, args.kb_id, args.directory))
         elif args.command == "push-dir":
             from .directory import push_dir
-            result = push_dir(args.directory, args.server, args.kb)
+            result = push_dir(
+                args.directory, args.server, args.kb,
+                token=os.getenv(args.token_env))
         elif args.command == "retrieve":
             if args.governed or args.as_of or args.include_superseded or args.include_deprecated:
                 from .governance import VersionGovernance

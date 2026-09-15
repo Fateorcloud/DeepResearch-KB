@@ -328,9 +328,16 @@ def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=N
         with tempfile.NamedTemporaryFile(prefix="drkb-upload-", suffix=Path(logical_path).suffix, delete=False) as tmp:
             tmp.write(data); staged = Path(tmp.name)
         try:
+            previous = store.list_versions(kb_id, logical_path)
             version = await knowledge.ingest(kb_id, staged, logical_path=logical_path,
                                              source_type="web_upload", source_uri=f"upload://{kb_id}/{logical_path}")
-            return asdict(version)
+            return {
+                **asdict(version),
+                "ingest_action": (
+                    "unchanged" if previous
+                    and previous[-1].content_hash == version.content_hash
+                    else "imported"),
+            }
         except KeyError:
             raise HTTPException(404, detail=_error(
                 "knowledge_base_not_found", "Knowledge base does not exist"))

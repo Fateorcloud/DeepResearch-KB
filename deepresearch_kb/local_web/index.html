@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f8fa" />
+    <meta name="local-control-token" content="__CONTROL_TOKEN__" />
+    <title>DeepResearch-KB Local Control</title>
+    <link rel="stylesheet" href="/assets/local-control.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand-mark">LC</div>
+      <div><strong>DeepResearch-KB</strong><span>Local Control</span></div>
+      <div class="loopback"><i></i>127.0.0.1 only</div>
+    </header>
+    <main>
+      <section class="hero">
+        <div>
+          <span class="eyebrow">LOCAL CONTROL</span>
+          <h1>把本地文件推向唯一的云端知识库。</h1>
+          <p>扫描受允许目录，上传原文件并下载一致性备份。本地不会与云端维护双主数据库。</p>
+        </div>
+        <div class="authority-card">
+          <span>AUTHORITATIVE STORE</span>
+          <strong>Cloud SQLite</strong>
+          <small>本地动作是 push 或 backup，不是 sync。</small>
+        </div>
+      </section>
+
+      <section class="status-grid" aria-label="连接状态">
+        <article><span>允许目录</span><strong id="allowed-root">正在读取…</strong></article>
+        <article><span>云端服务</span><strong id="cloud-server">正在连接…</strong></article>
+        <article><span>CLI token</span><strong id="token-status">正在检查…</strong></article>
+      </section>
+
+      <div id="alert" class="alert" role="status" hidden></div>
+
+      <section class="workbench">
+        <header>
+          <div><span class="eyebrow">PUSH DIRECTORY</span><h2>扫描与推送</h2></div>
+          <span class="step-label">原文件 → Cloud ingest contract</span>
+        </header>
+        <div class="form-grid">
+          <label>相对目录
+            <input id="directory" value="." autocomplete="off" aria-describedby="directory-help" />
+            <small id="directory-help">只能选择启动时 <code>--root</code> 下的目录。</small>
+          </label>
+          <label>目标云端知识库
+            <select id="kb"><option value="">正在加载…</option></select>
+            <small>推送保持相对 logical_path，重复字节不会创建新版本。</small>
+          </label>
+        </div>
+        <div class="actions">
+          <button id="scan" class="button secondary">扫描文件</button>
+          <button id="push" class="button primary">推送到云端</button>
+        </div>
+        <div class="scan-summary" id="scan-summary">
+          <div class="empty"><strong>尚未扫描</strong><span>先确认目录与目标知识库。</span></div>
+        </div>
+      </section>
+
+      <section class="two-column">
+        <article class="panel">
+          <span class="eyebrow">OPTIONAL LOCAL CHECK</span>
+          <h2>本地 ingest-dir</h2>
+          <p>复用当前本地数据库和解析器做可选验证。它不是云端副本，也不会参与合并。</p>
+          <label>本地 KB ID
+            <input id="local-kb" placeholder="由现有 CLI create 生成" autocomplete="off" />
+          </label>
+          <button id="ingest" class="button secondary">执行本地导入</button>
+          <div id="ingest-result" class="result-line">等待执行</div>
+        </article>
+        <article class="panel">
+          <span class="eyebrow">CONSISTENT BACKUP</span>
+          <h2>下载云端 SQLite 快照</h2>
+          <p>云端先运行 online backup 与 integrity check，再保存到允许目录内的私有备份文件夹。</p>
+          <button id="backup" class="button secondary">生成并下载备份</button>
+          <div id="backup-result" class="result-line">保存到 <code>.deepresearch-kb/backups/</code></div>
+        </article>
+      </section>
+    </main>
+    <script type="module" src="/assets/local-control.js"></script>
+  </body>
+</html>

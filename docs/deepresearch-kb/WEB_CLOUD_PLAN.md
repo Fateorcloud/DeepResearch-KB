@@ -1,6 +1,6 @@
 # DeepResearch-KB Web 与云端互通开发方案
 
-状态：实施中。Stage 0～3 已于 2026-09-15 完成 Gate，下一阶段为 Stage 4 Local Control Web。本文描述产品层开发，不改变 Phase 1～5B 已验收的 Research Core。
+状态：实施中。Stage 0～4 已于 2026-09-15 完成 Gate，下一阶段为 Stage 5 Deployment。本文描述产品层开发，不改变 Phase 1～5B 已验收的 Research Core。
 
 ## 1. 目标
 
@@ -284,11 +284,20 @@ trace/metrics、生成 SQLite 快照与完整归档，以及创建 CLI token；�
 
 ### Stage 4 — Local Control Web
 
-- loopback companion；
-- 一键扫描、ingest、push 与备份下载；
-- allowed-root/path traversal 防护。
+- [x] loopback companion；
+- [x] 一键扫描、ingest、push 与备份下载；
+- [x] allowed-root/path traversal 防护。
 
 Gate：本地目录推送后，云端同一 `kb_id` 立即出现正确文档版本。
+
+实际验收：新增 `deepresearch_kb local-web` loopback-only companion，页面显示允许目录、云端
+authoritative store 和 token 配置状态，支持扫描支持格式、可选本地 `ingest-dir`、认证 `push-dir`
+和云端 SQLite 快照下载。目录解析拒绝绝对路径、`..` 穿越、外部 symlink 和非目录；写请求需要
+本地 control token；云端错误统一映射为结构化错误。`push-dir` 通过 multipart 上传原文件与
+`logical_path`，返回 imported/unchanged/failed 汇总；同一字节幂等，变更字节生成新版本。专项
+测试 5 passed；Playwright 桌面与 390×844 移动端浏览器验收完成扫描 → push → 云端版本反查 →
+backup 下载，SQLite `PRAGMA integrity_check` 通过。CLI `push-dir` 现在读取 `DRKB_CLI_TOKEN`，
+不再发送未认证请求。
 
 ### Stage 5 — Deployment
 
