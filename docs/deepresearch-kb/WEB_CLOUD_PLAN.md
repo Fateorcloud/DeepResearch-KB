@@ -1,6 +1,6 @@
 # DeepResearch-KB Web 与云端互通开发方案
 
-状态：实施中。Stage 0 与 Stage 1 已于 2026-09-15 完成 Gate，Stage 2 尚未开始。本文描述产品层开发，不改变 Phase 1～5B 已验收的 Research Core。
+状态：实施中。Stage 0～3 已于 2026-09-15 完成 Gate，下一阶段为 Stage 4 Local Control Web。本文描述产品层开发，不改变 Phase 1～5B 已验收的 Research Core。
 
 ## 1. 目标
 
@@ -248,19 +248,39 @@ Gate：重命名不改变 ID，预览和版本 provenance 正确。
 
 ### Stage 2 — Authentication and backup
 
-- 单用户 session、CSRF、CLI token；
-- SQLite online backup 与完整归档；
-- 安全测试。
+状态：已完成（2026-09-15）。
+
+- [x] 单用户 session、CSRF、CLI token；
+- [x] SQLite online backup 与完整归档；
+- [x] 安全测试。
 
 Gate：未认证访问被拒绝；下载快照通过 integrity check；敏感值不泄露。
 
+实际验收：缺少认证配置时默认 fail closed；浏览器 session cookie 使用 `HttpOnly + Secure +
+SameSite=Lax`，修改请求要求 CSRF token，登录失败统一响应并限速。CLI Bearer token 仅在创建时
+返回明文，数据库保存 HMAC 摘要，支持列出、创建替代 token 和吊销。数据库下载通过 SQLite
+online backup 生成一致性快照并执行 `PRAGMA integrity_check`；完整归档包含 `kb.sqlite`、
+`tasks/` 与无敏感值的 `manifest.json`。Stage 2 安全/备份专项 5 passed，完成后网络阻断、
+forked 的完整项目集合为 133 passed。
+
 ### Stage 3 — Cloud Web
 
-- 登录、首页、知识库、Research、结果和备份页面；
-- 响应式布局与基本无障碍；
-- loading/empty/error 状态。
+状态：已完成（2026-09-15）。
+
+- [x] 登录、首页、知识库、Research、结果和备份页面；
+- [x] 响应式布局与基本无障碍；
+- [x] loading/empty/error 状态。
 
 Gate：桌面与手机浏览器完成完整主链路。
+
+实际验收：独立 `web/` 使用 React、TypeScript、Vite、React Router、TanStack Query、Zod、
+Lucide 与原生 CSS，实现已确认的 GitHub 风格浅色信息结构。真实浏览器从登录开始，完成新建 KB、
+上传并解析原文件、选择知识库、填写 Evidence Contract、提交 Research、读取 report/sources/
+trace/metrics、生成 SQLite 快照与完整归档，以及创建 CLI token；请求经过真实 FastAPI、
+`TaskService`、`ResearchService` 和 ResearchEngine interface，浏览器验收仅在 Engine interface
+注入确定性 provider fixture。桌面 1440×1000 与手机 390×844 均通过布局和可访问名称检查，
+生产构建通过。文件夹字段首版只决定附件上传的 `logical_path`，Research 仍按整个 KB 检索，
+页面对此限制做了明确说明，没有伪造文件夹过滤能力。
 
 ### Stage 4 — Local Control Web
 

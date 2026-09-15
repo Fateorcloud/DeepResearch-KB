@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from deepresearch_kb.api import create_app
 from deepresearch_kb.directory import ingest_dir, scan
 from deepresearch_kb.knowledge import KnowledgeStore
+from tests.deepresearch_kb.auth_support import bearer_client, configured_auth
 
 
 async def loader(path):
@@ -13,8 +14,9 @@ async def loader(path):
 
 def test_upload_idempotency_version_and_security(tmp_path):
     store = KnowledgeStore(tmp_path / "kb.sqlite", loader=loader)
-    app = create_app(store=store)
-    client = TestClient(app)
+    auth = configured_auth(store.database)
+    app = create_app(store=store, auth=auth)
+    client = bearer_client(app, auth)
     kb = client.post('/api/kbs', json={'name': 'demo'}).json()['id']
     url = f'/api/kbs/{kb}/documents'
     first = client.post(url, data={'logical_path':'docs/a.txt'}, files={'file':('a.txt', b'one')})

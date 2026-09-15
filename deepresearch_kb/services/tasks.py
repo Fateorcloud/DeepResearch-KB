@@ -70,3 +70,6 @@ class TaskService:
         if task_id not in self.tasks:
             raise KeyError(task_id)
         return self.tasks[task_id]
+
+    def list(self):
+        return sorted(self.tasks.values(), key=lambda task: task.created_at, reverse=True)

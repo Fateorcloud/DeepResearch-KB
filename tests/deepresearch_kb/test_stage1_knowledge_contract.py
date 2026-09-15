@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from deepresearch_kb.api import create_app
 from deepresearch_kb.knowledge import KnowledgeStore
+from tests.deepresearch_kb.auth_support import bearer_client, configured_auth
 
 
 async def loader(path):
@@ -24,7 +25,9 @@ def test_kb_rename_preview_and_version_detail(tmp_path):
         kb.id, source, logical_path="architecture/decision.md",
         source_uri="file:///original/decision.md"))
 
-    client = TestClient(create_app(store=store, artifact_root=tmp_path / "tasks"))
+    auth = configured_auth(store.database)
+    client = bearer_client(create_app(
+        store=store, auth=auth, artifact_root=tmp_path / "tasks"), auth)
     renamed = client.patch(f"/api/kbs/{kb.id}", json={"name": "  After  "})
     assert renamed.status_code == 200
     assert renamed.json() == {"id": kb.id, "name": "After", "created_at": created_at}
@@ -60,7 +63,9 @@ def test_kb_rename_preview_and_version_detail(tmp_path):
 def test_stage1_contract_returns_structured_not_found_and_validation_errors(tmp_path):
     store = KnowledgeStore(tmp_path / "kb.sqlite", loader=loader)
     kb = store.create_knowledge_base("KB")
-    client = TestClient(create_app(store=store, artifact_root=tmp_path / "tasks"))
+    auth = configured_auth(store.database)
+    client = bearer_client(create_app(
+        store=store, auth=auth, artifact_root=tmp_path / "tasks"), auth)
 
     invalid_name = client.patch(f"/api/kbs/{kb.id}", json={"name": " "})
     assert invalid_name.status_code == 422

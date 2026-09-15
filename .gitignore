@@ -28,6 +28,7 @@ my-docs/
 #Ignore mypy cache
 .mypy_cache/
 node_modules
+*.tsbuildinfo
 .idea
 .DS_Store
 .docusaurus
@@ -38,6 +39,7 @@ docs/build
 .langgraph-data/
 .next/
 package-lock.json
+!web/package-lock.json
 
 #Vim swp files
 *.swp
@@ -57,3 +59,4 @@ CURSOR_RULES.md
 # Local DeepResearch-KB runtime and private knowledge
 /.venv/
 /data/
+/output/playwright/

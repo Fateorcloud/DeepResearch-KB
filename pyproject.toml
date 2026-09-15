@@ -124,6 +124,7 @@ dependencies = [
     "pydantic>=2.11.5",
     "pydantic-core>=2.33.2",
     "pydantic-settings>=2.9.1",
+    "pwdlib[argon2]>=0.3.0",
     "pydyf>=0.11.0",
     "pymupdf>=1.26.0",
     "pypdf>=5.5.0",

@@ -16,6 +16,7 @@ from deepresearch_kb.models import Evidence
 from deepresearch_kb.services.research import ResearchService
 from deepresearch_kb.services.tasks import TaskService
 from deepresearch_kb.sufficiency import EvidenceRequirement
+from tests.deepresearch_kb.auth_support import bearer_client, configured_auth
 
 
 def _research_body(kb_id=None):
@@ -71,13 +72,16 @@ def test_http_research_composes_engine_contract_lifecycle_and_artifacts(tmp_path
     store = KnowledgeStore(tmp_path / "kb.sqlite")
     kb = store.create_knowledge_base("project")
     engine = ControlledEngine()
-    app = create_app(store=store, engine=engine, artifact_root=tmp_path / "tasks")
+    auth = configured_auth(store.database)
+    app = create_app(store=store, engine=engine, auth=auth,
+                     artifact_root=tmp_path / "tasks")
 
-    with TestClient(app) as client:
+    with bearer_client(app, auth) as client:
         response = client.post("/api/research", json=_research_body(kb.id))
         assert response.status_code == 200
         assert set(response.json()) == {"task_id"}
         task_id = response.json()["task_id"]
+        assert client.get("/api/research").json()[0]["id"] == task_id
         assert engine.started.wait(1)
 
         running = _wait_for_status(client, task_id, "running")
@@ -115,8 +119,11 @@ def test_http_research_composes_engine_contract_lifecycle_and_artifacts(tmp_path
 def test_http_rejects_invalid_evidence_requirement(tmp_path, change):
     body = _research_body()
     body.update(change)
-    client = TestClient(create_app(store=KnowledgeStore(tmp_path / "kb.sqlite"),
-                                   engine=AsyncMock(), artifact_root=tmp_path / "tasks"))
+    store = KnowledgeStore(tmp_path / "kb.sqlite")
+    auth = configured_auth(store.database)
+    client = bearer_client(create_app(
+        store=store, auth=auth, engine=AsyncMock(),
+        artifact_root=tmp_path / "tasks"), auth)
     response = client.post("/api/research", json=body)
     assert response.status_code == 422
     assert response.json()["detail"]["code"] == "invalid_request"
@@ -124,8 +131,11 @@ def test_http_rejects_invalid_evidence_requirement(tmp_path, change):
 
 def test_http_rejects_unknown_knowledge_base_before_scheduling(tmp_path):
     engine = AsyncMock()
-    client = TestClient(create_app(store=KnowledgeStore(tmp_path / "kb.sqlite"),
-                                   engine=engine, artifact_root=tmp_path / "tasks"))
+    store = KnowledgeStore(tmp_path / "kb.sqlite")
+    auth = configured_auth(store.database)
+    client = bearer_client(create_app(
+        store=store, auth=auth, engine=engine,
+        artifact_root=tmp_path / "tasks"), auth)
     response = client.post("/api/research", json=_research_body("missing"))
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "knowledge_base_not_found"
@@ -210,14 +220,16 @@ def test_http_provider_failure_does_not_expose_exception_or_server_path(tmp_path
     engine = ResearchEngine(store=store, quick_search=quick_search,
                             researcher_factory=lambda query: BrokenProvider())
     artifact_root = tmp_path / "private-tasks"
-    app = create_app(store=store, engine=engine, artifact_root=artifact_root)
+    auth = configured_auth(store.database)
+    app = create_app(store=store, engine=engine, auth=auth,
+                     artifact_root=artifact_root)
     body = _research_body()
     body.update({"query": "What is the storage decision?",
                  "required_claims": ["provider-supported claim"],
                  "required_source_types": ["external_web"],
                  "minimum_distinct_sources": 1,
                  "max_deep_calls": 0})
-    with TestClient(app) as client:
+    with bearer_client(app, auth) as client:
         task_id = client.post("/api/research", json=body).json()["task_id"]
         failed = _wait_for_status(client, task_id, "failed")
         serialized = json.dumps(failed)
