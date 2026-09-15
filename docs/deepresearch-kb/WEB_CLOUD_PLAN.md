@@ -93,6 +93,20 @@ manifest.json
 
 首版恢复只提供服务器 CLI，不提供公网网页一键覆盖数据库。
 
+### 4.4 三种入口与数据库边界
+
+| 入口 | 连接对象 | 可写数据 | 不应做的事 |
+|---|---|---|---|
+| Cloud Web | 云端 API → 云端 `kb.sqlite` | KB、文档版本、Research task 请求 | 直接访问 SQLite 文件 |
+| Local Control Web | loopback companion → 云端 API | 扫描本地目录、上传原文件、请求备份 | 上传/覆盖数据库，建立双主同步 |
+| MCP | 应用 Service Layer | 复用云端或明确配置的单一 `KnowledgeStore` | 创建 MCP 专属库或自行复制 Research 逻辑 |
+
+云端持久化分为三类：`kb.sqlite` 是唯一知识库权威；`tasks/` 保存 Research artifacts；
+`backups/` 保存通过 online backup 生成的下载副本。Local Control 的可选 `local.sqlite`
+仅服务本地 `ingest-dir` 验证，不是云端副本，也不参与合并。MCP 部署在云端时与 Web
+共享同一 Service Layer 和云端数据库；本地运行 MCP 时必须显式指定一个数据库路径，
+不提供隐式的本地/云端双主关系。
+
 ## 5. 单用户认证
 
 - 一个固定管理员账号，无注册入口；
@@ -104,6 +118,9 @@ manifest.json
 - 登录限速，失败响应不暴露账号是否存在；
 - provider key、session secret 和 token 仅存在服务器环境变量；
 - 除登录、静态资源和健康检查外，所有 route 均需认证。
+
+Local Control 的 `DRKB_CLI_TOKEN` 来自云端 Web“设置 → CLI / Local Control token”创建动作，
+明文只展示一次；它不是登录密码，也不应写入仓库或公开命令历史。
 
 ## 6. 后端 product contract
 
