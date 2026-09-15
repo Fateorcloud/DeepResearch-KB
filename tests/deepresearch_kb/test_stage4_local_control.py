@@ -1,3 +1,6 @@
+import asyncio
+import json
+import os
 import sqlite3
 from pathlib import Path
 
@@ -7,8 +10,10 @@ from fastapi.testclient import TestClient
 from deepresearch_kb.api import create_app
 from deepresearch_kb.knowledge import KnowledgeStore
 from deepresearch_kb.local_control import (
-    AllowedRoot, CloudClient, LocalControlError, LocalControlService,
+    AllowedRoot, CloudClient, LocalConfigStore, LocalControlError, LocalControlService,
     create_local_app)
+from deepresearch_kb.services.research import ResearchService
+from deepresearch_kb.services.tasks import TaskService
 from tests.deepresearch_kb.auth_support import configured_auth
 
 
@@ -140,3 +145,203 @@ def test_cloud_errors_are_structured_and_do_not_expose_token(tmp_path):
     assert body == {
         "imported": 0, "unchanged": 0, "failed": 0,
         "skipped": 0, "errors": []}
+
+
+def test_local_research_works_without_cloud_configuration(tmp_path):
+    root = tmp_path / "allowed"
+    root.mkdir()
+    store = KnowledgeStore(tmp_path / "local.sqlite", loader=loader)
+    kb = store.create_knowledge_base("Local only")
+
+    observed = {}
+
+    class LocalEngine:
+        async def run(self, query, *, knowledge_base_ids, requirements, output_dir,
+                      as_of=None, max_deep_calls=1):
+            observed.update({
+                "query": query,
+                "knowledge_base_ids": knowledge_base_ids,
+                "requirements": requirements,
+                "as_of": as_of,
+                "max_deep_calls": max_deep_calls,
+            })
+            output_dir.mkdir(parents=True, exist_ok=False)
+            (output_dir / "report.md").write_text(f"# {query}", encoding="utf-8")
+            for name, value in (("sources.json", []), ("trace.json", []),
+                                ("run.json", {"status": "completed"})):
+                (output_dir / name).write_text(json.dumps(value), encoding="utf-8")
+            return {"metrics": {"status": "completed"}}
+
+    service = LocalControlService(
+        AllowedRoot(root), CloudClient(None, None), store,
+        TaskService(ResearchService(LocalEngine()), tmp_path / "tasks"))
+    app = create_local_app(
+        root=root, server=None, token=None, service=service,
+        allowed_hosts={"testserver", "testclient"}, control_token="local-only-token")
+    client = TestClient(app)
+    response = client.post(
+        "/api/local/research",
+        json={
+            "query": "本地问题", "knowledge_base_ids": [kb.id],
+            "required_claims": ["回答本地事实"],
+            "required_source_types": ["local_import"],
+            "minimum_distinct_sources": 2,
+            "require_current_version": True,
+            "as_of": "2026-09-15T12:00:00+08:00",
+            "max_deep_calls": 3,
+        },
+        headers={"X-Local-Control-Token": "local-only-token"})
+    assert response.status_code == 200
+    task_id = response.json()["task_id"]
+    for _ in range(20):
+        status = client.get(f"/api/local/research/{task_id}").json()
+        if status["status"] == "completed":
+            break
+        asyncio.run(asyncio.sleep(0.01))
+    assert status["status"] == "completed"
+    assert client.get(f"/api/local/research/{task_id}/report").text == "# 本地问题"
+    assert client.get(f"/api/local/research/{task_id}/sources").json() == []
+    assert client.get(f"/api/local/research/{task_id}/trace").json() == []
+    assert client.get(f"/api/local/research/{task_id}/metrics").json() == {
+        "status": "completed"}
+    assert observed["knowledge_base_ids"] == (kb.id,)
+    requirement = observed["requirements"]
+    assert requirement.required_claims == ("回答本地事实",)
+    assert requirement.required_source_types == ("local_import",)
+    assert requirement.minimum_distinct_sources == 2
+    assert requirement.require_current_version is True
+    assert observed["as_of"].isoformat() == "2026-09-15T12:00:00+08:00"
+    assert observed["max_deep_calls"] == 3
+
+    invalid_kb = client.post(
+        "/api/local/research",
+        json={"query": "本地问题", "knowledge_base_ids": ["missing"]},
+        headers={"X-Local-Control-Token": "local-only-token"})
+    assert invalid_kb.status_code == 404
+    assert invalid_kb.json()["detail"]["code"] == "local_knowledge_base_not_found"
+
+
+def test_explicit_pull_imports_cloud_latest_version_to_local(tmp_path):
+    client, cloud_store, cloud_kb, local_kb, root, _ = stage4_clients(tmp_path)
+    source = root / "remote.md"
+    source.write_text("cloud v1", encoding="utf-8")
+    asyncio.run(cloud_store.ingest(
+        cloud_kb, source, logical_path="docs/remote.md",
+        source_type="web_upload", source_uri="upload://remote"))
+
+    pulled = mutate(client, "/api/local/pull", {
+        "cloud_kb_id": cloud_kb, "local_kb_id": local_kb})
+    assert pulled.status_code == 200
+    assert pulled.json()["imported"] == 1
+
+    local_database = client.get("/api/local/status").json()["local_database"]
+    local_store = KnowledgeStore(local_database, loader=loader)
+    versions = local_store.list_versions(local_kb, "docs/remote.md")
+    assert len(versions) == 1
+    assert versions[0].source_type == "web_upload"
+    assert versions[0].source_uri.startswith("cloud://")
+
+    unchanged = mutate(client, "/api/local/pull", {
+        "cloud_kb_id": cloud_kb, "local_kb_id": local_kb})
+    assert unchanged.json()["unchanged"] == 1
+
+
+def test_pull_reports_conflict_without_overwriting_local_version(tmp_path):
+    client, cloud_store, cloud_kb, local_kb, root, _ = stage4_clients(tmp_path)
+    cloud_source = root / "cloud.md"
+    cloud_source.write_text("cloud content", encoding="utf-8")
+    asyncio.run(cloud_store.ingest(
+        cloud_kb, cloud_source, logical_path="shared.md",
+        source_type="web_upload", source_uri="upload://shared"))
+    local_database = client.get("/api/local/status").json()["local_database"]
+    local_store = KnowledgeStore(local_database, loader=loader)
+    local_source = root / "local.md"
+    local_source.write_text("local content", encoding="utf-8")
+    asyncio.run(local_store.ingest(
+        local_kb, local_source, logical_path="shared.md",
+        source_type="local_import"))
+
+    result = mutate(client, "/api/local/pull", {
+        "cloud_kb_id": cloud_kb, "local_kb_id": local_kb}).json()
+    assert result["conflicts"] == 1
+    assert result["imported"] == 0
+    assert result["conflict_items"][0]["logical_path"] == "shared.md"
+    versions = local_store.list_versions(local_kb, "shared.md")
+    assert len(versions) == 1
+    assert versions[0].source_uri.startswith("file:")
+
+
+def test_explicit_kb_push_tracks_baseline_and_adds_cloud_versions(tmp_path):
+    client, cloud_store, cloud_kb, local_kb, root, _ = stage4_clients(tmp_path)
+    local_store = KnowledgeStore(
+        client.get("/api/local/status").json()["local_database"], loader=loader)
+    source = root / "local.md"
+    source.write_text("local v1", encoding="utf-8")
+    asyncio.run(local_store.ingest(
+        local_kb, source, logical_path="docs/local.md", source_type="local_import"))
+
+    first = mutate(client, "/api/local/sync/push", {
+        "cloud_kb_id": cloud_kb, "local_kb_id": local_kb}).json()
+    assert first["imported"] == 1
+    assert len(cloud_store.list_versions(cloud_kb, "docs/local.md")) == 1
+
+    source.write_text("local v2", encoding="utf-8")
+    asyncio.run(local_store.ingest(
+        local_kb, source, logical_path="docs/local.md", source_type="local_import"))
+    second = mutate(client, "/api/local/sync/push", {
+        "cloud_kb_id": cloud_kb, "local_kb_id": local_kb}).json()
+    assert second["imported"] == 1
+    assert [item.version for item in cloud_store.list_versions(
+        cloud_kb, "docs/local.md")] == [1, 2]
+
+    unchanged = mutate(client, "/api/local/sync/push", {
+        "cloud_kb_id": cloud_kb, "local_kb_id": local_kb}).json()
+    assert unchanged["unchanged"] == 1
+
+
+def test_explicit_kb_push_reports_divergence_without_overwriting_cloud(tmp_path):
+    client, cloud_store, cloud_kb, local_kb, root, _ = stage4_clients(tmp_path)
+    local_store = KnowledgeStore(
+        client.get("/api/local/status").json()["local_database"], loader=loader)
+    local_source = root / "local.md"
+    local_source.write_text("shared v1", encoding="utf-8")
+    asyncio.run(local_store.ingest(
+        local_kb, local_source, logical_path="shared.md", source_type="local_import"))
+    mutate(client, "/api/local/sync/push", {
+        "cloud_kb_id": cloud_kb, "local_kb_id": local_kb})
+
+    local_source.write_text("local v2", encoding="utf-8")
+    asyncio.run(local_store.ingest(
+        local_kb, local_source, logical_path="shared.md", source_type="local_import"))
+    cloud_source = root / "cloud.md"
+    cloud_source.write_text("cloud v2", encoding="utf-8")
+    asyncio.run(cloud_store.ingest(
+        cloud_kb, cloud_source, logical_path="shared.md", source_type="web_upload",
+        source_uri="upload://shared.md"))
+    cloud_hash = cloud_store.list_versions(cloud_kb, "shared.md")[-1].content_hash
+
+    result = mutate(client, "/api/local/sync/push", {
+        "cloud_kb_id": cloud_kb, "local_kb_id": local_kb}).json()
+    assert result["conflicts"] == 1
+    assert result["imported"] == 0
+    assert result["conflict_items"][0]["reason"] == "local_and_cloud_versions_differ"
+    assert cloud_store.list_versions(cloud_kb, "shared.md")[-1].content_hash == cloud_hash
+
+
+def test_local_kb_create_and_restricted_cloud_config_storage(tmp_path):
+    client, _, _, _, _, _ = stage4_clients(tmp_path)
+    created = client.post(
+        "/api/local/kbs", json={"name": "Created locally"},
+        headers={"X-Local-Control-Token": "stage4-control-token"})
+    assert created.status_code == 200
+    assert created.json()["name"] == "Created locally"
+    assert any(item["id"] == created.json()["id"]
+               for item in client.get("/api/local/kbs").json())
+
+    config = LocalConfigStore(tmp_path / "private" / "cloud.json")
+    config.save("https://research.example.com", "drkb_secret")
+    assert config.load() == ("https://research.example.com", "drkb_secret")
+    if os.name != "nt":
+        assert config.path.stat().st_mode & 0o777 == 0o600
+    config.clear()
+    assert config.load() == (None, None)

@@ -10,7 +10,7 @@ from typing import Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .engine import ResearchEngine
@@ -370,6 +370,18 @@ def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=N
         except (KeyError, ValueError):
             raise HTTPException(404, detail=_error(
                 "document_version_not_found", "Document version does not exist"))
+
+    @app.get("/api/kbs/{kb_id}/documents/{document_id}/versions/{version}/raw")
+    def raw_version(kb_id, document_id, version: int):
+        try:
+            item = knowledge.version(kb_id, document_id, version)
+            raw = store.raw_document_version(document_id, version)
+        except (KeyError, ValueError):
+            raise HTTPException(404, detail=_error(
+                "document_version_not_found", "Document version does not exist"))
+        return Response(
+            raw, media_type="application/octet-stream",
+            headers={"X-Content-Hash": item.content_hash})
 
     @app.post("/api/research")
     async def create_research(body: ResearchCreate):

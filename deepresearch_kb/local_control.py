@@ -1,14 +1,17 @@
-"""Loopback-only local control companion for cloud DeepResearch-KB."""
+"""Loopback-only local-first control companion for DeepResearch-KB."""
 
 import asyncio
+import json
 import os
 import secrets
 import tempfile
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from importlib.resources import files
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlsplit
 
 import httpx
@@ -51,6 +54,18 @@ class DirectoryInput(BaseModel):
         return value.strip()
 
 
+class KnowledgeBaseInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1)
+
+    @field_validator("name")
+    @classmethod
+    def non_blank_name(cls, value):
+        if not value.strip():
+            raise ValueError("name must not be blank")
+        return value.strip()
+
+
 class TransferInput(DirectoryInput):
     kb_id: str = Field(min_length=1)
 
@@ -61,13 +76,106 @@ class ResearchInput(BaseModel):
     query: str = Field(min_length=1)
     knowledge_base_ids: list[str] = Field(min_length=1)
     required_claims: list[str] = Field(default_factory=list)
-    max_deep_calls: int = Field(default=1, ge=0, le=20)
+    required_source_types: list[Literal[
+        "local_import", "web_upload", "external_web"]] = Field(default_factory=list)
+    minimum_distinct_sources: int = Field(default=1, ge=1, strict=True)
+    require_current_version: bool = False
+    as_of: datetime | None = None
+    max_deep_calls: int = Field(default=1, ge=0, le=20, strict=True)
+
+    @field_validator("query")
+    @classmethod
+    def non_blank_query(cls, value):
+        if not value.strip():
+            raise ValueError("query must not be blank")
+        return value.strip()
+
+    @field_validator("knowledge_base_ids")
+    @classmethod
+    def valid_kb_ids(cls, value):
+        if any(not item.strip() for item in value):
+            raise ValueError("knowledge_base_ids must not contain blank IDs")
+        if len(set(value)) != len(value):
+            raise ValueError("knowledge_base_ids must not contain duplicates")
+        return value
+
+    @field_validator("required_claims")
+    @classmethod
+    def non_blank_claims(cls, value):
+        if any(not claim.strip() for claim in value):
+            raise ValueError("required_claims must not contain blank claims")
+        return [claim.strip() for claim in value]
+
+    @field_validator("required_source_types")
+    @classmethod
+    def unique_source_types(cls, value):
+        if len(set(value)) != len(value):
+            raise ValueError("required_source_types must not contain duplicates")
+        return value
+
+    @field_validator("as_of")
+    @classmethod
+    def timezone_aware_as_of(cls, value):
+        if value is not None and (value.tzinfo is None or value.utcoffset() is None):
+            raise ValueError("as_of must include a timezone")
+        return value
 
 
 class CloudInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     server: str = Field(min_length=1)
     token: str = Field(min_length=1)
+
+
+class PullInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    cloud_kb_id: str = Field(min_length=1)
+    local_kb_id: str = Field(min_length=1)
+
+
+class SyncLedger:
+    """Records last common content hashes for explicit local/cloud transfers."""
+
+    def __init__(self, path):
+        self.path = Path(path).resolve()
+
+    def _load(self):
+        if not self.path.exists():
+            return {}
+        try:
+            value = json.loads(self.path.read_text(encoding="utf-8"))
+            return value if isinstance(value, dict) else {}
+        except (OSError, ValueError):
+            return {}
+
+    @staticmethod
+    def _key(server, local_kb_id, cloud_kb_id, logical_path):
+        return "\n".join((server, local_kb_id, cloud_kb_id, logical_path))
+
+    def get(self, server, local_kb_id, cloud_kb_id, logical_path):
+        return self._load().get(self._key(
+            server, local_kb_id, cloud_kb_id, logical_path))
+
+    def set(self, server, local_kb_id, cloud_kb_id, logical_path, digest):
+        data = self._load()
+        data[self._key(server, local_kb_id, cloud_kb_id, logical_path)] = digest
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        handle = tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", prefix=".sync-", suffix=".tmp",
+            dir=self.path.parent, delete=False)
+        staging = Path(handle.name)
+        try:
+            json.dump(data, handle, ensure_ascii=False, sort_keys=True)
+            handle.flush()
+            os.fsync(handle.fileno())
+            handle.close()
+            os.chmod(staging, 0o600)
+            os.replace(staging, self.path)
+            os.chmod(self.path, 0o600)
+        finally:
+            if not handle.closed:
+                handle.close()
+            staging.unlink(missing_ok=True)
 
 
 class AllowedRoot:
@@ -126,10 +234,26 @@ class CloudClient:
 
     def configure(self, server, token):
         replacement = CloudClient(server, token)
-        old = self._client
+        try:
+            replacement.knowledge_bases()
+        except Exception:
+            replacement.close()
+            raise
+        old, old_owned = self._client, self._owns_client
         self.server, self.token_configured = replacement.server, replacement.token_configured
-        self._headers, self._client, self._owns_client = replacement._headers, replacement._client, True
-        if old is not None:
+        self._headers = replacement._headers
+        self._client, self._owns_client = replacement._client, replacement._owns_client
+        if old_owned and old is not None:
+            old.close()
+
+    def clear(self):
+        old, old_owned = self._client, self._owns_client
+        self.server = None
+        self.token_configured = False
+        self._headers = {}
+        self._client = None
+        self._owns_client = False
+        if old_owned and old is not None:
             old.close()
 
     def _request(self, method, path, **kwargs):
@@ -158,6 +282,24 @@ class CloudClient:
 
     def knowledge_bases(self):
         return self._request("GET", "/api/kbs").json()
+
+    def documents(self, kb_id):
+        return self._request("GET", f"/api/kbs/{kb_id}/documents").json()
+
+    def versions(self, kb_id, document_id):
+        return self._request(
+            "GET", f"/api/kbs/{kb_id}/documents/{document_id}/versions").json()
+
+    def raw_version(self, kb_id, document_id, version):
+        return self._request(
+            "GET", f"/api/kbs/{kb_id}/documents/{document_id}/versions/{version}/raw")
+
+    def upload(self, kb_id, logical_path, raw):
+        filename = Path(logical_path).name
+        return self._request(
+            "POST", f"/api/kbs/{kb_id}/documents",
+            data={"logical_path": logical_path},
+            files={"file": (filename, raw, "application/octet-stream")}).json()
 
     def push(self, root, kb_id):
         if self._client is None:
@@ -212,18 +354,61 @@ class _AuthorizedClient:
         return self.client.post(path, headers=headers, **kwargs)
 
 
+class LocalConfigStore:
+    """Permission-restricted local cloud connection settings."""
+
+    def __init__(self, path):
+        self.path = Path(path).resolve()
+
+    def load(self):
+        if not self.path.exists():
+            return None, None
+        try:
+            data = json.loads(self.path.read_text(encoding="utf-8"))
+            server, token = data.get("server"), data.get("token")
+            return (server, token) if isinstance(server, str) and isinstance(token, str) else (None, None)
+        except (OSError, ValueError):
+            return None, None
+
+    def save(self, server, token):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        handle = tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", prefix=".cloud-", suffix=".tmp",
+            dir=self.path.parent, delete=False)
+        staging = Path(handle.name)
+        try:
+            json.dump({"server": server, "token": token}, handle)
+            handle.flush()
+            os.fsync(handle.fileno())
+            handle.close()
+            os.chmod(staging, 0o600)
+            os.replace(staging, self.path)
+            os.chmod(self.path, 0o600)
+        finally:
+            if not handle.closed:
+                handle.close()
+            staging.unlink(missing_ok=True)
+
+    def clear(self):
+        self.path.unlink(missing_ok=True)
+
+
 @dataclass
 class LocalControlService:
     allowed: AllowedRoot
     cloud: CloudClient
     store: KnowledgeStore
     tasks: TaskService | None = None
+    config: LocalConfigStore | None = None
+    sync: SyncLedger | None = None
 
     def __post_init__(self):
         if self.tasks is None:
             self.tasks = TaskService(
                 ResearchService(ResearchEngine(store=self.store)),
                 self.store.database.with_suffix(".tasks"))
+        if self.sync is None:
+            self.sync = SyncLedger(self.store.database.with_suffix(".sync.json"))
 
     def scan(self, directory):
         root = self.allowed.directory(directory)
@@ -257,6 +442,127 @@ class LocalControlService:
             "size_bytes": path.stat().st_size,
         }
 
+    def _cloud_documents(self, cloud_kb_id):
+        result = {}
+        for document in self.cloud.documents(cloud_kb_id):
+            versions = self.cloud.versions(cloud_kb_id, document["id"])
+            if versions:
+                result[document["logical_path"]] = (document, versions[-1])
+        return result
+
+    def push_knowledge_base(self, local_kb_id, cloud_kb_id):
+        known = {item.id for item in self.store.list_knowledge_bases()}
+        if local_kb_id not in known:
+            raise LocalControlError(
+                "local_knowledge_base_not_found", "Local knowledge base does not exist", 404)
+        cloud = self._cloud_documents(cloud_kb_id)
+        result = {
+            "imported": 0, "unchanged": 0, "conflicts": 0,
+            "failed": 0, "errors": [], "conflict_items": []}
+        for document in self.store.list_documents(local_kb_id):
+            logical_path = document["logical_path"]
+            try:
+                local = self.store.list_versions_by_document(
+                    local_kb_id, document["id"])[-1]
+                remote = cloud.get(logical_path)
+                cloud_hash = remote[1]["content_hash"] if remote else None
+                baseline = self.sync.get(
+                    self.cloud.server, local_kb_id, cloud_kb_id, logical_path)
+                if cloud_hash == local.content_hash:
+                    result["unchanged"] += 1
+                    self.sync.set(
+                        self.cloud.server, local_kb_id, cloud_kb_id,
+                        logical_path, local.content_hash)
+                    continue
+                if cloud_hash is not None and baseline != cloud_hash:
+                    reason = ("cloud_changed_pull_recommended"
+                              if baseline == local.content_hash
+                              else "local_and_cloud_versions_differ")
+                    result["conflicts"] += 1
+                    result["conflict_items"].append({
+                        "logical_path": logical_path,
+                        "local_hash": local.content_hash,
+                        "cloud_hash": cloud_hash,
+                        "reason": reason,
+                    })
+                    continue
+                raw = self.store.raw_document_version(
+                    document["id"], local.version)
+                uploaded = self.cloud.upload(cloud_kb_id, logical_path, raw)
+                self.sync.set(
+                    self.cloud.server, local_kb_id, cloud_kb_id,
+                    logical_path, uploaded["content_hash"])
+                result["imported"] += 1
+            except Exception as exc:
+                result["failed"] += 1
+                result["errors"].append({
+                    "logical_path": logical_path,
+                    "error_type": type(exc).__name__})
+        return result
+
+    async def pull(self, cloud_kb_id, local_kb_id):
+        known = {item.id for item in self.store.list_knowledge_bases()}
+        if local_kb_id not in known:
+            raise LocalControlError(
+                "local_knowledge_base_not_found", "Local knowledge base does not exist", 404)
+        result = {
+            "imported": 0, "unchanged": 0, "conflicts": 0,
+            "failed": 0, "errors": [], "conflict_items": []}
+        for document in self.cloud.documents(cloud_kb_id):
+            try:
+                versions = self.cloud.versions(cloud_kb_id, document["id"])
+                latest = versions[-1]
+                logical_path = document["logical_path"]
+                local_versions = self.store.list_versions(local_kb_id, logical_path)
+                baseline = self.sync.get(
+                    self.cloud.server, local_kb_id, cloud_kb_id, logical_path)
+                if local_versions and local_versions[-1].content_hash == latest["content_hash"]:
+                    result["unchanged"] += 1
+                    self.sync.set(
+                        self.cloud.server, local_kb_id, cloud_kb_id,
+                        logical_path, latest["content_hash"])
+                    continue
+                if (local_versions
+                        and baseline != local_versions[-1].content_hash):
+                    reason = ("local_changed_push_recommended"
+                              if baseline == latest["content_hash"]
+                              else "local_and_cloud_versions_differ")
+                    result["conflicts"] += 1
+                    result["conflict_items"].append({
+                        "logical_path": logical_path,
+                        "local_hash": local_versions[-1].content_hash,
+                        "cloud_hash": latest["content_hash"],
+                        "reason": reason,
+                    })
+                    continue
+                response = self.cloud.raw_version(
+                    cloud_kb_id, document["id"], latest["version"])
+                suffix = Path(logical_path).suffix
+                handle = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+                staged = Path(handle.name)
+                try:
+                    handle.write(response.content)
+                    handle.close()
+                    await self.store.ingest(
+                        local_kb_id, staged, logical_path=logical_path,
+                        source_type=latest["source_type"],
+                        source_uri=f"cloud://{cloud_kb_id}/{document['id']}/v{latest['version']}",
+                        updated_at=datetime.fromisoformat(latest["updated_at"]))
+                finally:
+                    if not handle.closed:
+                        handle.close()
+                    staged.unlink(missing_ok=True)
+                result["imported"] += 1
+                self.sync.set(
+                    self.cloud.server, local_kb_id, cloud_kb_id,
+                    logical_path, latest["content_hash"])
+            except Exception as exc:
+                result["failed"] += 1
+                result["errors"].append({
+                    "logical_path": document.get("logical_path", "unknown"),
+                    "error_type": type(exc).__name__})
+        return result
+
 
 def _asset(name):
     return files("deepresearch_kb.local_web").joinpath(name).read_text(encoding="utf-8")
@@ -265,13 +571,26 @@ def _asset(name):
 def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
                      service=None, allowed_hosts=None, control_token=None):
     allowed = AllowedRoot(root)
+    config = LocalConfigStore(Path(database).with_suffix(".cloud.json"))
+    if service is None and not server:
+        saved_server, saved_token = config.load()
+        server, token = saved_server, saved_token
     cloud = service.cloud if service else CloudClient(server, token)
     if service is None:
         store = KnowledgeStore(database)
-        service = LocalControlService(allowed, cloud, store)
+        service = LocalControlService(allowed, cloud, store, config=config)
     allowed_hosts = set(allowed_hosts or LOOPBACK_HOSTS)
     control_token = control_token or secrets.token_urlsafe(32)
-    app = FastAPI(title="DeepResearch-KB Local Control", docs_url=None, redoc_url=None)
+    @asynccontextmanager
+    async def lifespan(_app):
+        try:
+            yield
+        finally:
+            cloud.close()
+
+    app = FastAPI(
+        title="DeepResearch-KB Local Control", docs_url=None, redoc_url=None,
+        lifespan=lifespan)
 
     @app.middleware("http")
     async def loopback_boundary(request, call_next):
@@ -337,6 +656,10 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
     def local_knowledge_bases():
         return [asdict(item) for item in service.store.list_knowledge_bases()]
 
+    @app.post("/api/local/kbs")
+    def create_local_knowledge_base(body: KnowledgeBaseInput):
+        return asdict(service.store.create_knowledge_base(body.name))
+
     @app.get("/api/local/cloud-kbs")
     async def cloud_knowledge_bases():
         return await asyncio.to_thread(service.cloud.knowledge_bases)
@@ -347,7 +670,16 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
             service.cloud.configure(body.server, body.token)
         except (ValueError, LocalControlError):
             raise LocalControlError("invalid_cloud_config", "Cloud connection is invalid") from None
+        if service.config:
+            service.config.save(service.cloud.server, body.token)
         return {"configured": True, "server": service.cloud.server}
+
+    @app.delete("/api/local/cloud")
+    def disconnect_cloud():
+        service.cloud.clear()
+        if service.config:
+            service.config.clear()
+        return {"configured": False}
 
     @app.post("/api/local/scan")
     async def scan_directory(body: DirectoryInput):
@@ -365,17 +697,34 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
     async def download_backup():
         return await asyncio.to_thread(service.download_backup)
 
+    @app.post("/api/local/pull")
+    async def pull_cloud(body: PullInput):
+        return await service.pull(body.cloud_kb_id, body.local_kb_id)
+
+    @app.post("/api/local/sync/push")
+    async def push_local_knowledge_base(body: PullInput):
+        return await asyncio.to_thread(
+            service.push_knowledge_base, body.local_kb_id, body.cloud_kb_id)
+
     @app.post("/api/local/research")
-    def local_research(body: ResearchInput):
-        requirements = EvidenceRequirement(
-            "local-web", tuple(body.required_claims or [body.query]))
+    async def local_research(body: ResearchInput):
+        known_ids = {kb.id for kb in service.store.list_knowledge_bases()}
+        if any(kb_id not in known_ids for kb_id in body.knowledge_base_ids):
+            raise LocalControlError(
+                "local_knowledge_base_not_found",
+                "One or more local knowledge bases do not exist", 404)
         try:
+            requirements = EvidenceRequirement(
+                "local-web", tuple(body.required_claims or [body.query]),
+                tuple(body.required_source_types), body.minimum_distinct_sources,
+                body.require_current_version)
             task = service.tasks.create(
                 body.query, body.knowledge_base_ids,
-                requirements=requirements, max_deep_calls=body.max_deep_calls)
-        except (ValueError, KeyError):
+                requirements=requirements, as_of=body.as_of,
+                max_deep_calls=body.max_deep_calls)
+        except ValueError:
             raise LocalControlError(
-                "local_research_invalid", "Local research request is invalid") from None
+                "invalid_requirement", "Evidence requirement is invalid", 422) from None
         return {"task_id": task.id, "status": task.status}
 
     @app.get("/api/local/research/{task_id}")
@@ -391,20 +740,28 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
             "error": asdict(task.error) if task.error else None,
         }
 
-    @app.get("/api/local/research/{task_id}/report")
-    def local_research_report(task_id: str):
+    def local_research_artifact(task_id, name):
         try:
             task = service.tasks.get(task_id)
         except KeyError:
             raise LocalControlError("task_not_found", "Research task does not exist", 404)
         if task.status != "completed" or not task.artifact_path:
             raise LocalControlError("task_not_completed", "Research task is not completed", 409)
-        report = Path(task.artifact_path) / "report.md"
-        return Response(report.read_text(encoding="utf-8"), media_type="text/markdown")
+        path = Path(task.artifact_path) / name
+        if not path.is_file():
+            raise LocalControlError(
+                "artifact_not_found", "Research artifact is unavailable", 404)
+        if path.suffix == ".json":
+            return json.loads(path.read_text(encoding="utf-8"))
+        return Response(path.read_text(encoding="utf-8"), media_type="text/markdown")
 
-    @app.on_event("shutdown")
-    def close_cloud():
-        cloud.close()
+    for route_name, artifact_name in (
+            ("sources", "sources.json"), ("trace", "trace.json"),
+            ("metrics", "run.json")):
+        app.get(f"/api/local/research/{{task_id}}/{route_name}")(
+            lambda task_id, name=artifact_name: local_research_artifact(task_id, name))
+    app.get("/api/local/research/{task_id}/report")(
+        lambda task_id: local_research_artifact(task_id, "report.md"))
 
     return app
 

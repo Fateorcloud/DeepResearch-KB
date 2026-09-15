@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#f6f8fa" />
     <meta name="local-control-token" content="__CONTROL_TOKEN__" />
     <title>DeepResearch-KB Local Control</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f2328'/%3E%3Ctext x='16' y='21' text-anchor='middle' font-family='Arial' font-size='12' font-weight='700' fill='white'%3ELC%3C/text%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./local-control.css" />
   </head>
   <body>
@@ -18,32 +19,66 @@
       <section class="hero">
         <div>
           <span class="eyebrow">LOCAL CONTROL</span>
-          <h1>把本地文件推向唯一的云端知识库。</h1>
-          <p>扫描受允许目录，上传原文件并下载一致性备份。本地不会与云端维护双主数据库。</p>
+          <h1>在本地知识库研究，需要时再连接云端。</h1>
+          <p>本地扫描、摄取与 Research 默认可用；云端连接只在主动 push、pull 或备份时使用。</p>
         </div>
         <div class="authority-card">
-          <span>AUTHORITATIVE STORE</span>
-          <strong>Cloud SQLite</strong>
-          <small>本地动作是 push 或 backup，不是 sync。</small>
+          <span>CURRENT WORKING COPY</span>
+          <strong>Local SQLite</strong>
+          <small>云端是可选工作副本，数据流向由你明确触发。</small>
         </div>
       </section>
 
       <section class="status-grid" aria-label="连接状态">
         <article><span>允许目录</span><strong id="allowed-root">正在读取…</strong></article>
         <article><span>云端服务</span><strong id="cloud-server">正在连接…</strong></article>
-        <article><span>CLI token</span><strong id="token-status">正在检查…</strong></article>
+        <article><span>云端 token</span><strong id="token-status">正在检查…</strong></article>
       </section>
 
       <section class="panel cloud-settings">
         <span class="eyebrow">OPTIONAL CLOUD CONNECTION</span>
         <h2>云端连接（可选）</h2>
-        <p>不配置云端也可以使用本地 KB 和 Research。填写后可启用显式 push 与备份。</p>
-        <label>云端地址<input id="cloud-server-input" placeholder="https://research.example.com" /></label>
-        <label>CLI token<input id="cloud-token-input" type="password" placeholder="只保存在当前 Local Control 进程" /></label>
-        <button id="cloud-save" class="button secondary">保存云端连接</button>
+        <p>不配置云端也可以使用本地 KB 和 Research。填写后可启用显式 push、pull 与备份。</p>
+        <form id="cloud-form">
+          <label>云端地址<input id="cloud-server-input" type="url" placeholder="https://research.example.com" /></label>
+          <label>CLI token<input id="cloud-token-input" type="password" autocomplete="off" placeholder="保存到本地权限受限配置，不会回显" /></label>
+          <div class="inline-actions"><button id="cloud-save" type="submit" class="button secondary">保存并验证</button><button id="cloud-clear" type="button" class="button secondary">断开云端</button></div>
+        </form>
       </section>
 
       <div id="alert" class="alert" role="status" hidden></div>
+
+      <section class="workbench local-research">
+        <header>
+          <div><span class="eyebrow">LOCAL RESEARCH</span><h2>在本地知识库上研究</h2></div>
+          <span class="step-label">本地数据库 · 无云端 token 也可用</span>
+        </header>
+        <div class="form-grid">
+          <label>研究问题<textarea id="research-query" rows="5" placeholder="描述需要本地知识支持的问题"></textarea></label>
+          <div class="local-kb-control"><label>本地知识库<select id="local-kb"><option value="">正在加载…</option></select><small>Research 直接使用本地工作副本。</small></label><label>新建本地知识库<div class="inline-form"><input id="local-kb-name" placeholder="知识库名称" /><button id="local-kb-create" class="button secondary">新建</button></div></label></div>
+        </div>
+        <details class="evidence-contract">
+          <summary>Evidence Contract（高级设置）</summary>
+          <div class="evidence-grid">
+            <label class="wide">报告必须回答什么？<textarea id="required-claims" rows="3" placeholder="每行一个必须回答的要点；留空时使用研究问题"></textarea></label>
+            <fieldset><legend>允许的来源类型</legend><label><input type="checkbox" name="source-type" value="local_import" />本地导入</label><label><input type="checkbox" name="source-type" value="web_upload" />Web 上传</label><label><input type="checkbox" name="source-type" value="external_web" />外部 Web</label></fieldset>
+            <label>最少独立来源数<input id="minimum-sources" type="number" min="1" value="1" /></label>
+            <label>最大 Deep 调用数<input id="max-deep-calls" type="number" min="0" max="20" value="1" /></label>
+            <label>截至时间（可选）<input id="research-as-of" type="datetime-local" /></label>
+            <label class="check-label"><input id="require-current" type="checkbox" />只允许知识库当前版本</label>
+          </div>
+        </details>
+        <div class="actions"><button id="research" class="button primary">开始本地 Research</button></div>
+        <div id="research-result" class="research-result">
+          <span>尚未提交研究任务</span>
+          <pre id="research-report" hidden></pre>
+          <div id="research-artifacts" class="artifact-grid" hidden>
+            <details><summary>Sources</summary><pre id="research-sources"></pre></details>
+            <details><summary>Route Trace</summary><pre id="research-trace"></pre></details>
+            <details><summary>Metrics</summary><pre id="research-metrics"></pre></details>
+          </div>
+        </div>
+      </section>
 
       <section class="workbench">
         <header>
@@ -69,15 +104,22 @@
         </div>
       </section>
 
+      <section class="workbench sync-workbench">
+        <header>
+          <div><span class="eyebrow">WORKING COPY TRANSFER</span><h2>本地 KB ↔ 云端 KB</h2></div>
+          <span class="step-label">基于最后共同 content hash 检查冲突</span>
+        </header>
+        <p class="sync-copy">使用上方已选择的本地知识库和云端知识库。传输只处理当前版本；双方都变化时停止该文档并报告冲突。</p>
+        <div class="actions"><button id="sync-push" class="button primary">本地 KB 推送到云端</button><button id="sync-pull" class="button secondary">云端 KB 拉取到本地</button></div>
+        <div id="sync-result" class="result-line">尚未执行工作副本传输</div>
+      </section>
+
       <section class="two-column">
         <article class="panel">
-          <span class="eyebrow">OPTIONAL LOCAL CHECK</span>
-          <h2>本地 ingest-dir</h2>
-          <p>复用当前本地数据库和解析器做可选验证。它不是云端副本，也不会参与合并。</p>
-          <label>本地 KB ID
-            <input id="local-kb" placeholder="由现有 CLI create 生成" autocomplete="off" />
-          </label>
-          <button id="ingest" class="button secondary">执行本地导入</button>
+          <span class="eyebrow">LOCAL DIRECTORY INGEST</span>
+          <h2>导入到本地知识库</h2>
+          <p>把扫描目录导入上方选中的本地 KB，复用现有解析、版本和 provenance 规则。</p>
+          <button id="ingest" class="button secondary">导入扫描目录</button>
           <div id="ingest-result" class="result-line">等待执行</div>
         </article>
         <article class="panel">

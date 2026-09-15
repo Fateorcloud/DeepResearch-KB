@@ -17,6 +17,12 @@ async function request(path, options = {}) {
   return payload;
 }
 
+async function requestText(path) {
+  const response = await fetch(path, { headers: { Accept: "text/markdown" } });
+  if (!response.ok) throw new Error("研究报告读取失败");
+  return response.text();
+}
+
 function setBusy(button, busy, busyLabel) {
   if (!button.dataset.label) button.dataset.label = button.textContent;
   button.disabled = busy;
@@ -30,7 +36,27 @@ function notify(message, kind = "success") {
 }
 
 function transferSummary(result) {
-  return `新增版本 ${result.imported} · 未变化 ${result.unchanged} · 失败 ${result.failed}`;
+  const conflicts = result.conflicts ? ` · 冲突 ${result.conflicts}` : "";
+  return `新增版本 ${result.imported} · 未变化 ${result.unchanged}${conflicts} · 失败 ${result.failed}`;
+}
+
+function renderTransferResult(result) {
+  const target = byId("sync-result");
+  const reasons = {
+    cloud_changed_pull_recommended: "云端已变化，请先拉取",
+    local_changed_push_recommended: "本地已变化，请先推送",
+    local_and_cloud_versions_differ: "本地与云端内容分叉",
+  };
+  const conflicts = (result.conflict_items || []).map((item) =>
+    `<li><code>${escapeHtml(item.logical_path)}</code><span>${escapeHtml(reasons[item.reason] || item.reason)}</span></li>`);
+  target.innerHTML = `<strong>${transferSummary(result)}</strong>${conflicts.length ? `<ul>${conflicts.join("")}</ul>` : ""}`;
+}
+
+function replaceOptions(select, items, emptyLabel) {
+  const selected = select.value;
+  select.replaceChildren(new Option(emptyLabel, ""));
+  for (const item of items) select.add(new Option(item.name, item.id));
+  if (items.some((item) => item.id === selected)) select.value = selected;
 }
 
 async function loadStatus() {
@@ -41,9 +67,17 @@ async function loadStatus() {
   byId("cloud-server").textContent = status.cloud_server || "未配置（本地模式）";
   byId("token-status").textContent = status.cloud_token_configured ? "已配置" : "未配置";
   byId("token-status").className = status.cloud_token_configured ? "ok" : "bad";
+  if (!byId("cloud-server-input").value) {
+    byId("cloud-server-input").value = status.cloud_server || "";
+  }
+  const localSelect = byId("local-kb");
+  replaceOptions(localSelect, kbs, kbs.length ? "选择本地知识库" : "本地暂无知识库");
   const select = byId("kb");
-  select.replaceChildren(new Option(kbs.length ? "选择知识库" : "云端暂无知识库", ""));
-  for (const kb of kbs) select.add(new Option(kb.name, kb.id));
+  let cloudKbs = [];
+  if (status.cloud_token_configured) {
+    try { cloudKbs = await request("/api/local/cloud-kbs"); } catch (_) { cloudKbs = []; }
+  }
+  replaceOptions(select, cloudKbs, cloudKbs.length ? "选择云端知识库" : "未配置云端连接");
 }
 
 byId("scan").addEventListener("click", async () => {
@@ -66,15 +100,40 @@ byId("scan").addEventListener("click", async () => {
   }
 });
 
-byId("cloud-save").addEventListener("click", async () => {
+byId("cloud-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
   try {
     await request("/api/local/cloud", { method: "PUT", body: JSON.stringify({
       server: byId("cloud-server-input").value,
       token: byId("cloud-token-input").value,
     }) });
     byId("cloud-token-input").value = "";
-    notify("云端连接已保存；token 不会回显。 ");
+    notify("云端连接已验证并保存；token 不会回显。");
     await loadStatus();
+  } catch (error) { notify(error.message, "error"); }
+});
+
+byId("cloud-clear").addEventListener("click", async () => {
+  try {
+    await request("/api/local/cloud", { method: "DELETE" });
+    byId("cloud-server-input").value = "";
+    byId("cloud-token-input").value = "";
+    await loadStatus();
+    notify("云端连接已清除，本地模式继续可用。");
+  } catch (error) { notify(error.message, "error"); }
+});
+
+byId("local-kb-create").addEventListener("click", async () => {
+  const name = byId("local-kb-name").value.trim();
+  if (!name) return notify("请填写本地知识库名称。", "error");
+  try {
+    const created = await request("/api/local/kbs", {
+      method: "POST", body: JSON.stringify({ name }),
+    });
+    byId("local-kb-name").value = "";
+    await loadStatus();
+    byId("local-kb").value = created.id;
+    notify("本地知识库已创建。 ");
   } catch (error) { notify(error.message, "error"); }
 });
 
@@ -96,9 +155,107 @@ byId("push").addEventListener("click", async () => {
   }
 });
 
+byId("sync-pull").addEventListener("click", async () => {
+  const cloudKbId = byId("kb").value;
+  const localKbId = byId("local-kb").value;
+  if (!cloudKbId || !localKbId) return notify("请选择云端和本地知识库。", "error");
+  const button = byId("sync-pull");
+  setBusy(button, true, "拉取中…");
+  try {
+    const result = await request("/api/local/pull", { method: "POST", body: JSON.stringify({
+      cloud_kb_id: cloudKbId, local_kb_id: localKbId,
+    }) });
+    renderTransferResult(result);
+    notify(`拉取完成：${transferSummary(result)}`,
+      result.conflicts ? "error" : "success");
+  } catch (error) { notify(error.message, "error"); }
+  finally { setBusy(button, false); }
+});
+
+byId("sync-push").addEventListener("click", async () => {
+  const cloudKbId = byId("kb").value;
+  const localKbId = byId("local-kb").value;
+  if (!cloudKbId || !localKbId) return notify("请选择云端和本地知识库。", "error");
+  const button = byId("sync-push");
+  setBusy(button, true, "传输中…");
+  try {
+    const result = await request("/api/local/sync/push", { method: "POST", body: JSON.stringify({
+      cloud_kb_id: cloudKbId, local_kb_id: localKbId,
+    }) });
+    renderTransferResult(result);
+    notify(`推送完成：${transferSummary(result)}`,
+      result.conflicts ? "error" : "success");
+  } catch (error) { notify(error.message, "error"); }
+  finally { setBusy(button, false); }
+});
+
+byId("research").addEventListener("click", async () => {
+  const query = byId("research-query").value.trim();
+  const kbId = byId("local-kb").value;
+  if (!query || !kbId) return notify("请填写研究问题并选择本地知识库。", "error");
+  const button = byId("research");
+  setBusy(button, true, "提交中…");
+  try {
+    const requiredClaims = byId("required-claims").value.split("\n")
+      .map((claim) => claim.trim()).filter(Boolean);
+    const sourceTypes = [...document.querySelectorAll('input[name="source-type"]:checked')]
+      .map((input) => input.value);
+    const asOf = byId("research-as-of").value;
+    const payload = {
+      query,
+      knowledge_base_ids: [kbId],
+      required_claims: requiredClaims,
+      required_source_types: sourceTypes,
+      minimum_distinct_sources: Number(byId("minimum-sources").value),
+      require_current_version: byId("require-current").checked,
+      max_deep_calls: Number(byId("max-deep-calls").value),
+    };
+    if (asOf) payload.as_of = new Date(asOf).toISOString();
+    byId("research-report").hidden = true;
+    byId("research-artifacts").hidden = true;
+    const task = await request("/api/local/research", {
+      method: "POST", body: JSON.stringify(payload),
+    });
+    byId("research-result").querySelector("span").textContent = `任务已提交：${task.task_id} · 状态 ${task.status}`;
+    notify("本地 Research 已提交，任务在 Local Control 进程中运行。");
+    await pollResearch(task.task_id);
+  } catch (error) { notify(error.message, "error"); }
+  finally { setBusy(button, false); }
+});
+
+async function pollResearch(taskId) {
+  const statusLine = byId("research-result").querySelector("span");
+  for (;;) {
+    const task = await request(`/api/local/research/${taskId}`);
+    statusLine.textContent = `任务 ${taskId.slice(0, 12)} · ${task.status}`;
+    if (task.status === "completed") {
+      const report = byId("research-report");
+      const [reportText, sources, trace, metrics] = await Promise.all([
+        requestText(`/api/local/research/${taskId}/report`),
+        request(`/api/local/research/${taskId}/sources`),
+        request(`/api/local/research/${taskId}/trace`),
+        request(`/api/local/research/${taskId}/metrics`),
+      ]);
+      report.textContent = reportText;
+      report.hidden = false;
+      byId("research-sources").textContent = JSON.stringify(sources, null, 2);
+      byId("research-trace").textContent = JSON.stringify(trace, null, 2);
+      byId("research-metrics").textContent = JSON.stringify(metrics, null, 2);
+      byId("research-artifacts").hidden = false;
+      notify("本地 Research 已完成，报告已加载。");
+      return;
+    }
+    if (task.status === "failed") {
+      notify(task.error?.message || "本地 Research 失败。", "error");
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 750));
+  }
+}
+
 byId("ingest").addEventListener("click", async () => {
-  const kbId = byId("local-kb").value.trim();
-  if (!kbId) return notify("请填写现有本地 KB ID。", "error");
+  const kbId = byId("local-kb").value;
+  if (!kbId) return notify("请先选择本地知识库。", "error");
   const button = byId("ingest");
   setBusy(button, true, "导入中…");
   try {
@@ -107,7 +264,7 @@ byId("ingest").addEventListener("click", async () => {
       body: JSON.stringify({ directory: byId("directory").value, kb_id: kbId }),
     });
     byId("ingest-result").textContent = transferSummary(result);
-    notify("本地解析验证完成。云端数据未被修改。");
+    notify("扫描目录已导入本地知识库，云端数据未被修改。");
   } catch (error) {
     notify(error.message, "error");
   } finally {

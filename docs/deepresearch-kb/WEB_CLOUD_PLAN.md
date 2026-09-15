@@ -1,23 +1,21 @@
 # DeepResearch-KB Web 与云端互通开发方案
 
-状态：实施中。Stage 0～3 已于 2026-09-15 完成 Gate；Stage 4 进入 Local-first 修订，Stage 5 Deployment 暂不开始。本文描述产品层开发，不改变 Phase 1～5B 已验收的 Research Core。
+状态：实施中。Stage 0～4 已于 2026-09-15 完成 Gate；下一阶段为 Stage 5 Deployment。本文描述产品层开发，不改变 Phase 1～5B 已验收的 Research Core。
 
 ## 1. 目标
 
-为单用户提供一个简洁、可长期使用的 Web 研究工作台：在任意网络和设备上登录后，可以管理知识库、上传和查看文档、运行真实 Research、检查报告与证据，并下载一致性备份。本地控制端负责扫描本机目录和推送原文件，云端负责保存唯一权威数据。
+为单用户提供一个简洁、可长期使用的 Web 研究工作台：Local Control 默认管理项目本地知识库并运行 Research；Cloud Web 在任意设备上管理云端工作副本。两端都通过同一 Service Layer 工作，用户需要时再显式 push、pull 或下载一致性备份。
 
 ```text
-本地文件夹                         任意设备浏览器
-    │                                    │
-    ↓                                    ↓
-Local Control Web ─── HTTPS ───→ Cloud DeepResearch-KB
-    │                                    │
- ingest / push                      login / KB / research
-                                         │
-                                Authoritative SQLite
-                                + Research Artifacts
-                                         │
-                                backup / archive export
+本地文件夹                              任意设备浏览器
+    │                                         │
+    ↓                                         ↓
+Local Control Web ←── explicit push/pull ──→ Cloud Web
+    │                                         │
+    ↓                                         ↓
+Local SQLite + tasks                  Cloud SQLite + tasks
+    │                                         │
+ local ingest / research               upload / research / backup
 ```
 
 ## 2. 核心原则
@@ -51,18 +49,18 @@ Local Control Web ─── HTTPS ───→ Cloud DeepResearch-KB
 
 ## 4. 数据权威与互通
 
-### 4.1 首次迁移
+### 4.1 首次云端迁移（可选）
 
-首次部署通过 SQLite online backup 或停机复制，将当前 `data/kb.sqlite` 导入服务器持久化 volume。迁移后校验：
+需要建立云端工作副本时，通过 SQLite online backup 或停机复制，将当前 `data/kb.sqlite` 导入服务器持久化 volume。迁移后校验：
 
 - `PRAGMA integrity_check`；
 - KB/document/version/chunk 数量；
 - 当前版本与 provenance；
 - 一次 governed retrieval。
 
-### 4.2 日常推送
+### 4.2 显式 push / pull
 
-本地控制端调用上传接口：
+本地控制端通过云端受认证接口传输当前文档版本：
 
 ```text
 relative logical_path + bytes + source metadata
@@ -72,7 +70,9 @@ relative logical_path + bytes + source metadata
 same hash = unchanged / changed hash = version + 1
 ```
 
-`kb_id + logical_path` 决定文档身份；重命名 KB 不改变 `kb_id`。首版不传播本地删除，不实现冲突合并或双向实时同步。
+`kb_id + logical_path` 决定文档身份；重命名 KB 不改变 `kb_id`。Local Control 记录每对
+本地/云端 KB 的最后共同 `content_hash`：只有目标端仍处于共同基线时才写入新版本；双方都变化时
+返回逐文档冲突并停止覆盖。首版只传输当前版本，不传播删除，不做后台自动同步或自动冲突合并。
 
 ### 4.3 云端备份
 
@@ -170,9 +170,8 @@ Local Control 的云端 token 是可选配置，来自云端 Web“设置 → CL
 浏览器不能安全地自行执行本地 CLI。因此提供 loopback-only companion：
 
 ```sh
-deepresearch_kb local-web \
-  --root /allowed/local/root \
-  --server https://research.example.com
+deepresearch_kb --database data/kb.sqlite local-web \
+  --root /allowed/local/root
 ```
 
 约束：
@@ -181,7 +180,8 @@ deepresearch_kb local-web \
 - 只能访问 `--root` 下的路径；
 - 直接调用 Python module，不拼接 shell 命令；
 - 云端 token 存在操作系统凭据存储或本地权限受限配置中；
-- 支持目录扫描、`ingest-dir`、`push-dir`、结果汇总和备份下载；
+- 云端地址和 token 可在页面设置中添加，也可通过可选 `--server` / token 环境变量预配置；
+- 支持本地 KB 创建、目录扫描、`ingest-dir`、本地 Research、KB 级 push/pull、冲突汇总和备份下载；
 - 本地页面与云端页面共用视觉语言，但职责和运行位置明确区分。
 
 ## 8. Web 信息架构
@@ -300,15 +300,20 @@ trace/metrics、生成 SQLite 快照与完整归档，以及创建 CLI token；�
 
 ### Stage 4 — Local Control Web
 
-- [ ] local-first companion：无云端配置也能读取本地 KB 并 Research；
-- [ ] 设置页添加可选云端地址/token；
-- [ ] 显式 push/pull/backup 双向数据流；
+- [x] local-first companion：无云端配置也能读取本地 KB 并 Research；
+- [x] 设置页添加可选云端地址/token；
+- [x] 显式 push/pull/backup 双向数据流；
 - [x] allowed-root/path traversal 防护。
 
 Gate：无 token 时本地 Research 可用；配置云端后，用户主动执行 push/pull，双方版本和冲突状态可见。
 
-当前已验收的 loopback companion 仍是 cloud-required 原型；下一轮必须改为 local-first，补齐本地
-Research、可选 token 配置和显式双向传输后，才重新通过 Stage 4 Gate。
+实际验收（2026-09-15）：`local-web` 的 `--server` 和 token 均为可选；无云端配置时，真实页面可
+读取/创建本地 KB、提交完整 Evidence Contract，并经 `TaskService → ResearchService → ResearchEngine`
+interface 完成本地 Research。云端设置验证成功后保存在本地 `0600` 配置文件中且不回显 token；
+KB 级 push/pull 传输原始当前版本，使用最后共同 `content_hash` 识别分叉，冲突时不覆盖并在页面列出
+路径和原因。接口测试覆盖路径边界、Research contract、配置存储、push/pull 幂等、版本递增、冲突
+保护、结构化错误和一致性备份。Playwright 真实浏览器完成无 token Research、连接云端、双向传输及
+冲突显示；1440×1000 与 390×844 布局通过，控制台 0 error / 0 warning。
 
 ### Stage 5 — Deployment
 
@@ -323,13 +328,13 @@ Gate：手机或另一台电脑登录后可查看 KB、发起 Research、取得�
 - service/interface tests：重命名、预览、版本、requirements、backup；
 - HTTP integration：auth、CSRF、上传、任务轮询、artifact、下载；
 - browser E2E：登录 → 上传 → Research → report/source/trace → backup；
-- local companion：allowed root、路径穿越、push 幂等与失败汇总；
+- local companion：allowed root、路径穿越、无 token Research、完整 requirements、KB 级 push/pull、冲突保护、备份；
 - deployment smoke：HTTPS、持久化、容器重启后 KB 保留；
 - 原有 111 项 Research Core 回归继续通过。
 
 ## 12. 明确不做
 
-- 双主 SQLite 或自动双向数据库同步；
+- 后台自动双向数据库同步、静默覆盖或自动冲突合并；
 - 浏览器上传 `.db` 并直接覆盖线上数据库；
 - PostgreSQL、Redis、Celery、Kafka 或分布式 executor；
 - Multi-Agent、GraphRAG、新 Research algorithm 或扩大 Phase 4.5 benchmark；

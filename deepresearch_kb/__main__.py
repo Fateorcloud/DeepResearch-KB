@@ -30,7 +30,7 @@ def main():
     push_dir.add_argument("--token-env", default="DRKB_CLI_TOKEN")
     local_web = commands.add_parser("local-web")
     local_web.add_argument("--root", required=True)
-    local_web.add_argument("--server", required=True)
+    local_web.add_argument("--server")
     local_web.add_argument("--token-env", default="DRKB_CLI_TOKEN")
     local_web.add_argument("--port", type=int, default=8765)
     versions = commands.add_parser("versions")

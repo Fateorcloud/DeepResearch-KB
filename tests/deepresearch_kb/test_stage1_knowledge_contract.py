@@ -59,6 +59,12 @@ def test_kb_rename_preview_and_version_detail(tmp_path):
     assert current.json()["updated_at"] == second.updated_at
     assert current.json()["ingested_at"] == second.ingested_at
 
+    raw = client.get(
+        f"/api/kbs/{kb.id}/documents/{first.document_id}/versions/1/raw")
+    assert raw.status_code == 200
+    assert raw.content == b"old decision"
+    assert raw.headers["x-content-hash"] == first.content_hash
+
 
 def test_stage1_contract_returns_structured_not_found_and_validation_errors(tmp_path):
     store = KnowledgeStore(tmp_path / "kb.sqlite", loader=loader)

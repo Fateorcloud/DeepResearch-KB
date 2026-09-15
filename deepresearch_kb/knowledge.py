@@ -209,6 +209,15 @@ class KnowledgeStore:
                 raise KeyError(document_id)
             return [self._version(row) for row in rows]
 
+    def raw_document_version(self, document_id: str, version: int) -> bytes:
+        with closing(self._connect()) as db:
+            row = db.execute(
+                "SELECT raw_bytes FROM document_version WHERE document_id = ? AND version = ?",
+                (document_id, version)).fetchone()
+            if row is None:
+                raise KeyError((document_id, version))
+            return row["raw_bytes"]
+
     async def ingest(
         self, knowledge_base_id: str, file_path: str | Path, *,
         logical_path: str, source_type: SourceType = "local_import",
