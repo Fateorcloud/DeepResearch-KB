@@ -128,6 +128,16 @@ class KnowledgeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(calls, [[str(self.file)]])
         self.assertEqual(result[0]["raw_content"], "parsed")
 
+    async def test_builtin_json_and_csv_adapters_do_not_require_upstream_loaders(self):
+        json_file = self.root / "facts.json"
+        json_file.write_text('{"answer": "local", "count": 2}', encoding="utf-8")
+        csv_file = self.root / "facts.csv"
+        csv_file.write_text("name,value\nalpha,1\nbeta,2\n", encoding="utf-8")
+        json_pages = await _load_upstream(json_file)
+        csv_pages = await _load_upstream(csv_file)
+        self.assertIn('"answer": "local"', json_pages[0]["raw_content"])
+        self.assertIn("alpha\t1", csv_pages[0]["raw_content"])
+
     async def test_chunks_are_persisted_and_retrieved_from_active_versions(self):
         await self.ingest()
         results = self.store.retrieve([self.kb.id], "architecture", limit=2)

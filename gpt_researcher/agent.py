@@ -34,6 +34,21 @@ from .utils.llm import create_chat_completion
 from .vector_store import VectorStoreWrapper
 
 
+class _LazyMemory:
+    """Delay embedding-provider setup until retrieval actually needs embeddings."""
+
+    def __init__(self, provider: str, model: str, **kwargs):
+        self.provider = provider
+        self.model = model
+        self.kwargs = kwargs
+        self._memory = None
+
+    def get_embeddings(self):
+        if self._memory is None:
+            self._memory = Memory(self.provider, self.model, **self.kwargs)
+        return self._memory.get_embeddings()
+
+
 class GPTResearcher:
     """Main GPT Researcher agent class.
 
@@ -174,7 +189,7 @@ class GPTResearcher:
             self._process_mcp_configs(mcp_configs)
         
         self.retrievers = get_retrievers(self.headers, self.cfg)
-        self.memory = Memory(
+        self.memory = _LazyMemory(
             self.cfg.embedding_provider, self.cfg.embedding_model, **self.cfg.embedding_kwargs
         )
         

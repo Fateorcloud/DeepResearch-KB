@@ -22,14 +22,51 @@ async def loader(path):
 
 
 class BrowserResearchEngine:
+    def __init__(self, knowledge_base_id):
+        self.knowledge_base_id = knowledge_base_id
+
     async def run(self, query, *, knowledge_base_ids, requirements, output_dir,
-                  as_of=None, max_deep_calls=1):
+                  as_of=None, max_deep_calls=1, progress=None,
+                  output_language="Chinese", research_depth="medium"):
+        if progress:
+            progress({"phase": "retrieval", "progress_percent": 35,
+                      "evidence_count": 1})
         await asyncio.sleep(0.15)
         output_dir.mkdir(parents=True, exist_ok=False)
-        report = f"# Local-first Research\n\n{query}\n\n本地知识库 Research 已完成。"
+        report = (
+            f"# Local-first Research\n\n{query}\n\n"
+            "## 研究结论\n\n本地知识库 Research 已完成。[1]\n\n"
+            "## 数据边界\n\nCloud 是可选工作副本，数据只通过显式传输流动。[1]")
+        sources = [{
+            "chunk_id": "browser:local:0",
+            "text": "Local Control uses the local knowledge base without cloud configuration.",
+            "source_type": "local_import",
+            "source_uri": "file://docs/browser.md",
+            "logical_path": "docs/browser.md",
+            "document_id": "browser-document",
+            "version": 1,
+            "knowledge_base_id": self.knowledge_base_id,
+            "status": "active",
+            "version_selection_reason": "latest eligible revision",
+        }]
+        trace = [{
+            "question": query,
+            "internal_evidence": sources,
+            "quick_evidence": [],
+            "deep_evidence": [],
+            "decisions": [{
+                "route": "stop",
+                "reason": "all evidence requirements satisfied",
+                "evidence_count": 1,
+            }],
+            "final_route": "stop",
+            "final_evidence": sources,
+        }]
         (output_dir / "report.md").write_text(report, encoding="utf-8")
-        (output_dir / "sources.json").write_text("[]", encoding="utf-8")
-        (output_dir / "trace.json").write_text("[]", encoding="utf-8")
+        (output_dir / "sources.json").write_text(
+            json.dumps(sources), encoding="utf-8")
+        (output_dir / "trace.json").write_text(
+            json.dumps(trace), encoding="utf-8")
         metrics = {"status": "completed", "max_deep_calls": max_deep_calls}
         (output_dir / "run.json").write_text(json.dumps(metrics), encoding="utf-8")
         return {"report": report, "sources": [], "trace": [], "metrics": metrics}
@@ -63,7 +100,9 @@ def main():
         logical_path="docs/browser.md", source_type="local_import"))
     service = LocalControlService(
         AllowedRoot(local_root), CloudClient(None, None), local_store,
-        TaskService(ResearchService(BrowserResearchEngine()), base / "local-tasks"))
+        TaskService(
+            ResearchService(BrowserResearchEngine(local_kb.id)),
+            base / "local-tasks"))
     local_app = create_local_app(
         root=local_root, server=None, token=None, service=service,
         allowed_hosts={"127.0.0.1", "localhost"})

@@ -13,6 +13,17 @@ from .research import UpstreamExternalResearch
 from .deep_adapter import UpstreamDeepResearch, default_deep_factory
 
 
+RESEARCH_DEPTHS = {
+    "low": {"reasoning_effort": "low", "breadth": 2, "depth": 1,
+            "iterations": 1, "subtopics": 2, "search_results": 3},
+    "medium": {"reasoning_effort": "medium", "breadth": 3, "depth": 2,
+               "iterations": 3, "subtopics": 3, "search_results": 5},
+    "high": {"reasoning_effort": "high", "breadth": 4, "depth": 3,
+             "iterations": 5, "subtopics": 5, "search_results": 8},
+}
+RESEARCH_DEPTH_ALIASES = {"quick": "low", "standard": "medium", "deep": "high"}
+
+
 class ResearchEngine:
     """Orchestrate planning, governed retrieval, adaptive routing and synthesis."""
     def __init__(self, *, store, quick_search=None, deep_research=None, researcher_factory=None,
@@ -36,9 +47,35 @@ class ResearchEngine:
 
     async def run(self, query, *, knowledge_base_ids, requirements=None,
                   subquestions=None, output_dir=None, limit=5, as_of=None,
-                  max_deep_calls=None):
+                  max_deep_calls=None, progress=None,
+                  output_language="Chinese", research_depth="medium"):
         started = time.perf_counter()
         usage = UsageCollector()
+        if output_language not in {"Chinese", "English"}:
+            raise ValueError("output_language must be Chinese or English")
+        research_depth = RESEARCH_DEPTH_ALIASES.get(research_depth, research_depth)
+        if research_depth not in RESEARCH_DEPTHS:
+            raise ValueError("research_depth must be low, medium, or high")
+        depth_config = RESEARCH_DEPTHS[research_depth]
+        observed_evidence = {}
+
+        def emit_progress(phase, progress_percent, evidence=()):
+            for item in evidence:
+                key = getattr(item, "chunk_id", None) or getattr(
+                    item, "source_uri", None) or id(item)
+                observed_evidence[key] = item
+            if progress is not None:
+                try:
+                    progress({
+                        "phase": phase,
+                        "progress_percent": progress_percent,
+                        "evidence_count": len(observed_evidence),
+                    })
+                except Exception:
+                    # Progress reporting is observational and must not alter Research.
+                    pass
+
+        emit_progress("planning", 5)
         task_as_of = self.as_of if as_of is None else as_of
         task_max_deep_calls = self.max_deep_calls if max_deep_calls is None else max_deep_calls
         if type(task_max_deep_calls) is not int or task_max_deep_calls < 0:
@@ -51,6 +88,14 @@ class ResearchEngine:
             researcher = factory(question)
             if hasattr(researcher, "cfg"):
                 attach_usage(researcher, usage)
+                researcher.cfg.language = output_language
+                researcher.cfg.reasoning_effort = depth_config["reasoning_effort"]
+                researcher.cfg.max_iterations = depth_config["iterations"]
+                researcher.cfg.max_subtopics = depth_config["subtopics"]
+                researcher.cfg.max_search_results_per_query = depth_config["search_results"]
+            if getattr(researcher, "deep_researcher", None) is not None:
+                researcher.deep_researcher.breadth = depth_config["breadth"]
+                researcher.deep_researcher.depth = depth_config["depth"]
             return researcher
 
         quick_search = self.quick_search or UpstreamExternalResearch(tracked_factory).search
@@ -62,6 +107,7 @@ class ResearchEngine:
             researcher = tracked_factory(query)
             subquestions = await researcher.research_conductor.plan_research(query)
         plan = self.planner.plan(query, subquestions)
+        emit_progress("retrieval", 15)
         governed = GovernedKnowledge(self.store, as_of=task_as_of,
             include_superseded=self.include_superseded,
             include_deprecated=self.include_deprecated)
@@ -82,28 +128,39 @@ class ResearchEngine:
         traces, final_evidence = [], []
         quick_calls = deep_calls = 0
         for index, planned in enumerate(plan.questions):
+            question_start = 20 + round(50 * index / max(1, len(plan.questions)))
+            question_done = 20 + round(50 * (index + 1) / max(1, len(plan.questions)))
             req = requirements[index]
             quick_evidence, deep_evidence = [], []
             blocked_calls = []
-            internal = [] if planned.source_policy == "external" else governed.retrieve(
-                knowledge_base_ids, planned.question, limit=limit)
+            source_types = set(req.required_source_types)
+            internal_allowed = not source_types or bool(
+                source_types & {"local_import", "web_upload"})
+            external_allowed = not source_types or "external_web" in source_types
+            use_internal = internal_allowed and (
+                planned.source_policy != "external" or not external_allowed)
+            internal = governed.retrieve(
+                knowledge_base_ids, planned.question, limit=limit) if use_internal else []
+            emit_progress("retrieval", question_start, internal)
             async def quick(question, _q=quick_search):
                 nonlocal quick_calls
-                if planned.source_policy == "internal":
+                if planned.source_policy == "internal" or not external_allowed:
                     blocked_calls.append("quick")
                     return []
                 quick_calls += 1
                 entries = list(await _q(question))
                 quick_evidence.extend(entries)
+                emit_progress("quick_research", min(question_done - 1, question_start + 12), entries)
                 return entries
             async def deep(question, _d=deep_research):
                 nonlocal deep_calls
-                if planned.source_policy == "internal":
+                if planned.source_policy == "internal" or not external_allowed:
                     blocked_calls.append("deep")
                     return []
                 deep_calls += 1
                 entries = list(await _d(question))
                 deep_evidence.extend(entries)
+                emit_progress("deep_research", min(question_done - 1, question_start + 24), entries)
                 return entries
             router = AdaptiveResearchRouter(quick_search=quick, deep_research=deep,
                 requirements=[req], max_deep_calls=max(0, task_max_deep_calls - deep_calls))
@@ -118,8 +175,13 @@ class ResearchEngine:
             route, evidence, decisions = await router.run(planned.question, internal=internal,
                                                           conflict_checker=TracedChecker())
             final_evidence.extend(evidence)
+            emit_progress("sufficiency", question_done, evidence)
             traces.append({"question": planned.question, "source_policy": planned.source_policy,
                 "rationale": planned.rationale, "requirement": asdict(req) if req else None,
+                "source_constraint": {
+                    "internal_allowed": internal_allowed,
+                    "external_allowed": external_allowed,
+                },
                 "internal_evidence": [asdict(e) for e in internal],
                 "quick_evidence": [asdict(e) for e in quick_evidence],
                 "deep_evidence": [asdict(e) for e in deep_evidence],
@@ -141,6 +203,7 @@ class ResearchEngine:
                         "Do not treat tool completion as evidence sufficiency; preserve uncertainty.\n"
                         + json.dumps(unresolved, ensure_ascii=False))
         if final_evidence:
+            emit_progress("synthesis", 85, final_evidence)
             try:
                 researcher = tracked_factory(query)
                 report = await researcher.write_report(ext_context=context)
@@ -159,6 +222,14 @@ class ResearchEngine:
             "final_route_summary": [t["final_route"] for t in traces],
             "quick_calls": quick_calls, "deep_calls": deep_calls,
             "max_deep_calls": task_max_deep_calls,
+            "output_language": output_language,
+            "research_depth": research_depth,
+            "reasoning_effort": depth_config["reasoning_effort"],
+            "deep_research_breadth": depth_config["breadth"],
+            "deep_research_depth": depth_config["depth"],
+            "planning_iterations": depth_config["iterations"],
+            "max_subtopics": depth_config["subtopics"],
+            "max_search_results_per_query": depth_config["search_results"],
             "latency_seconds": time.perf_counter() - started}
         result.update(usage.summary())
         result["evidence_status"] = [
@@ -175,6 +246,7 @@ class ResearchEngine:
             "deep": "injected" if self.deep_research else "upstream_live"}
         result["usage_scope"] = "Tracked researcher factories only; injected tools/checkers may have unobserved usage"
         result["actual_cost_usd"] = None
+        emit_progress("finalizing", 95, final_evidence)
         if folder is not None:
             (folder / "run.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
             (folder / "plan.json").write_text(json.dumps(asdict(plan), indent=2), encoding="utf-8")

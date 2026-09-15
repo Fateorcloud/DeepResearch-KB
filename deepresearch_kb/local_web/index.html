@@ -3,134 +3,157 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f6f8fa" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="local-control-token" content="__CONTROL_TOKEN__" />
-    <title>DeepResearch-KB Local Control</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f2328'/%3E%3Ctext x='16' y='21' text-anchor='middle' font-family='Arial' font-size='12' font-weight='700' fill='white'%3ELC%3C/text%3E%3C/svg%3E" />
+    <title>DeepResearch-KB</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 6c4-2 8-1 12 2v19c-4-3-8-4-12-2V6zm24 0c-4-2-8-1-12 2v19c4-3 8-4 12-2V6z' fill='%230969da'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./local-control.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="brand-mark">LC</div>
-      <div><strong>DeepResearch-KB</strong><span>Local Control</span></div>
-      <div class="loopback"><i></i>127.0.0.1 only</div>
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M3 5.5A3.5 3.5 0 0 1 6.5 2H11v18H6.5A3.5 3.5 0 0 0 3 23V5.5Zm18 0A3.5 3.5 0 0 0 17.5 2H13v18h4.5A3.5 3.5 0 0 1 21 23V5.5Z"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="m4 20 4.3-1 10.9-10.9a2.1 2.1 0 0 0-3-3L5.3 16 4 20Zm10.6-13.4 2.8 2.8"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+      <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6V2Z"/><path d="M14 2v5h5"/></symbol>
+      <symbol id="i-transfer" viewBox="0 0 24 24"><path d="M4 7h15m-4-4 4 4-4 4M20 17H5m4 4-4-4 4-4"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+      <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 19h11a4 4 0 0 0 .5-8A7 7 0 0 0 5 9a5 5 0 0 0 2 10Z"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m-4 4 4-4 4 4M4 20h16"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12m-4-4 4 4 4-4M4 20h16"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    </svg>
+
+    <header class="app-header">
+      <button class="brand" data-route="research" aria-label="返回新建研究"><span class="brand-icon"><svg><use href="#i-book" /></svg></span><strong>DeepResearch-KB</strong></button>
+      <div class="header-state"><span class="mode-pill"><i></i>Local · 本地工作副本</span><button id="cloud-status-pill" class="cloud-pill" data-route="settings"><svg><use href="#i-cloud" /></svg><span>Cloud 未连接</span></button></div>
+      <button class="header-settings" data-route="settings"><svg><use href="#i-settings" /></svg><span>设置</span></button>
     </header>
-    <main>
-      <section class="hero">
-        <div>
-          <span class="eyebrow">LOCAL CONTROL</span>
-          <h1>在本地知识库研究，需要时再连接云端。</h1>
-          <p>本地扫描、摄取与 Research 默认可用；云端连接只在主动 push、pull 或备份时使用。</p>
-        </div>
-        <div class="authority-card">
-          <span>CURRENT WORKING COPY</span>
-          <strong>Local SQLite</strong>
-          <small>云端是可选工作副本，数据流向由你明确触发。</small>
-        </div>
-      </section>
 
-      <section class="status-grid" aria-label="连接状态">
-        <article><span>允许目录</span><strong id="allowed-root">正在读取…</strong></article>
-        <article><span>云端服务</span><strong id="cloud-server">正在连接…</strong></article>
-        <article><span>云端 token</span><strong id="token-status">正在检查…</strong></article>
-      </section>
+    <aside class="sidebar" aria-label="主导航">
+      <button class="new-research-button" data-route="research"><svg><use href="#i-plus" /></svg>新建研究</button>
+      <nav>
+        <span class="nav-group">研究</span>
+        <button class="nav-item active" data-route="research"><svg><use href="#i-edit" /></svg>新建研究</button>
+        <button class="nav-item" data-route="history"><svg><use href="#i-clock" /></svg>研究历史</button>
+        <span class="nav-group">知识</span>
+        <button class="nav-item" data-route="knowledge"><svg><use href="#i-database" /></svg>知识库</button>
+        <button class="nav-item" data-route="files"><svg><use href="#i-file" /></svg>本地文件</button>
+        <span class="nav-group">数据</span>
+        <button class="nav-item" data-route="transfers"><svg><use href="#i-transfer" /></svg>传输</button>
+        <span class="nav-group">系统</span>
+        <button class="nav-item" data-route="settings"><svg><use href="#i-settings" /></svg>设置</button>
+      </nav>
+      <p class="sidebar-quote">让知识成为<br />更深入的见解。</p>
+    </aside>
 
-      <section class="panel cloud-settings">
-        <span class="eyebrow">OPTIONAL CLOUD CONNECTION</span>
-        <h2>云端连接（可选）</h2>
-        <p>不配置云端也可以使用本地 KB 和 Research。填写后可启用显式 push、pull 与备份。</p>
-        <form id="cloud-form">
-          <label>云端地址<input id="cloud-server-input" type="url" placeholder="https://research.example.com" /></label>
-          <label>CLI token<input id="cloud-token-input" type="password" autocomplete="off" placeholder="保存到本地权限受限配置，不会回显" /></label>
-          <div class="inline-actions"><button id="cloud-save" type="submit" class="button secondary">保存并验证</button><button id="cloud-clear" type="button" class="button secondary">断开云端</button></div>
-        </form>
-      </section>
+    <main class="app-content">
+      <div id="alert" class="toast" role="status" hidden></div>
 
-      <div id="alert" class="alert" role="status" hidden></div>
+      <section class="view active" data-view="research">
+        <div class="research-home">
+          <section class="composer-panel">
+            <header class="composer-heading"><span class="heading-icon"><svg><use href="#i-edit" /></svg></span><div><h1>开始新的研究</h1><p>基于你的知识库，进行深入、可靠、有据可查的研究。</p></div></header>
+            <label class="query-field"><span class="sr-only">研究问题</span><textarea id="research-query" maxlength="5000" placeholder="你想研究什么？"></textarea><span id="query-count">0 / 5000</span></label>
+            <div class="knowledge-picker-row"><div class="field-title"><svg><use href="#i-book" /></svg><span>选择知识库</span></div><div id="composer-kbs" class="kb-chips" aria-label="选择一个或多个本地知识库"></div></div>
+            <details class="evidence-contract">
+              <summary><span><svg><use href="#i-list" /></svg><strong>证据要求</strong><small>默认优先使用所选知识库，并注明来源</small></span><svg class="chevron"><use href="#i-chevron" /></svg></summary>
+              <div class="evidence-grid">
+                <label class="wide">报告必须回答什么<textarea id="required-claims" rows="3" placeholder="每行一个必须回答的要点；留空时使用研究问题"></textarea></label>
+                <label>报告语言<select id="output-language"><option value="Chinese" selected>中文（默认）</option><option value="English">English</option></select></label>
+                <label>研究深度<select id="research-depth"><option value="low">low</option><option value="medium" selected>medium（默认）</option><option value="high">high</option></select></label>
+                <label>最少独立来源数<input id="minimum-sources" type="number" min="1" value="1" /></label>
+                <fieldset class="source-options"><legend>允许哪些来源</legend><div><label><input type="checkbox" name="source-type" value="local_import" />Local KB</label><label><input type="checkbox" name="source-type" value="web_upload" />Cloud KB</label><label><input type="checkbox" name="source-type" value="external_web" />Web Research</label></div></fieldset>
+                <label>截止时间（可选）<input id="research-as-of" type="datetime-local" /></label>
+                <label>Deep Research 调用上限（高级）<input id="max-deep-calls" type="number" min="0" max="20" value="1" /><small>仅限制外部深研最多执行几次，不代表思考深度。</small></label>
+                <label class="check-label current-version-option"><input id="require-current" type="checkbox" /><span><strong>只允许知识库当前版本</strong><small>排除已被新版本替代的历史内容。</small></span></label>
+              </div>
+            </details>
+            <footer class="composer-footer"><p><span>i</span>仅使用本地知识库即可开始研究，无需配置云端。</p><button id="research" class="button primary"><svg><use href="#i-play" /></svg>开始研究</button></footer>
+          </section>
 
-      <section class="workbench local-research">
-        <header>
-          <div><span class="eyebrow">LOCAL RESEARCH</span><h2>在本地知识库上研究</h2></div>
-          <span class="step-label">本地数据库 · 无云端 token 也可用</span>
-        </header>
-        <div class="form-grid">
-          <label>研究问题<textarea id="research-query" rows="5" placeholder="描述需要本地知识支持的问题"></textarea></label>
-          <div class="local-kb-control"><label>本地知识库<select id="local-kb"><option value="">正在加载…</option></select><small>Research 直接使用本地工作副本。</small></label><label>新建本地知识库<div class="inline-form"><input id="local-kb-name" placeholder="知识库名称" /><button id="local-kb-create" class="button secondary">新建</button></div></label></div>
-        </div>
-        <details class="evidence-contract">
-          <summary>Evidence Contract（高级设置）</summary>
-          <div class="evidence-grid">
-            <label class="wide">报告必须回答什么？<textarea id="required-claims" rows="3" placeholder="每行一个必须回答的要点；留空时使用研究问题"></textarea></label>
-            <fieldset><legend>允许的来源类型</legend><label><input type="checkbox" name="source-type" value="local_import" />本地导入</label><label><input type="checkbox" name="source-type" value="web_upload" />Web 上传</label><label><input type="checkbox" name="source-type" value="external_web" />外部 Web</label></fieldset>
-            <label>最少独立来源数<input id="minimum-sources" type="number" min="1" value="1" /></label>
-            <label>最大 Deep 调用数<input id="max-deep-calls" type="number" min="0" max="20" value="1" /></label>
-            <label>截至时间（可选）<input id="research-as-of" type="datetime-local" /></label>
-            <label class="check-label"><input id="require-current" type="checkbox" />只允许知识库当前版本</label>
-          </div>
-        </details>
-        <div class="actions"><button id="research" class="button primary">开始本地 Research</button></div>
-        <div id="research-result" class="research-result">
-          <span>尚未提交研究任务</span>
-          <pre id="research-report" hidden></pre>
-          <div id="research-artifacts" class="artifact-grid" hidden>
-            <details><summary>Sources</summary><pre id="research-sources"></pre></details>
-            <details><summary>Route Trace</summary><pre id="research-trace"></pre></details>
-            <details><summary>Metrics</summary><pre id="research-metrics"></pre></details>
-          </div>
+          <section class="recent-panel">
+            <header><div><svg><use href="#i-clock" /></svg><h2>最近研究</h2></div><button data-route="history">查看全部 <span>→</span></button></header>
+            <div class="table-wrap"><table><thead><tr><th>标题</th><th>知识库</th><th>状态</th><th>更新时间</th></tr></thead><tbody id="recent-tasks"></tbody></table></div>
+            <div id="recent-empty" class="empty-state" hidden>还没有研究记录，从上方开始第一项研究。</div>
+          </section>
         </div>
       </section>
 
-      <section class="workbench">
-        <header>
-          <div><span class="eyebrow">PUSH DIRECTORY</span><h2>扫描与推送</h2></div>
-          <span class="step-label">原文件 → Cloud ingest contract</span>
-        </header>
-        <div class="form-grid">
-          <label>相对目录
-            <input id="directory" value="." autocomplete="off" aria-describedby="directory-help" />
-            <small id="directory-help">只能选择启动时 <code>--root</code> 下的目录。</small>
-          </label>
-          <label>目标云端知识库
-            <select id="kb"><option value="">正在加载…</option></select>
-            <small>推送保持相对 logical_path，重复字节不会创建新版本。</small>
-          </label>
-        </div>
-        <div class="actions">
-          <button id="scan" class="button secondary">扫描文件</button>
-          <button id="push" class="button primary">推送到云端</button>
-        </div>
-        <div class="scan-summary" id="scan-summary">
-          <div class="empty"><strong>尚未扫描</strong><span>先确认目录与目标知识库。</span></div>
+      <section class="view" data-view="result">
+        <header class="page-heading result-heading"><div><button class="back-button" data-route="history">←</button><div><span class="section-label">研究结果</span><h1 id="result-title">研究报告</h1></div></div><span id="result-status" class="status-badge running">运行中</span></header>
+        <div class="result-layout">
+          <aside class="report-outline"><h2>报告目录</h2><nav id="report-outline"></nav></aside>
+          <article id="report-reader" class="report-reader width-standard">
+            <div class="report-toolbar">
+              <div class="report-width-control" role="group" aria-label="报告阅读宽度"><span>阅读宽度</span><button data-report-width="narrow" aria-pressed="false">窄</button><button class="active" data-report-width="standard" aria-pressed="true">标准</button><button data-report-width="wide" aria-pressed="false">宽</button></div>
+              <div class="report-downloads"><button id="download-md" disabled>下载 MD</button><button id="download-pdf" disabled>下载 PDF</button></div>
+            </div>
+            <div id="result-loading" class="report-loading"><span class="loading-spinner"></span><strong id="progress-title">正在准备研究</strong><div class="research-progress" role="progressbar" aria-label="研究阶段进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="progress-bar"></i></div><div class="progress-meta"><span id="progress-phase">等待开始</span><span id="progress-evidence">已收集 0 个证据碎片</span></div><p id="progress-detail">结果会在任务完成后自动显示。</p></div>
+            <div id="report-content" hidden></div>
+          </article>
+          <aside class="evidence-inspector">
+            <header><h2>Evidence Inspector</h2><span id="source-count">0 个来源</span></header>
+            <div class="inspector-tabs" role="tablist"><button class="active" data-inspector="sources">来源</button><button data-inspector="trace">流程</button><button data-inspector="versions">版本</button><button data-inspector="metrics">指标</button></div>
+            <div class="inspector-panel active" data-inspector-panel="sources"><div id="sources-list"></div><div id="source-detail" class="source-detail"></div></div>
+            <div class="inspector-panel" data-inspector-panel="trace"><div id="trace-flow" class="trace-flow"></div></div>
+            <div class="inspector-panel" data-inspector-panel="versions"><div id="version-decisions"></div></div>
+            <div class="inspector-panel" data-inspector-panel="metrics"><dl id="metrics-list" class="metrics-list"></dl></div>
+          </aside>
         </div>
       </section>
 
-      <section class="workbench sync-workbench">
-        <header>
-          <div><span class="eyebrow">WORKING COPY TRANSFER</span><h2>本地 KB ↔ 云端 KB</h2></div>
-          <span class="step-label">基于最后共同 content hash 检查冲突</span>
-        </header>
-        <p class="sync-copy">使用上方已选择的本地知识库和云端知识库。传输只处理当前版本；双方都变化时停止该文档并报告冲突。</p>
-        <div class="actions"><button id="sync-push" class="button primary">本地 KB 推送到云端</button><button id="sync-pull" class="button secondary">云端 KB 拉取到本地</button></div>
-        <div id="sync-result" class="result-line">尚未执行工作副本传输</div>
+      <section class="view" data-view="history">
+        <header class="page-heading"><div><span class="section-label">研究</span><h1>研究历史</h1><p>查看保存在本地的研究记录、状态与报告。</p></div><button class="button primary" data-route="research"><svg><use href="#i-plus" /></svg>新建研究</button></header>
+        <section class="content-panel"><div class="table-wrap"><table><thead><tr><th>标题</th><th>知识库</th><th>状态</th><th>创建时间</th></tr></thead><tbody id="history-tasks"></tbody></table></div><div id="history-empty" class="empty-state" hidden>暂无研究记录。</div></section>
       </section>
 
-      <section class="two-column">
-        <article class="panel">
-          <span class="eyebrow">LOCAL DIRECTORY INGEST</span>
-          <h2>导入到本地知识库</h2>
-          <p>把扫描目录导入上方选中的本地 KB，复用现有解析、版本和 provenance 规则。</p>
-          <button id="ingest" class="button secondary">导入扫描目录</button>
-          <div id="ingest-result" class="result-line">等待执行</div>
-        </article>
-        <article class="panel">
-          <span class="eyebrow">CONSISTENT BACKUP</span>
-          <h2>下载云端 SQLite 快照</h2>
-          <p>云端先运行 online backup 与 integrity check，再保存到允许目录内的私有备份文件夹。</p>
-          <button id="backup" class="button secondary">生成并下载备份</button>
-          <div id="backup-result" class="result-line">保存到 <code>.deepresearch-kb/backups/</code></div>
-        </article>
+      <section class="view" data-view="knowledge">
+        <header class="page-heading"><div><span class="section-label">知识</span><h1>知识库</h1><p>已导入并完成版本管理、可以用于 Research 的知识资产。</p></div><form id="kb-create-form" class="inline-create"><input id="local-kb-name" placeholder="新知识库名称" /><button class="button secondary" type="submit">创建</button></form></header>
+        <section class="content-panel"><div class="table-wrap"><table><thead><tr><th>名称</th><th>文档</th><th>最近更新</th><th>创建时间</th></tr></thead><tbody id="knowledge-table"></tbody></table></div><div id="knowledge-empty" class="empty-state" hidden>暂无知识库，创建后可从“本地文件”导入资料。</div></section>
+      </section>
+
+      <section class="view" data-view="files">
+        <header class="page-heading"><div><span class="section-label">知识</span><h1>本地文件</h1><p>扫描电脑上的原始文件，并将它们导入本地知识库。</p></div></header>
+        <section class="workflow-panel">
+          <div class="flow-strip"><span class="active">1&nbsp; 选择文件目录</span><i>→</i><span>2&nbsp; 扫描支持的文件</span><i>→</i><span>3&nbsp; 导入本地知识库</span></div>
+          <div class="form-row"><label>相对目录<input id="directory" value="." autocomplete="off" /><small>目录必须位于允许访问的根目录内。</small></label><label>目标本地知识库<select id="file-local-kb"><option value="">选择本地知识库</option></select></label></div>
+          <div class="panel-actions"><button id="scan" class="button secondary">扫描文件</button><button id="ingest" class="button primary"><svg><use href="#i-upload" /></svg>导入知识库</button></div>
+          <div id="scan-summary" class="scan-summary"><div class="empty-state">尚未扫描文件。</div></div>
+          <div id="ingest-result" class="operation-result" hidden></div>
+        </section>
+      </section>
+
+      <section class="view" data-view="transfers">
+        <header class="page-heading"><div><span class="section-label">数据</span><h1>传输</h1><p>在两个独立工作副本之间主动 Push 或 Pull，不执行后台自动同步。</p></div><span id="transfer-cloud-state" class="connection-badge">Cloud 未连接</span></header>
+        <section class="transfer-panel">
+          <div class="transfer-side local-side"><span class="side-label">本地工作副本</span><h2>Local KB</h2><select id="transfer-local-kb"><option value="">选择本地知识库</option></select><dl><div><dt>文档</dt><dd id="local-doc-count">—</dd></div><div><dt>最近更新</dt><dd id="local-updated">—</dd></div></dl></div>
+          <div class="transfer-actions"><button id="sync-push" class="direction-button"><span>Push</span><svg><use href="#i-arrow" /></svg><small>推送到云端</small></button><button id="sync-pull" class="direction-button pull"><span>Pull</span><svg><use href="#i-arrow" /></svg><small>拉取到本地</small></button></div>
+          <div class="transfer-side cloud-side"><span class="side-label">云端工作副本</span><h2>Cloud KB</h2><select id="transfer-cloud-kb"><option value="">Cloud 未连接</option></select><dl><div><dt>文档</dt><dd id="cloud-doc-count">—</dd></div><div><dt>最近更新</dt><dd id="cloud-updated">—</dd></div></dl></div>
+        </section>
+        <section class="baseline-bar"><div><strong>最后共同基线</strong><span id="baseline-status">选择两侧知识库后显示</span></div><p>基线按每个文档的 content hash 记录。双方都变化时停止覆盖并报告冲突。</p></section>
+        <section id="sync-result" class="transfer-result"><div class="empty-state">尚未执行传输。</div></section>
+      </section>
+
+      <section class="view" data-view="settings">
+        <header class="page-heading"><div><span class="section-label">系统</span><h1>设置</h1><p>管理可选云端连接和本地运行信息。</p></div></header>
+        <div class="settings-grid">
+          <section class="content-panel settings-section"><h2>云端连接</h2><p>云端仅用于主动传输或备份，不影响本地 Research。</p><form id="cloud-form"><label>Cloud URL<input id="cloud-server-input" type="url" placeholder="https://research.example.com" /></label><label>CLI token<input id="cloud-token-input" type="password" autocomplete="off" placeholder="保存后不会回显" /></label><div class="panel-actions"><button id="cloud-clear" type="button" class="button secondary">断开云端</button><button id="cloud-save" type="submit" class="button primary">验证并保存</button></div></form></section>
+          <section class="content-panel settings-section provider-section"><h2>本机模型与 Provider</h2><p>不同 Agent 角色可选择不同供应商和模型。配置只供本机 Research 使用，不进入 SQLite 或传输链。</p><form id="provider-form"><div class="provider-credentials"><label>OpenAI API key<input id="openai-api-key" type="password" autocomplete="off" placeholder="可选；保存后不会回显" /></label><label>OpenAI Base URL<input id="openai-base-url" type="url" placeholder="https://api.openai.com/v1" /></label><label>DeepSeek API key<input id="deepseek-api-key" type="password" autocomplete="off" placeholder="可选；保存后不会回显" /></label><label>DeepSeek Base URL<input id="deepseek-base-url" type="url" placeholder="https://api.deepseek.com" /></label><label>Tavily API key<input id="tavily-api-key" type="password" autocomplete="off" placeholder="可选，用于 Web Research" /></label></div><fieldset class="role-bindings"><legend>Agent 模型绑定</legend><div class="role-row"><strong>Fast</strong><select id="fast-provider"><option value="openai">OpenAI</option><option value="deepseek">DeepSeek</option></select><input id="fast-model" placeholder="模型名称" /></div><div class="role-row"><strong>Smart</strong><select id="smart-provider"><option value="openai">OpenAI</option><option value="deepseek">DeepSeek</option></select><input id="smart-model" placeholder="模型名称" /></div><div class="role-row"><strong>Strategic</strong><select id="strategic-provider"><option value="openai">OpenAI</option><option value="deepseek">DeepSeek</option></select><input id="strategic-model" placeholder="模型名称" /></div></fieldset><div class="panel-actions"><button id="provider-clear" type="button" class="button secondary">清除本机配置</button><button id="provider-save" type="submit" class="button primary">保存本机配置</button></div><div id="provider-result" class="operation-result">当前密钥不会回显。</div></form></section>
+          <section class="content-panel settings-section"><h2>本地工作区</h2><dl class="settings-facts"><div><dt>数据库</dt><dd id="local-database">正在读取…</dd></div><div><dt>允许目录</dt><dd id="allowed-root">正在读取…</dd></div><div><dt>Research Provider</dt><dd id="research-provider">正在读取…</dd></div><div><dt>Web Search Provider</dt><dd id="web-search-provider">正在读取…</dd></div><div><dt>Cloud 状态</dt><dd id="cloud-server">未配置</dd></div></dl></section>
+          <section class="content-panel settings-section backup-section"><h2>云端备份</h2><p>生成经过 integrity check 的一致性 SQLite 快照，并下载到允许目录。</p><button id="backup" class="button secondary"><svg><use href="#i-download" /></svg>生成并下载备份</button><div id="backup-result" class="operation-result">尚未生成备份。</div></section>
+        </div>
       </section>
     </main>
+
+    <nav class="mobile-nav" aria-label="移动端主导航">
+      <button class="active" data-route="research"><svg><use href="#i-edit" /></svg><span>研究</span></button><button data-route="history"><svg><use href="#i-clock" /></svg><span>历史</span></button><button data-route="knowledge"><svg><use href="#i-database" /></svg><span>知识库</span></button><button data-route="files"><svg><use href="#i-file" /></svg><span>文件</span></button><button data-route="transfers"><svg><use href="#i-transfer" /></svg><span>传输</span></button><button data-route="settings"><svg><use href="#i-settings" /></svg><span>设置</span></button>
+    </nav>
+
     <script type="module" src="./local-control.js"></script>
   </body>
 </html>

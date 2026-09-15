@@ -83,6 +83,8 @@ class ResearchCreate(BaseModel):
     require_current_version: bool = False
     as_of: datetime | None = None
     max_deep_calls: int = Field(default=1, ge=0, strict=True)
+    output_language: Literal["Chinese", "English"] = "Chinese"
+    research_depth: Literal["low", "medium", "high"] = "medium"
 
     @field_validator("query")
     @classmethod
@@ -399,7 +401,9 @@ def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=N
                 "invalid_requirement", "Evidence requirement is invalid")) from None
         task = tasks.create(body.query, body.knowledge_base_ids,
                             requirements=requirement, as_of=body.as_of,
-                            max_deep_calls=body.max_deep_calls)
+                            max_deep_calls=body.max_deep_calls,
+                            output_language=body.output_language,
+                            research_depth=body.research_depth)
         return {"task_id": task.id}
 
     @app.get("/api/research")

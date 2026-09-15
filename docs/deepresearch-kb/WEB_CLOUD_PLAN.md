@@ -315,6 +315,47 @@ KB 级 push/pull 传输原始当前版本，使用最后共同 `content_hash` �
 保护、结构化错误和一致性备份。Playwright 真实浏览器完成无 token Research、连接云端、双向传输及
 冲突显示；1440×1000 与 390×844 布局通过，控制台 0 error / 0 warning。
 
+界面重构验收（2026-09-15）：Local Web 已由单页技术控制台改为单用户研究工作台。桌面端使用固定
+Sidebar，手机端使用六项底部导航；首页只保留多行 Research Composer、多个本地 KB 选择、可折叠
+Evidence Contract 和最近研究。Research Result 以报告为主，提供报告目录、可点击引用、Evidence
+Inspector、流程、版本和指标；Transfer 独立呈现 `Local KB ↔ Cloud KB` 的显式 Push/Pull、两侧文档
+状态、共同基线和冲突停止覆盖结果。Cloud URL、CLI token、Provider 状态、本地路径和备份集中到设置
+页，secret 不回显。最新确定性 Engine interface 浏览器 E2E 覆盖无 Cloud token 提交 Research 并读取
+完整 artifacts，桌面 1440×1000 与手机 390×844 复验通过，控制台 0 error / 0 warning；网络阻断的
+完整项目回归为 144 passed。当前 KB 与文档页仍是紧凑基础视图，文档详情交互和历史筛选属于后续
+体验增强，不影响本轮三项优先页面 Gate。
+
+导入修复（2026-09-15）：本地 JSON 与 CSV 使用内置无依赖文本适配器，不再因上游 `DocumentLoader`
+缺少对应 loader 或 `pandas` 而批量失败；本地文件页会显示失败类型及有限路径示例。
+
+本机 Provider 配置（2026-09-15）：Local Web 设置页支持独立保存本机 OpenAI、DeepSeek、Tavily key
+及 OpenAI-compatible base URL，并可分别绑定 Fast、Smart、Strategic 三类代理所用的 Provider 与模型。配置文件
+与 Cloud token 分离并使用 `0600` 权限；接口只返回 configured 状态，密钥不会进入 SQLite、Push/Pull、
+Backup 或浏览器存储。Local Research 启动 Provider 时优先使用本机配置，未配置时回退到进程环境变量；
+DeepSeek-only Research 初始化不再提前要求 OpenAI Embedding key。Cloud 端 Provider 仍由云端部署环境
+独立管理，Local/Cloud 之间只传输知识库数据，不传输 Provider 密钥。
+
+本地 Research 历史（2026-09-15）：任务元数据和 artifacts 保存在本地 task 目录，Local Web 重启后会
+恢复研究历史，已完成任务仍可读取 Report、Sources、Trace 和 Metrics；进程退出时尚未完成的任务会以
+`research_interrupted` 标记失败，不会错误显示为永久运行中。
+
+研究进度（2026-09-15）：Research Engine 通过 Service Layer 上报 planning、retrieval、Quick/Deep
+Research、sufficiency、synthesis 和 finalizing 阶段；任务状态接口持续返回阶段进度与已收集的去重证据
+碎片数，结果页用进度条展示且明确不是剩余时间估算。Evidence Contract 和 Evidence Inspector 的来源
+名称统一为 `Local KB`、`Cloud KB`、`Web Research`，底层 contract 值保持兼容。
+只选择 `Local KB` / `Cloud KB` 而未选择 `Web Research` 时，Engine 会阻止 Quick/Deep 外部扩展，避免
+本地限定研究意外进入耗时的 Web Research；该约束在 Engine 执行接缝实现，不下沉到 HTTP 页面逻辑。
+
+报告语言与研究深度（2026-09-15）：Local Web 每次 Research 可选择中文/English，默认中文，语言要求
+沿 Service Layer 传入上游报告生成配置，不根据证据文档语言猜测。研究深度提供 `low`、`medium`、`high` 三个
+档位，分别控制规划迭代、子问题数、单次检索结果数、模型支持时的 reasoning effort，以及 Deep
+Research 的 breadth/depth；`max_deep_calls` 仍是外部 Deep Research 调用次数上限，不再作为“思考深度”
+呈现。
+
+报告阅读与导出（2026-09-15）：Research Result 提供窄、标准、宽三档阅读宽度并在本机浏览器记忆偏好；
+已完成报告可下载原始 Markdown，或由同一 `report.md` 生成 A4 PDF。导出接口只读取任务 artifact，未完成
+任务不可下载；PDF 使用私有任务目录缓存且生成失败返回结构化错误，不暴露内部异常或路径。
+
 ### Stage 5 — Deployment
 
 - Docker/Caddy；

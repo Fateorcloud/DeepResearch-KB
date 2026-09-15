@@ -12,6 +12,7 @@ from deepresearch_kb.knowledge import KnowledgeStore
 from deepresearch_kb.local_control import (
     AllowedRoot, CloudClient, LocalConfigStore, LocalControlError, LocalControlService,
     create_local_app)
+from deepresearch_kb.run_research import live_factory
 from deepresearch_kb.services.research import ResearchService
 from deepresearch_kb.services.tasks import TaskService
 from tests.deepresearch_kb.auth_support import configured_auth
@@ -76,7 +77,12 @@ def test_local_api_enforces_loopback_csrf_and_safe_scan(tmp_path):
     page = client.get("/")
     assert page.status_code == 200
     assert cloud_token not in page.text
-    assert client.get("/api/local/status").json()["authoritative_store"] == "local"
+    status = client.get("/api/local/status").json()
+    assert status["authoritative_store"] == "local"
+    assert set(status["providers"]) == {
+        "research", "web_search", "llm_providers", "roles"}
+    assert "OPENAI_API_KEY" not in json.dumps(status)
+    assert cloud_token not in json.dumps(status)
     assert client.post("/api/local/scan", json={"directory": "docs"}).status_code == 403
     rejected_host = client.get(
         "/api/local/status", headers={"host": "attacker.example"})
@@ -88,6 +94,60 @@ def test_local_api_enforces_loopback_csrf_and_safe_scan(tmp_path):
     traversal = mutate(client, "/api/local/scan", {"directory": "../"})
     assert traversal.status_code == 400
     assert traversal.json()["detail"]["code"] == "path_outside_allowed_root"
+
+
+def test_local_provider_keys_are_separate_from_cloud_and_never_echoed(tmp_path, monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    client, _, _, _, _, _ = stage4_clients(tmp_path)
+    token = "stage4-control-token"
+    before = client.get("/api/local/status").json()
+    assert before["providers"]["research"]["configured"] is False
+    assert before["providers"]["web_search"]["configured"] is False
+    assert before["providers"]["llm_providers"] == {
+        "openai": False, "deepseek": False}
+    response = client.put(
+        "/api/local/providers",
+        json={
+            "deepseek_api_key": "local-deepseek-secret",
+            "tavily_api_key": "local-tavily-secret",
+            "deepseek_base_url": "https://api.deepseek.example",
+            "fast_llm": "deepseek:deepseek-chat",
+            "smart_llm": "deepseek:deepseek-chat",
+            "strategic_llm": "deepseek:deepseek-reasoner",
+        },
+        headers={"X-Local-Control-Token": token})
+    assert response.status_code == 200
+    assert "local-deepseek-secret" not in response.text
+    assert "local-tavily-secret" not in response.text
+    assert response.json()["providers"]["research"]["configured"] is True
+    assert response.json()["providers"]["web_search"]["configured"] is True
+    assert response.json()["providers"]["llm_providers"]["deepseek"] is True
+    assert response.json()["providers"]["roles"]["strategic"] == (
+        "deepseek:deepseek-reasoner")
+    assert os.environ["DEEPSEEK_API_KEY"] == "local-deepseek-secret"
+    assert os.environ["FAST_LLM"] == "deepseek:deepseek-chat"
+    provider_file = tmp_path / "local.providers.json"
+    assert provider_file.stat().st_mode & 0o777 == 0o600
+    assert client.delete(
+        "/api/local/providers", headers={"X-Local-Control-Token": token}).status_code == 200
+    assert not provider_file.exists()
+    assert client.get("/api/local/status").json()["providers"]["research"]["configured"] is False
+
+
+def test_deepseek_only_researcher_initializes_without_openai_embedding_key(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "deepseek-only")
+    monkeypatch.setenv("FAST_LLM", "deepseek:deepseek-chat")
+    monkeypatch.setenv("SMART_LLM", "deepseek:deepseek-chat")
+    monkeypatch.setenv("STRATEGIC_LLM", "deepseek:deepseek-reasoner")
+
+    researcher = live_factory("只使用已有证据")
+
+    assert researcher.cfg.fast_llm == "deepseek:deepseek-chat"
+    assert researcher.cfg.smart_llm == "deepseek:deepseek-chat"
+    assert researcher.cfg.strategic_llm == "deepseek:deepseek-reasoner"
 
 
 def test_push_is_authenticated_idempotent_and_creates_new_version(tmp_path):
@@ -157,14 +217,20 @@ def test_local_research_works_without_cloud_configuration(tmp_path):
 
     class LocalEngine:
         async def run(self, query, *, knowledge_base_ids, requirements, output_dir,
-                      as_of=None, max_deep_calls=1):
+                      as_of=None, max_deep_calls=1, progress=None,
+                      output_language="Chinese", research_depth="medium"):
             observed.update({
                 "query": query,
                 "knowledge_base_ids": knowledge_base_ids,
                 "requirements": requirements,
                 "as_of": as_of,
                 "max_deep_calls": max_deep_calls,
+                "output_language": output_language,
+                "research_depth": research_depth,
             })
+            if progress:
+                progress({"phase": "synthesis", "progress_percent": 85,
+                          "evidence_count": 4})
             output_dir.mkdir(parents=True, exist_ok=False)
             (output_dir / "report.md").write_text(f"# {query}", encoding="utf-8")
             for name, value in (("sources.json", []), ("trace.json", []),
@@ -189,6 +255,8 @@ def test_local_research_works_without_cloud_configuration(tmp_path):
             "require_current_version": True,
             "as_of": "2026-09-15T12:00:00+08:00",
             "max_deep_calls": 3,
+            "output_language": "Chinese",
+            "research_depth": "high",
         },
         headers={"X-Local-Control-Token": "local-only-token"})
     assert response.status_code == 200
@@ -204,6 +272,18 @@ def test_local_research_works_without_cloud_configuration(tmp_path):
     assert client.get(f"/api/local/research/{task_id}/trace").json() == []
     assert client.get(f"/api/local/research/{task_id}/metrics").json() == {
         "status": "completed"}
+    markdown_download = client.get(
+        f"/api/local/research/{task_id}/download?format=md")
+    assert markdown_download.status_code == 200
+    assert markdown_download.text == "# 本地问题"
+    assert "research-" in markdown_download.headers["content-disposition"]
+    assert markdown_download.headers["content-disposition"].endswith('.md"')
+    pdf_download = client.get(
+        f"/api/local/research/{task_id}/download?format=pdf")
+    assert pdf_download.status_code == 200
+    assert pdf_download.headers["content-type"] == "application/pdf"
+    assert pdf_download.content.startswith(b"%PDF")
+    assert pdf_download.headers["content-disposition"].endswith('.pdf"')
     assert observed["knowledge_base_ids"] == (kb.id,)
     requirement = observed["requirements"]
     assert requirement.required_claims == ("回答本地事实",)
@@ -212,6 +292,24 @@ def test_local_research_works_without_cloud_configuration(tmp_path):
     assert requirement.require_current_version is True
     assert observed["as_of"].isoformat() == "2026-09-15T12:00:00+08:00"
     assert observed["max_deep_calls"] == 3
+    assert observed["output_language"] == "Chinese"
+    assert observed["research_depth"] == "high"
+    history = client.get("/api/local/research").json()
+    assert history[0]["id"] == task_id
+    assert history[0]["query"] == "本地问题"
+    assert history[0]["knowledge_base_ids"] == [kb.id]
+    assert history[0]["status"] == "completed"
+    assert history[0]["phase"] == "completed"
+    assert history[0]["progress_percent"] == 100
+    assert history[0]["evidence_count"] == 4
+
+    service.tasks = TaskService(
+        ResearchService(LocalEngine()), tmp_path / "tasks")
+    restored = client.get(f"/api/local/research/{task_id}")
+    assert restored.status_code == 200
+    assert restored.json()["status"] == "completed"
+    assert client.get(f"/api/local/research/{task_id}/report").text == "# 本地问题"
+    assert (tmp_path / "tasks" / ".research-tasks.json").stat().st_mode & 0o777 == 0o600
 
     invalid_kb = client.post(
         "/api/local/research",
@@ -284,6 +382,13 @@ def test_explicit_kb_push_tracks_baseline_and_adds_cloud_versions(tmp_path):
         "cloud_kb_id": cloud_kb, "local_kb_id": local_kb}).json()
     assert first["imported"] == 1
     assert len(cloud_store.list_versions(cloud_kb, "docs/local.md")) == 1
+    overview = client.get(
+        "/api/local/transfers/overview",
+        params={"cloud_kb_id": cloud_kb, "local_kb_id": local_kb}).json()
+    assert overview["local"]["document_count"] == 1
+    assert overview["cloud"]["document_count"] == 1
+    assert overview["baseline"] == {
+        "tracked_documents": 1, "strategy": "per_document_content_hash"}
 
     source.write_text("local v2", encoding="utf-8")
     asyncio.run(local_store.ingest(

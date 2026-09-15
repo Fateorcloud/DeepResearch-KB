@@ -28,6 +28,7 @@ def ev(text, uri="kb://doc"):
 
 
 def test_unified_engine_runs_stop_quick_and_deep(tmp_path):
+    progress_events = []
     async def loader(path):
         return [{"raw_content": path.read_text(), "url": path.name}]
     store = KnowledgeStore(Path(tmp_path) / "kb.sqlite", loader=loader)
@@ -47,7 +48,8 @@ def test_unified_engine_runs_stop_quick_and_deep(tmp_path):
             EvidenceRequirement("r3", ("deep claim",))]
     result = asyncio.run(engine.run("project", knowledge_base_ids=[kb.id],
                               requirements=reqs,
-                              output_dir=tmp_path / "run"))
+                              output_dir=tmp_path / "run",
+                              progress=progress_events.append))
     assert [t["final_route"] for t in result["trace"]] == ["stop", "quick", "deep"]
     assert result["metrics"]["quick_calls"] == 2
     assert result["metrics"]["deep_calls"] == 1
@@ -60,6 +62,14 @@ def test_unified_engine_runs_stop_quick_and_deep(tmp_path):
     assert result["trace"][1]["quick_evidence"]
     assert result["trace"][2]["deep_evidence"]
     assert result["trace"][2]["decisions"][-1]["terminal_status"] == "sufficient"
+    assert progress_events[0] == {
+        "phase": "planning", "progress_percent": 5, "evidence_count": 0}
+    assert progress_events[-1]["phase"] == "finalizing"
+    assert progress_events[-1]["progress_percent"] == 95
+    assert progress_events[-1]["evidence_count"] == 3
+    assert {event["phase"] for event in progress_events} >= {
+        "planning", "retrieval", "quick_research", "deep_research",
+        "sufficiency", "synthesis", "finalizing"}
 
 
 def test_internal_policy_blocks_external_calls(tmp_path):
@@ -78,6 +88,69 @@ def test_internal_policy_blocks_external_calls(tmp_path):
     assert result["trace"][0]["policy_blocked_calls"] == ["quick", "deep"]
     assert result["trace"][0]["decisions"][-1]["terminal_status"] == "insufficient"
     assert result["metrics"]["status"] == "incomplete"
+
+
+def test_language_and_research_depth_are_applied_to_researcher_config(tmp_path):
+    store = KnowledgeStore(tmp_path / "settings.sqlite")
+    captured = []
+
+    class ConfiguredResearcher(_Researcher):
+        def __init__(self):
+            from types import SimpleNamespace
+            self.cfg = SimpleNamespace(
+                language="english", reasoning_effort="low", llm_kwargs={})
+
+    def factory(query):
+        researcher = ConfiguredResearcher()
+        captured.append(researcher)
+        return researcher
+
+    async def quick(query):
+        return [Evidence(
+            "web", "supported", "external_web", "https://example.org",
+            "web", "", 1, 1.0)]
+
+    from deepresearch_kb.sufficiency import EvidenceRequirement
+    engine = ResearchEngine(
+        store=store, researcher_factory=factory, quick_search=quick)
+    asyncio.run(engine.run(
+        "external", knowledge_base_ids=[], subquestions=["external"],
+        requirements=[EvidenceRequirement("r", ("supported",))],
+        output_language="Chinese", research_depth="high"))
+
+    assert captured
+    assert captured[0].cfg.language == "Chinese"
+    assert captured[0].cfg.reasoning_effort == "high"
+    assert captured[0].cfg.max_iterations == 5
+    assert captured[0].cfg.max_subtopics == 5
+    assert captured[0].cfg.max_search_results_per_query == 8
+
+
+def test_local_kb_only_requirement_blocks_external_expansion(tmp_path):
+    store = KnowledgeStore(tmp_path / "local-only.sqlite")
+    kb = store.create_knowledge_base("local-only")
+    calls = []
+
+    async def forbidden(query):
+        calls.append(query)
+        return []
+
+    from deepresearch_kb.sufficiency import EvidenceRequirement
+    engine = ResearchEngine(
+        store=store, quick_search=forbidden, deep_research=forbidden,
+        researcher_factory=lambda q: _Researcher())
+    result = asyncio.run(engine.run(
+        "general question", knowledge_base_ids=[kb.id],
+        subquestions=["general question"],
+        requirements=[EvidenceRequirement(
+            "local-only", ("missing",), ("local_import",))]))
+
+    assert calls == []
+    assert result["metrics"]["quick_calls"] == 0
+    assert result["metrics"]["deep_calls"] == 0
+    assert result["trace"][0]["source_constraint"] == {
+        "internal_allowed": True, "external_allowed": False}
+    assert result["trace"][0]["policy_blocked_calls"] == ["quick", "deep"]
 
 
 def test_usage_is_per_run_and_not_inferred_from_tool_calls(tmp_path):

@@ -51,6 +51,9 @@ class ControlledEngine:
 
     async def run(self, query, **kwargs):
         self.call = (query, kwargs)
+        kwargs["progress"]({
+            "phase": "retrieval", "progress_percent": 30,
+            "evidence_count": 3})
         self.started.set()
         while not self.release.is_set():
             await asyncio.sleep(0.005)
@@ -86,6 +89,9 @@ def test_http_research_composes_engine_contract_lifecycle_and_artifacts(tmp_path
 
         running = _wait_for_status(client, task_id, "running")
         assert running["error"] is None
+        assert running["phase"] == "retrieval"
+        assert running["progress_percent"] == 30
+        assert running["evidence_count"] == 3
         assert "artifact_path" not in running
         assert client.get(f"/api/research/{task_id}/report").status_code == 409
 

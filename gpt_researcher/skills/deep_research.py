@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 
 import json_repair
 
-from gpt_researcher.llm_provider.generic.base import ReasoningEfforts
 from ..utils.llm import create_chat_completion
 from ..utils.enum import ReportType, ReportSource, Tone
 from ..actions.query_processing import get_search_results
@@ -336,7 +335,7 @@ Return ONLY a JSON object using this exact schema:
             messages=messages,
             llm_provider=self.researcher.cfg.strategic_llm_provider,
             model=self.researcher.cfg.strategic_llm_model,
-            reasoning_effort=ReasoningEfforts.High.value,
+            reasoning_effort=self.researcher.cfg.reasoning_effort,
             temperature=0.4,
             llm_kwargs=self.researcher.cfg.llm_kwargs
         )
@@ -369,7 +368,7 @@ Return ONLY a JSON object using this exact schema:
             llm_provider=self.researcher.cfg.strategic_llm_provider,
             model=self.researcher.cfg.strategic_llm_model,
             temperature=0.4,
-            reasoning_effort=ReasoningEfforts.High.value,
+            reasoning_effort=self.researcher.cfg.reasoning_effort,
             # Needs headroom for reasoning tokens on reasoning models
             max_tokens=4000,
             llm_kwargs=self.researcher.cfg.llm_kwargs

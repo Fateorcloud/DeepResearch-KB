@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .directory import ingest_dir, push_dir, scan
@@ -82,6 +82,8 @@ class ResearchInput(BaseModel):
     require_current_version: bool = False
     as_of: datetime | None = None
     max_deep_calls: int = Field(default=1, ge=0, le=20, strict=True)
+    output_language: Literal["Chinese", "English"] = "Chinese"
+    research_depth: Literal["low", "medium", "high"] = "medium"
 
     @field_validator("query")
     @classmethod
@@ -118,6 +120,33 @@ class ResearchInput(BaseModel):
     def timezone_aware_as_of(cls, value):
         if value is not None and (value.tzinfo is None or value.utcoffset() is None):
             raise ValueError("as_of must include a timezone")
+        return value
+
+
+class ProviderInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    openai_api_key: str | None = Field(default=None, max_length=4096)
+    deepseek_api_key: str | None = Field(default=None, max_length=4096)
+    tavily_api_key: str | None = Field(default=None, max_length=4096)
+    openai_base_url: str | None = Field(default=None, max_length=2048)
+    deepseek_base_url: str | None = Field(default=None, max_length=2048)
+    fast_llm: str | None = Field(default=None, max_length=256)
+    smart_llm: str | None = Field(default=None, max_length=256)
+    strategic_llm: str | None = Field(default=None, max_length=256)
+
+    @field_validator("openai_api_key", "deepseek_api_key", "tavily_api_key",
+                     "openai_base_url", "deepseek_base_url", "fast_llm",
+                     "smart_llm", "strategic_llm")
+    @classmethod
+    def normalize_value(cls, value):
+        return value.strip() if value else None
+
+    @field_validator("fast_llm", "smart_llm", "strategic_llm")
+    @classmethod
+    def supported_llm(cls, value):
+        if value is not None and not value.startswith(("openai:", "deepseek:")):
+            raise ValueError("local provider must be openai or deepseek")
         return value
 
 
@@ -176,6 +205,10 @@ class SyncLedger:
             if not handle.closed:
                 handle.close()
             staging.unlink(missing_ok=True)
+
+    def count(self, server, local_kb_id, cloud_kb_id):
+        prefix = "\n".join((server, local_kb_id, cloud_kb_id, ""))
+        return sum(key.startswith(prefix) for key in self._load())
 
 
 class AllowedRoot:
@@ -393,6 +426,58 @@ class LocalConfigStore:
         self.path.unlink(missing_ok=True)
 
 
+class LocalProviderConfigStore:
+    """Permission-restricted local-only provider credentials.
+
+    This file is deliberately separate from the SQLite database and cloud
+    connection token. It is never included in push, pull, or backup data.
+    """
+
+    KEYS = (
+        "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "TAVILY_API_KEY",
+        "OPENAI_BASE_URL", "DEEPSEEK_BASE_URL",
+        "FAST_LLM", "SMART_LLM", "STRATEGIC_LLM")
+
+    def __init__(self, path):
+        self.path = Path(path).resolve()
+
+    def load(self):
+        if not self.path.exists():
+            return {}
+        try:
+            data = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        if not isinstance(data, dict):
+            return {}
+        return {key: value for key, value in data.items()
+                if key in self.KEYS and isinstance(value, str) and value}
+
+    def save(self, values):
+        clean = {key: value for key, value in values.items()
+                 if key in self.KEYS and isinstance(value, str) and value}
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        handle = tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", prefix=".providers-", suffix=".tmp",
+            dir=self.path.parent, delete=False)
+        staging = Path(handle.name)
+        try:
+            json.dump(clean, handle)
+            handle.flush()
+            os.fsync(handle.fileno())
+            handle.close()
+            os.chmod(staging, 0o600)
+            os.replace(staging, self.path)
+            os.chmod(self.path, 0o600)
+        finally:
+            if not handle.closed:
+                handle.close()
+            staging.unlink(missing_ok=True)
+
+    def clear(self):
+        self.path.unlink(missing_ok=True)
+
+
 @dataclass
 class LocalControlService:
     allowed: AllowedRoot
@@ -400,15 +485,66 @@ class LocalControlService:
     store: KnowledgeStore
     tasks: TaskService | None = None
     config: LocalConfigStore | None = None
+    provider_config: LocalProviderConfigStore | None = None
     sync: SyncLedger | None = None
 
     def __post_init__(self):
+        self._provider_env_baseline = {
+            key: os.environ.get(key) for key in LocalProviderConfigStore.KEYS}
+        self.apply_provider_config()
         if self.tasks is None:
             self.tasks = TaskService(
                 ResearchService(ResearchEngine(store=self.store)),
                 self.store.database.with_suffix(".tasks"))
         if self.sync is None:
             self.sync = SyncLedger(self.store.database.with_suffix(".sync.json"))
+
+    def apply_provider_config(self):
+        values = self.provider_config.load() if self.provider_config else {}
+        for key in LocalProviderConfigStore.KEYS:
+            if key in values:
+                os.environ[key] = values[key]
+            else:
+                original = getattr(self, "_provider_env_baseline", {}).get(key)
+                if original is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = original
+
+    def set_provider_config(self, updates):
+        if self.provider_config is None:
+            raise LocalControlError(
+                "provider_config_unavailable",
+                "Local provider configuration is unavailable", 503)
+        values = self.provider_config.load()
+        for key, value in updates.items():
+            if value:
+                values[key] = value
+            else:
+                values.pop(key, None)
+        self.provider_config.save(values)
+        self.apply_provider_config()
+
+    def provider_status(self):
+        values = self.provider_config.load() if self.provider_config else {}
+        configured = {
+            "openai": bool(values.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")),
+            "deepseek": bool(values.get("DEEPSEEK_API_KEY") or os.getenv("DEEPSEEK_API_KEY")),
+        }
+        return {
+            "research": {"configured": any(configured.values())},
+            "web_search": {"configured": bool(values.get("TAVILY_API_KEY")
+                                               or os.getenv("TAVILY_API_KEY"))},
+            "llm_providers": configured,
+            "roles": {
+                "fast": values.get("FAST_LLM") or os.getenv("FAST_LLM")
+                        or "openai:gpt-5.4-mini",
+                "smart": values.get("SMART_LLM") or os.getenv("SMART_LLM")
+                         or "openai:gpt-5.4",
+                "strategic": values.get("STRATEGIC_LLM") or os.getenv("STRATEGIC_LLM")
+                             or "openai:gpt-5.4",
+            },
+        }
 
     def scan(self, directory):
         root = self.allowed.directory(directory)
@@ -424,6 +560,25 @@ class LocalControlService:
         root = self.allowed.directory(directory)
         try:
             return await ingest_dir(self.store, kb_id, root)
+        except KeyError:
+            raise LocalControlError(
+                "local_knowledge_base_not_found",
+                "Local knowledge base does not exist", 404) from None
+
+    def documents(self, kb_id):
+        try:
+            result = []
+            for document in self.store.list_documents(kb_id):
+                versions = self.store.list_versions_by_document(kb_id, document["id"])
+                latest = versions[-1]
+                result.append({
+                    **document,
+                    "version": latest.version,
+                    "source_type": latest.source_type,
+                    "updated_at": latest.updated_at,
+                    "status": latest.status,
+                })
+            return result
         except KeyError:
             raise LocalControlError(
                 "local_knowledge_base_not_found",
@@ -449,6 +604,36 @@ class LocalControlService:
             if versions:
                 result[document["logical_path"]] = (document, versions[-1])
         return result
+
+    def transfer_overview(self, local_kb_id, cloud_kb_id):
+        known = {item.id for item in self.store.list_knowledge_bases()}
+        if local_kb_id not in known:
+            raise LocalControlError(
+                "local_knowledge_base_not_found", "Local knowledge base does not exist", 404)
+        local_versions = []
+        for document in self.store.list_documents(local_kb_id):
+            versions = self.store.list_versions_by_document(local_kb_id, document["id"])
+            if versions:
+                local_versions.append(versions[-1])
+        cloud_versions = [latest for _, latest in self._cloud_documents(cloud_kb_id).values()]
+
+        def summary(versions):
+            return {
+                "document_count": len(versions),
+                "updated_at": max(
+                    (item["updated_at"] if isinstance(item, dict) else item.updated_at
+                     for item in versions), default=None),
+            }
+
+        return {
+            "local": summary(local_versions),
+            "cloud": summary(cloud_versions),
+            "baseline": {
+                "tracked_documents": self.sync.count(
+                    self.cloud.server, local_kb_id, cloud_kb_id),
+                "strategy": "per_document_content_hash",
+            },
+        }
 
     def push_knowledge_base(self, local_kb_id, cloud_kb_id):
         known = {item.id for item in self.store.list_knowledge_bases()}
@@ -568,17 +753,77 @@ def _asset(name):
     return files("deepresearch_kb.local_web").joinpath(name).read_text(encoding="utf-8")
 
 
+def _render_report_pdf(report_path):
+    """Render a completed Markdown report to a private, cached PDF artifact."""
+    pdf_path = report_path.with_suffix(".pdf")
+    if (pdf_path.is_file()
+            and pdf_path.stat().st_mtime_ns >= report_path.stat().st_mtime_ns):
+        return pdf_path
+
+    nonce = secrets.token_hex(8)
+    staged_path = report_path.parent / f".report-{nonce}.pdf"
+    staged_css = report_path.parent / f".report-{nonce}.css"
+    try:
+        from markdown import markdown
+        from weasyprint import CSS, HTML
+        from weasyprint.text.fonts import FontConfiguration
+
+        font_candidates = [
+            Path("/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc"),
+            Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+            Path("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"),
+            Path("/mnt/c/Windows/Fonts/simhei.ttf"),
+            Path("/mnt/c/Windows/Fonts/msyh.ttc"),
+            Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts/simhei.ttf",
+        ]
+        cjk_font = next((path for path in font_candidates if path.is_file()), None)
+        font_face = (f'@font-face {{ font-family: "Report CJK"; '
+                     f'src: url("{cjk_font.resolve().as_uri()}"); }}\n'
+                     if cjk_font else "")
+        staged_css.write_text(
+            font_face + _asset("report-print.css"), encoding="utf-8")
+        staged_css.chmod(0o600)
+        html = markdown(
+            report_path.read_text(encoding="utf-8"),
+            extensions=["extra", "sane_lists"],
+        )
+        font_config = FontConfiguration()
+        stylesheet = CSS(filename=staged_css, font_config=font_config)
+        HTML(string=html, base_url=report_path.parent).write_pdf(
+            staged_path, stylesheets=[stylesheet], font_config=font_config)
+        if not staged_path.is_file() or not staged_path.read_bytes().startswith(b"%PDF"):
+            raise RuntimeError("PDF renderer did not produce a PDF")
+        staged_path.chmod(0o600)
+        os.replace(staged_path, pdf_path)
+    except Exception:
+        staged_path.unlink(missing_ok=True)
+        raise LocalControlError(
+            "report_pdf_unavailable", "PDF report could not be generated", 503
+        ) from None
+    finally:
+        staged_css.unlink(missing_ok=True)
+    return pdf_path
+
+
 def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
                      service=None, allowed_hosts=None, control_token=None):
     allowed = AllowedRoot(root)
-    config = LocalConfigStore(Path(database).with_suffix(".cloud.json"))
+    database_path = Path(database)
+    config = LocalConfigStore(database_path.with_suffix(".cloud.json"))
+    provider_database = Path(service.store.database) if service is not None else database_path
+    provider_config = LocalProviderConfigStore(
+        provider_database.with_suffix(".providers.json"))
     if service is None and not server:
         saved_server, saved_token = config.load()
         server, token = saved_server, saved_token
     cloud = service.cloud if service else CloudClient(server, token)
     if service is None:
         store = KnowledgeStore(database)
-        service = LocalControlService(allowed, cloud, store, config=config)
+        service = LocalControlService(
+            allowed, cloud, store, config=config, provider_config=provider_config)
+    elif service.provider_config is None:
+        service.provider_config = provider_config
+        service.apply_provider_config()
     allowed_hosts = set(allowed_hosts or LOOPBACK_HOSTS)
     control_token = control_token or secrets.token_urlsafe(32)
     @asynccontextmanager
@@ -650,11 +895,40 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
             "cloud_token_configured": service.cloud.token_configured,
             "authoritative_store": "local",
             "local_database": str(service.store.database),
+            "providers": service.provider_status(),
         }
+
+    @app.put("/api/local/providers")
+    def configure_providers(body: ProviderInput):
+        fields = {
+            "openai_api_key": "OPENAI_API_KEY",
+            "deepseek_api_key": "DEEPSEEK_API_KEY",
+            "tavily_api_key": "TAVILY_API_KEY",
+            "openai_base_url": "OPENAI_BASE_URL",
+            "deepseek_base_url": "DEEPSEEK_BASE_URL",
+            "fast_llm": "FAST_LLM",
+            "smart_llm": "SMART_LLM",
+            "strategic_llm": "STRATEGIC_LLM",
+        }
+        updates = {environment: getattr(body, field) for field, environment in fields.items()
+                   if field in body.model_fields_set}
+        service.set_provider_config(updates)
+        return {"providers": service.provider_status()}
+
+    @app.delete("/api/local/providers")
+    def clear_providers():
+        if service.provider_config is not None:
+            service.provider_config.clear()
+            service.apply_provider_config()
+        return {"providers": service.provider_status()}
 
     @app.get("/api/local/kbs")
     def local_knowledge_bases():
         return [asdict(item) for item in service.store.list_knowledge_bases()]
+
+    @app.get("/api/local/kbs/{kb_id}/documents")
+    def local_documents(kb_id: str):
+        return service.documents(kb_id)
 
     @app.post("/api/local/kbs")
     def create_local_knowledge_base(body: KnowledgeBaseInput):
@@ -706,6 +980,28 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
         return await asyncio.to_thread(
             service.push_knowledge_base, body.local_kb_id, body.cloud_kb_id)
 
+    @app.get("/api/local/transfers/overview")
+    async def transfer_overview(local_kb_id: str, cloud_kb_id: str):
+        return await asyncio.to_thread(
+            service.transfer_overview, local_kb_id, cloud_kb_id)
+
+    @app.get("/api/local/research")
+    def local_research_history():
+        return [{
+            "id": task.id,
+            "query": task.query,
+            "knowledge_base_ids": list(task.knowledge_base_ids),
+            "status": task.status,
+            "created_at": task.created_at,
+            "started_at": task.started_at,
+            "completed_at": task.completed_at,
+            "updated_at": task.updated_at,
+            "phase": task.phase,
+            "progress_percent": task.progress_percent,
+            "evidence_count": task.evidence_count,
+            "error": asdict(task.error) if task.error else None,
+        } for task in service.tasks.list()]
+
     @app.post("/api/local/research")
     async def local_research(body: ResearchInput):
         known_ids = {kb.id for kb in service.store.list_knowledge_bases()}
@@ -721,7 +1017,9 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
             task = service.tasks.create(
                 body.query, body.knowledge_base_ids,
                 requirements=requirements, as_of=body.as_of,
-                max_deep_calls=body.max_deep_calls)
+                max_deep_calls=body.max_deep_calls,
+                output_language=body.output_language,
+                research_depth=body.research_depth)
         except ValueError:
             raise LocalControlError(
                 "invalid_requirement", "Evidence requirement is invalid", 422) from None
@@ -735,8 +1033,12 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
             raise LocalControlError("task_not_found", "Research task does not exist", 404)
         return {
             "id": task.id, "query": task.query, "status": task.status,
+            "knowledge_base_ids": list(task.knowledge_base_ids),
             "created_at": task.created_at, "started_at": task.started_at,
             "completed_at": task.completed_at,
+            "updated_at": task.updated_at, "phase": task.phase,
+            "progress_percent": task.progress_percent,
+            "evidence_count": task.evidence_count,
             "error": asdict(task.error) if task.error else None,
         }
 
@@ -762,6 +1064,30 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
             lambda task_id, name=artifact_name: local_research_artifact(task_id, name))
     app.get("/api/local/research/{task_id}/report")(
         lambda task_id: local_research_artifact(task_id, "report.md"))
+
+    @app.get("/api/local/research/{task_id}/download")
+    def download_research_report(
+            task_id: str, format: Literal["md", "pdf"] = "md"):
+        try:
+            task = service.tasks.get(task_id)
+        except KeyError:
+            raise LocalControlError(
+                "task_not_found", "Research task does not exist", 404) from None
+        if task.status != "completed" or not task.artifact_path:
+            raise LocalControlError(
+                "task_not_completed", "Research task is not completed", 409)
+        report_path = Path(task.artifact_path) / "report.md"
+        if not report_path.is_file():
+            raise LocalControlError(
+                "artifact_not_found", "Research artifact is unavailable", 404)
+        download_path = (
+            report_path if format == "md" else _render_report_pdf(report_path))
+        return FileResponse(
+            download_path,
+            media_type=("text/markdown; charset=utf-8"
+                        if format == "md" else "application/pdf"),
+            filename=f"research-{task.id}.{format}",
+        )
 
     return app
 

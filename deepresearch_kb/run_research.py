@@ -131,7 +131,19 @@ def main():
     if args.mode != "external" and not args.kb:
         parser.error("internal/hybrid requires --kb")
     load_dotenv()
-    required = ["OPENAI_API_KEY"] + (["TAVILY_API_KEY"] if args.mode != "internal" else [])
+    llm_providers = {
+        value.partition(":")[0]
+        for value in (
+            os.getenv("FAST_LLM", "openai:gpt-4o-mini"),
+            os.getenv("SMART_LLM", "openai:gpt-4o"),
+            os.getenv("STRATEGIC_LLM", "openai:o1-preview"),
+        )
+    }
+    required = [
+        {"openai": "OPENAI_API_KEY", "deepseek": "DEEPSEEK_API_KEY"}.get(
+            provider, f"{provider.upper()}_API_KEY")
+        for provider in sorted(llm_providers)
+    ] + (["TAVILY_API_KEY"] if args.mode != "internal" else [])
     missing = [key for key in required if not os.getenv(key)]
     if missing:
         parser.error("Missing local credentials: " + ", ".join(missing))

@@ -2,7 +2,6 @@ import json_repair
 import logging
 from typing import Any, Dict, List
 
-from gpt_researcher.llm_provider.generic.base import ReasoningEfforts
 
 from ..config import Config
 from ..prompts import PromptFamily
@@ -121,7 +120,7 @@ async def generate_sub_queries(
             llm_provider=cfg.strategic_llm_provider,
             max_tokens=None,
             llm_kwargs=cfg.llm_kwargs,
-            reasoning_effort=ReasoningEfforts.Medium.value,
+            reasoning_effort=cfg.reasoning_effort,
             cost_callback=cost_callback,
             **kwargs
         )

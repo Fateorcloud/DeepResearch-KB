@@ -1,6 +1,8 @@
 """Small SQLite knowledge store. No vector index or research routing yet."""
 
 import hashlib
+import csv
+import io
 import json
 import re
 import sqlite3
@@ -51,6 +53,24 @@ def _logical_path(value: str) -> str:
 
 
 async def _load_upstream(path: Path) -> list[dict]:
+    # GPTR's upstream DocumentLoader does not consistently expose JSON/CSV
+    # loaders (CSV may additionally depend on pandas). These are plain-text
+    # knowledge assets, so keep ingestion deterministic and dependency-light
+    # at this boundary instead of reporting false parser failures.
+    suffix = path.suffix.lower()
+    if suffix == ".json":
+        text = path.read_text(encoding="utf-8-sig")
+        try:
+            text = json.dumps(json.loads(text), ensure_ascii=False, indent=2)
+        except json.JSONDecodeError:
+            # Preserve a useful parseable text page; malformed JSON remains
+            # visible to Research rather than being silently discarded.
+            pass
+        return [{"raw_content": text}]
+    if suffix == ".csv":
+        text = path.read_text(encoding="utf-8-sig")
+        rows = csv.reader(io.StringIO(text))
+        return [{"raw_content": "\n".join("\t".join(row) for row in rows)}]
     # Lazy import: metadata operations do not require GPTR's optional stack.
     from gpt_researcher.document import DocumentLoader
 
