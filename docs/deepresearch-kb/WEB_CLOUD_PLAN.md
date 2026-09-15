@@ -1,6 +1,6 @@
 # DeepResearch-KB Web 与云端互通开发方案
 
-状态：实施中。Stage 0～4 已于 2026-09-15 完成 Gate，下一阶段为 Stage 5 Deployment。本文描述产品层开发，不改变 Phase 1～5B 已验收的 Research Core。
+状态：实施中。Stage 0～3 已于 2026-09-15 完成 Gate；Stage 4 进入 Local-first 修订，Stage 5 Deployment 暂不开始。本文描述产品层开发，不改变 Phase 1～5B 已验收的 Research Core。
 
 ## 1. 目标
 
@@ -22,9 +22,9 @@ Local Control Web ─── HTTPS ───→ Cloud DeepResearch-KB
 
 ## 2. 核心原则
 
-1. 云端 SQLite 是唯一权威知识库，不维护需要合并的本地、云端双主数据库。
-2. 本地向云端传输原文件、`logical_path` 和必要 metadata，不直接覆盖云端 `.db`。
-3. 云端数据库可生成一致性快照并下载到本地备份；备份不是双向同步。
+1. Local Control 可以在没有云端配置时独立读取本地项目知识库并发起 Research。
+2. 云端与本地数据库均可作为明确选定的工作副本；不做隐式实时双主冲突合并。
+3. 本地与云端的数据流通必须由用户主动触发，并通过可审计的 push/pull/backup 操作完成。
 4. Web、CLI、MCP 继续复用 `KnowledgeService`、`ResearchService` 和 `TaskService`。
 5. 不修改版本治理、充分性判断、Adaptive Router 或 Phase 4.5 冻结评测。
 6. 初期仅支持单用户，认证实现仍满足基本 Web 安全要求。
@@ -97,15 +97,14 @@ manifest.json
 
 | 入口 | 连接对象 | 可写数据 | 不应做的事 |
 |---|---|---|---|
-| Cloud Web | 云端 API → 云端 `kb.sqlite` | KB、文档版本、Research task 请求 | 直接访问 SQLite 文件 |
-| Local Control Web | loopback companion → 云端 API | 扫描本地目录、上传原文件、请求备份 | 上传/覆盖数据库，建立双主同步 |
-| MCP | 应用 Service Layer | 复用云端或明确配置的单一 `KnowledgeStore` | 创建 MCP 专属库或自行复制 Research 逻辑 |
+| Cloud Web | 云端 API → 云端 `kb.sqlite` | 云端 KB、文档版本、Research task 请求 | 直接访问 SQLite 文件 |
+| Local Control Web | 本地 `KnowledgeStore`，云端配置为可选 | 本地 KB、Research；主动 push/pull/backup | 隐式实时双主合并 |
+| MCP | 应用 Service Layer | 复用当前明确选定的本地或云端 `KnowledgeStore` | 创建 MCP 专属库或自行复制 Research 逻辑 |
 
-云端持久化分为三类：`kb.sqlite` 是唯一知识库权威；`tasks/` 保存 Research artifacts；
-`backups/` 保存通过 online backup 生成的下载副本。Local Control 的可选 `local.sqlite`
-仅服务本地 `ingest-dir` 验证，不是云端副本，也不参与合并。MCP 部署在云端时与 Web
-共享同一 Service Layer 和云端数据库；本地运行 MCP 时必须显式指定一个数据库路径，
-不提供隐式的本地/云端双主关系。
+每个工作副本都由一个 `KnowledgeStore`、对应的 `tasks/` 和 `backups/` 组成。Local Control
+默认使用本地项目数据库并可直接 Research；设置中添加云端地址和 CLI token 后，才启用主动
+push、pull 或 backup。同步方向、覆盖策略和失败结果必须显式显示，不提供后台自动合并。
+MCP 与当前选定的 Service Layer 共用数据库，不创建第三份库。
 
 ## 5. 单用户认证
 
@@ -119,8 +118,8 @@ manifest.json
 - provider key、session secret 和 token 仅存在服务器环境变量；
 - 除登录、静态资源和健康检查外，所有 route 均需认证。
 
-Local Control 的 `DRKB_CLI_TOKEN` 来自云端 Web“设置 → CLI / Local Control token”创建动作，
-明文只展示一次；它不是登录密码，也不应写入仓库或公开命令历史。
+Local Control 的云端 token 是可选配置，来自云端 Web“设置 → CLI / Local Control token”创建动作，
+明文只展示一次；没有 token 时本地 Research 仍应可用。token 不应写入仓库或公开命令历史。
 
 ## 6. 后端 product contract
 
@@ -301,20 +300,15 @@ trace/metrics、生成 SQLite 快照与完整归档，以及创建 CLI token；�
 
 ### Stage 4 — Local Control Web
 
-- [x] loopback companion；
-- [x] 一键扫描、ingest、push 与备份下载；
+- [ ] local-first companion：无云端配置也能读取本地 KB 并 Research；
+- [ ] 设置页添加可选云端地址/token；
+- [ ] 显式 push/pull/backup 双向数据流；
 - [x] allowed-root/path traversal 防护。
 
-Gate：本地目录推送后，云端同一 `kb_id` 立即出现正确文档版本。
+Gate：无 token 时本地 Research 可用；配置云端后，用户主动执行 push/pull，双方版本和冲突状态可见。
 
-实际验收：新增 `deepresearch_kb local-web` loopback-only companion，页面显示允许目录、云端
-authoritative store 和 token 配置状态，支持扫描支持格式、可选本地 `ingest-dir`、认证 `push-dir`
-和云端 SQLite 快照下载。目录解析拒绝绝对路径、`..` 穿越、外部 symlink 和非目录；写请求需要
-本地 control token；云端错误统一映射为结构化错误。`push-dir` 通过 multipart 上传原文件与
-`logical_path`，返回 imported/unchanged/failed 汇总；同一字节幂等，变更字节生成新版本。专项
-测试 5 passed；Playwright 桌面与 390×844 移动端浏览器验收完成扫描 → push → 云端版本反查 →
-backup 下载，SQLite `PRAGMA integrity_check` 通过。CLI `push-dir` 现在读取 `DRKB_CLI_TOKEN`，
-不再发送未认证请求。
+当前已验收的 loopback companion 仍是 cloud-required 原型；下一轮必须改为 local-first，补齐本地
+Research、可选 token 配置和显式双向传输后，才重新通过 Stage 4 Gate。
 
 ### Stage 5 — Deployment
 
