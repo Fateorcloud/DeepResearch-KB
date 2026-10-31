@@ -76,3 +76,25 @@ tied with jieba on quality and needs no dictionary. Rerank is not chosen
 because its one-case gain costs four orders of magnitude in latency. The
 test split is run once for all candidates after this commit; no parameter is
 changed afterwards.
+## Test results (37 answerable cases, run once after the selection commit)
+
+Run at commit 9b8a01b8. `worktree_dirty` was true only because of an
+unrelated, pre-existing change to `backend/run_server.py`.
+
+| retriever | R@1 | R@5 | R@10 | MRR@10 | empty | p50 ms |
+|---|---|---|---|---|---|---|
+| fts5 (current) | 0.270 | 0.378 | 0.432 | 0.308 | 0.513 | 0.4 |
+| trigram | 0.378 | 0.757 | 0.757 | 0.523 | 0.000 | 0.3 |
+| **bigram (selected)** | 0.460 | **0.838** | 0.865 | 0.612 | 0.000 | 0.3 |
+| jieba | 0.460 | 0.784 | 0.838 | 0.600 | 0.000 | 0.4 |
+| vector | 0.270 | 0.622 | 0.703 | 0.412 | 0.000 | 2.7 |
+| hybrid | 0.432 | 0.730 | 0.811 | 0.563 | 0.000 | 3.3 |
+| rerank | 0.595 | 0.865 | 0.892 | 0.730 | 0.000 | 4174 |
+| bigram_c400 | 0.405 | 0.730 | 0.757 | 0.550 | 0.000 | 0.3 |
+| vector_c400 | 0.270 | 0.595 | 0.730 | 0.412 | 0.000 | 24.5 |
+| hybrid_c400 | 0.378 | 0.676 | 0.784 | 0.519 | 0.000 | 27.8 |
+
+By type, span R@5 for fts5 → bigram: fact 0.526 → 0.947, paraphrase
+0.077 → 0.692, version 0.600 → 0.800. The ordering matches dev. The
+selected bigram analyser lives only in this benchmark; `KnowledgeStore`
+still uses the default tokenizer until it is changed and migrated.
