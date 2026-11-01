@@ -102,12 +102,12 @@ class VersionGovernance:
         with closing(self.store._connect()) as db:
             rows = db.execute(f"""SELECT c.*, d.knowledge_base_id, d.logical_path,
                 v.source_type, v.source_uri, v.content_hash, v.updated_at,
-                g.effective_at_inferred, bm25(chunk_fts) AS rank
-                FROM chunk c JOIN chunk_fts ON chunk_fts.rowid=c.rowid
+                g.effective_at_inferred, bm25(chunk_terms) AS rank
+                FROM chunk c JOIN chunk_terms ON chunk_terms.rowid=c.rowid
                 JOIN document d ON d.id=c.document_id
                 JOIN document_version v ON v.document_id=c.document_id AND v.version=c.version
                 JOIN version_governance g ON g.document_id=c.document_id AND g.version=c.version
-                WHERE d.knowledge_base_id IN ({placeholders}) AND chunk_fts MATCH ?
+                WHERE d.knowledge_base_id IN ({placeholders}) AND chunk_terms MATCH ?
             """, [*kb_ids, expression]).fetchall()
         hits = []
         for row in rows:

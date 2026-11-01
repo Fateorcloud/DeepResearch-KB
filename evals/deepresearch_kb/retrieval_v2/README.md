@@ -98,3 +98,20 @@ By type, span R@5 for fts5 → bigram: fact 0.526 → 0.947, paraphrase
 0.077 → 0.692, version 0.600 → 0.800. The ordering matches dev. The
 selected bigram analyser lives only in this benchmark; `KnowledgeStore`
 still uses the default tokenizer until it is changed and migrated.
+## After landing in KnowledgeStore (schema 2)
+
+`KnowledgeStore` and `GovernedKnowledge` now index and query CJK as
+character bigrams (`chunk_terms`); schema-1 databases are rebuilt on open.
+English handling is unchanged (function-word filter, quoted phrases), so
+the `fts5` retriever — the product's own `retrieve()` — differs slightly
+from the benchmark-only `bigram` analyser.
+
+| split | fts5 before | fts5 after | bigram (benchmark) |
+|---|---|---|---|
+| dev R@5 | 0.325 | 0.800 | 0.800 |
+| test R@5 | 0.378 | **0.811** | 0.838 |
+| test MRR@10 | 0.308 | 0.609 | 0.612 |
+| test empty | 0.513 | 0.000 | 0.000 |
+
+The test split was re-run only to verify the implementation; nothing was
+tuned on it. p50 latency of `retrieve()` is ~2.7 ms on this corpus.

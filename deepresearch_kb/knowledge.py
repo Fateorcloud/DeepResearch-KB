@@ -17,17 +17,37 @@ from .models import DocumentVersion, Evidence, KnowledgeBase, SourceType
 # Deliberately small English function-word list, not a domain vocabulary.
 # Quoted phrases and uppercase acronyms bypass it (e.g. "The Who", IS).
 _QUESTION_WORDS = frozenset("a an the is are was were be been being what which who where when why how do does did can could would should of for to in on at and or with about".split())
+# SQLite's unicode61 tokenizer keeps a whole run of Chinese between punctuation
+# as one token, so "依赖注入" never matches "依赖注入指的是……". CJK runs are
+# indexed and queried as character bigrams; other text is left to unicode61.
+# Chosen with evals/deepresearch_kb/retrieval_v2.
+_CJK_RUN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]+")
+
+
+def _index_text(text: str) -> str:
+    def bigrams(match):
+        run = match.group()
+        grams = [run] if len(run) == 1 else [run[i:i + 2] for i in range(len(run) - 1)]
+        return " " + " ".join(grams) + " "
+    return _CJK_RUN.sub(bigrams, text)
+
+
+def _index_chunks(db, rows):
+    db.executemany("INSERT INTO chunk_terms(rowid, terms) VALUES (?, ?)",
+                   [(rowid, _index_text(text)) for rowid, text in rows])
 
 
 def _fts_query(query: str) -> str:
     terms = []
     for phrase, word in re.findall(r'"([^"]+)"|(\w+)', query):
         if phrase:
-            words = re.findall(r"\w+", phrase)
+            words = re.findall(r"\w+", _index_text(phrase))
             if words:
                 terms.append('"' + " ".join(words) + '"')
-        elif word.isupper() or word.casefold() not in _QUESTION_WORDS:
-            terms.append('"' + word + '"')
+            continue
+        for part in re.findall(r"\w+", _index_text(word)):
+            if _CJK_RUN.match(part) or part.isupper() or part.casefold() not in _QUESTION_WORDS:
+                terms.append('"' + part + '"')
     return " OR ".join(dict.fromkeys(terms))
 
 
@@ -91,7 +111,7 @@ class KnowledgeStore:
         self.database.parent.mkdir(parents=True, exist_ok=True)
         self.loader = loader or _load_upstream
         with closing(self._connect()) as db, db:
-            if db.execute("PRAGMA user_version").fetchone()[0] > 1:
+            if db.execute("PRAGMA user_version").fetchone()[0] > 2:
                 raise ValueError("knowledge database schema is newer than this application")
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -127,24 +147,17 @@ class KnowledgeStore:
                     UNIQUE(document_id, version, ordinal),
                     FOREIGN KEY(document_id, version) REFERENCES document_version(document_id, version)
                 );
-                CREATE VIRTUAL TABLE IF NOT EXISTS chunk_fts USING fts5(
-                    text, content='chunk', content_rowid='rowid'
-                );
-                CREATE TRIGGER IF NOT EXISTS chunk_ai AFTER INSERT ON chunk BEGIN
-                    INSERT INTO chunk_fts(rowid, text) VALUES (new.rowid, new.text);
-                END;
-                CREATE TRIGGER IF NOT EXISTS chunk_ad AFTER DELETE ON chunk BEGIN
-                    INSERT INTO chunk_fts(chunk_fts, rowid, text) VALUES ('delete', old.rowid, old.text);
-                END;
-                CREATE TRIGGER IF NOT EXISTS chunk_au AFTER UPDATE ON chunk BEGIN
-                    INSERT INTO chunk_fts(chunk_fts, rowid, text) VALUES ('delete', old.rowid, old.text);
-                    INSERT INTO chunk_fts(rowid, text) VALUES (new.rowid, new.text);
+                -- Rows hold _index_text(chunk.text); ingest writes them in Python.
+                CREATE VIRTUAL TABLE IF NOT EXISTS chunk_terms USING fts5(terms);
+                CREATE TRIGGER IF NOT EXISTS chunk_terms_ad AFTER DELETE ON chunk BEGIN
+                    DELETE FROM chunk_terms WHERE rowid = old.rowid;
                 END;
             """)
-            # Historical Phase 1 databases had versions but no chunks, or chunks
-            # created before the FTS triggers. Backfill and rebuild atomically.
+            # Historical Phase 1 databases had versions but no chunks; schema 1
+            # indexed raw text with unicode61. Backfill and rebuild atomically.
             db.execute("BEGIN IMMEDIATE")
-            if db.execute("PRAGMA user_version").fetchone()[0] == 0:
+            schema = db.execute("PRAGMA user_version").fetchone()[0]
+            if schema == 0:
                 rows = db.execute("""
                     SELECT v.document_id, v.version, v.pages_json FROM document_version v
                     WHERE NOT EXISTS (SELECT 1 FROM chunk c WHERE
@@ -155,8 +168,13 @@ class KnowledgeStore:
                         (uuid4().hex, row["document_id"], row["version"], ordinal, text)
                         for ordinal, text in enumerate(_chunks(json.loads(row["pages_json"])))
                     ])
-                db.execute("INSERT INTO chunk_fts(chunk_fts) VALUES ('rebuild')")
-                db.execute("PRAGMA user_version = 1")
+            if schema < 2:
+                for trigger in ("chunk_ai", "chunk_ad", "chunk_au"):
+                    db.execute(f"DROP TRIGGER IF EXISTS {trigger}")
+                db.execute("DROP TABLE IF EXISTS chunk_fts")
+                db.execute("DELETE FROM chunk_terms")
+                _index_chunks(db, db.execute("SELECT rowid, text FROM chunk").fetchall())
+                db.execute("PRAGMA user_version = 2")
 
     def _connect(self):
         db = sqlite3.connect(self.database)
@@ -316,6 +334,9 @@ class KnowledgeStore:
                     (uuid4().hex, document_id, version, ordinal, text)
                     for ordinal, text in enumerate(_chunks(pages)) if text
                 ])
+                _index_chunks(db, db.execute(
+                    "SELECT rowid, text FROM chunk WHERE document_id = ? AND version = ?",
+                    (document_id, version)).fetchall())
         return self.list_versions(knowledge_base_id, logical_path)[-1]
 
     def retrieve(self, knowledge_base_ids: list[str], query: str, *, limit: int = 5) -> list[Evidence]:
@@ -337,13 +358,13 @@ class KnowledgeStore:
             rows = db.execute(f"""
                 SELECT c.id, c.text, v.source_type, v.source_uri, d.logical_path,
                        d.id AS document_id, c.version, d.knowledge_base_id,
-                       v.content_hash, v.updated_at, bm25(chunk_fts) AS rank
+                       v.content_hash, v.updated_at, bm25(chunk_terms) AS rank
                 FROM chunk c
-                JOIN chunk_fts ON chunk_fts.rowid = c.rowid
+                JOIN chunk_terms ON chunk_terms.rowid = c.rowid
                 JOIN document d ON d.id = c.document_id
                 JOIN document_version v ON v.document_id = c.document_id AND v.version = c.version
                 WHERE d.knowledge_base_id IN ({placeholders}) AND v.status = 'active'
-                  AND chunk_fts MATCH ?
+                  AND chunk_terms MATCH ?
             """, [*knowledge_base_ids, fts_query])
             scored = []
             for row in rows:
