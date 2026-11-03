@@ -27,7 +27,8 @@ class BrowserResearchEngine:
 
     async def run(self, query, *, knowledge_base_ids, requirements, output_dir,
                   as_of=None, max_deep_calls=1, progress=None,
-                  output_language="Chinese", research_depth="medium"):
+                  output_language="Chinese", research_depth="medium",
+                  source_mode="web", claims_source="explicit"):
         if progress:
             progress({"phase": "retrieval", "progress_percent": 35,
                       "evidence_count": 1})

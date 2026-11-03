@@ -218,7 +218,7 @@ def test_local_research_works_without_cloud_configuration(tmp_path):
     class LocalEngine:
         async def run(self, query, *, knowledge_base_ids, requirements, output_dir,
                       as_of=None, max_deep_calls=1, progress=None,
-                      output_language="Chinese", research_depth="medium"):
+                      output_language="Chinese", research_depth="medium", source_mode="web"):
             observed.update({
                 "query": query,
                 "knowledge_base_ids": knowledge_base_ids,
@@ -249,6 +249,7 @@ def test_local_research_works_without_cloud_configuration(tmp_path):
         "/api/local/research",
         json={
             "query": "本地问题", "knowledge_base_ids": [kb.id],
+            "source_mode": "local",
             "required_claims": ["回答本地事实"],
             "required_source_types": ["local_import"],
             "minimum_distinct_sources": 2,
@@ -313,7 +314,7 @@ def test_local_research_works_without_cloud_configuration(tmp_path):
 
     invalid_kb = client.post(
         "/api/local/research",
-        json={"query": "本地问题", "knowledge_base_ids": ["missing"]},
+        json={"query": "本地问题", "knowledge_base_ids": ["missing"], "source_mode": "local"},
         headers={"X-Local-Control-Token": "local-only-token"})
     assert invalid_kb.status_code == 404
     assert invalid_kb.json()["detail"]["code"] == "local_knowledge_base_not_found"

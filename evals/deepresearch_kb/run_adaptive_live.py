@@ -23,7 +23,8 @@ async def main(query, database, kb, output, max_deep_calls=1, requirements_path=
     requirements = parse(raw) if "required_claims" in raw else {q: parse(r) for q, r in raw.items()}
     load_dotenv()
     engine = ResearchEngine(store=KnowledgeStore(database), max_deep_calls=max_deep_calls)
-    result = await engine.run(query, knowledge_base_ids=[kb], requirements=requirements, output_dir=output)
+    result = await engine.run(query, knowledge_base_ids=[kb], requirements=requirements,
+                              output_dir=output, source_mode="hybrid")
     print(output)
     return result
 

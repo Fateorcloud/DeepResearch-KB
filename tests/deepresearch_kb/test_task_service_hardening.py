@@ -25,6 +25,7 @@ SAVED_REQUEST_FIELDS = {
     "minimum_distinct_sources", "require_current_version", "as_of",
     "max_deep_calls", "output_language", "research_depth", "claims_source",
     "requirement_id",
+    "source_mode",
 }
 
 
@@ -106,7 +107,7 @@ def request_body(**changes):
     return {
         "query": "research question", "knowledge_base_ids": [],
         "required_claims": ["first claim", "second claim"],
-        "required_source_types": ["external_web", "web_upload"],
+        "required_source_types": ["external_web"],
         "minimum_distinct_sources": 3, "require_current_version": True,
         "as_of": "2026-10-30T12:34:56+08:00", "max_deep_calls": 4,
         "output_language": "English", "research_depth": "high", **changes,
@@ -148,7 +149,7 @@ def full_record(**changes):
         minimum_distinct_sources=2, require_current_version=True,
         as_of="2026-10-30T12:34:56+08:00", max_deep_calls=3,
         output_language="English", research_depth="high", claims_source="generated",
-        requirement_id="saved-requirement", retry_available=True)) | changes
+        requirement_id="saved-requirement", retry_available=True, source_mode="web")) | changes
 
 
 async def test_background_tasks_are_retained_until_completion(services):
@@ -425,7 +426,7 @@ async def test_retry_replays_all_parameters_and_preserves_original(services, api
     original = service.create(
         "saved question", [], requirements=EvidenceRequirement(
             "saved-requirement", ("first claim", "second claim"),
-            ("web_upload", "external_web"), 3, True),
+            ("external_web",), 3, True),
         as_of=datetime.fromisoformat("2026-10-30T12:34:56+08:00"), max_deep_calls=4,
         output_language="English", research_depth="high", claims_source="generated")
     await research.wait_started(0)
@@ -529,7 +530,7 @@ async def test_retry_returns_404_when_original_knowledge_base_was_deleted(api_fa
     research = ControlledResearch({0: TimeoutError("failed")})
     client, _, root, store = api_factory(research)
     kb = store.create_knowledge_base("original knowledge base")
-    task_id = await submit(client, knowledge_base_ids=[kb.id])
+    task_id = await submit(client, knowledge_base_ids=[kb.id], source_mode="hybrid")
     await research.wait_started(0)
     research.releases[0].set()
     await wait_status(client, task_id, "failed")
@@ -550,8 +551,10 @@ async def test_request_parameters_and_retry_of_round_trip_after_restart(services
         requirements=EvidenceRequirement("saved", ("claim one", "claim two"),
                                          ("external_web", "local_import"), 3, True),
         as_of=datetime.fromisoformat("2026-10-30T12:34:56+08:00"), max_deep_calls=0,
-        output_language="English", research_depth="high", claims_source="query_fallback")
-    task = service.create("saved question", ["kb-one", "kb-two"], retry_of="b" * 32, **options)
+        output_language="English", research_depth="high", claims_source="query_fallback",
+        source_mode="hybrid")
+    task = service.create("saved question", [] if use_defaults else ["kb-one", "kb-two"],
+                          retry_of="b" * 32, **options)
     await service.research.wait_started(0)
     service.research.releases[0].set()
     await service._background_tasks[task.id]

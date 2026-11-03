@@ -23,6 +23,7 @@ from .services.research import ResearchService
 from .services.tasks import TaskActionError, TaskService
 from .directory import SUPPORTED
 from .sufficiency import EvidenceRequirement
+from .source_modes import SourceMode, SourceModeError, validate_source_mode
 from .claim_suggestions import ClaimSuggester, ClaimsGenerationError, ClaimsSuggestRequest
 
 
@@ -76,7 +77,8 @@ class ResearchCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     query: str = Field(min_length=1)
-    knowledge_base_ids: list[str]
+    knowledge_base_ids: list[str] = Field(default_factory=list)
+    source_mode: SourceMode = "web"
     required_claims: list[str] = Field(min_length=1)
     required_source_types: list[Literal["local_import", "web_upload", "external_web"]] = Field(
         default_factory=list)
@@ -185,8 +187,10 @@ def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=N
     async def invalid_request(_request, exc):
         errors = [{"location": list(item["loc"]), "type": item["type"],
                    "message": item["msg"]} for item in exc.errors()]
+        code = ("invalid_source_mode" if any(item["location"] == ["body", "source_mode"]
+                                            for item in errors) else "invalid_request")
         return JSONResponse(status_code=422, content={"detail": {
-            **_error("invalid_request", "Request validation failed"),
+            **_error(code, "Request validation failed"),
             "errors": errors}})
 
     @app.get("/api/health")
@@ -399,6 +403,10 @@ def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=N
 
     @app.post("/api/research")
     async def create_research(body: ResearchCreate):
+        try:
+            validate_source_mode(body.source_mode, body.knowledge_base_ids, body.required_source_types)
+        except SourceModeError as exc:
+            raise HTTPException(422, detail=_error(exc.code, str(exc))) from None
         known_ids = {kb.id for kb in knowledge.list()}
         if any(kb_id not in known_ids for kb_id in body.knowledge_base_ids):
             raise HTTPException(404, detail=_error(
@@ -415,7 +423,8 @@ def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=N
                             requirements=requirement, as_of=body.as_of,
                             max_deep_calls=body.max_deep_calls,
                             output_language=body.output_language,
-                            research_depth=body.research_depth)
+                            research_depth=body.research_depth,
+                            source_mode=body.source_mode)
         return {"task_id": task.id}
 
     @app.get("/api/research")

@@ -17,6 +17,7 @@ REQUEST_FIELDS = {
     "minimum_distinct_sources", "require_current_version", "as_of",
     "max_deep_calls", "output_language", "research_depth", "claims_source",
     "requirement_id",
+    "source_mode",
 }
 
 
@@ -65,6 +66,7 @@ class ResearchTask:
     requirement_id: str | None = None
     retry_of: str | None = None
     retry_available: bool = False
+    source_mode: str | None = None
 
 
 class TaskService:
@@ -125,12 +127,13 @@ class TaskService:
                     max_deep_calls=record.get("max_deep_calls"),
                     requirement_id=record.get("requirement_id"),
                     retry_of=record.get("retry_of"),
+                    source_mode=record.get("source_mode"),
                     retry_available=(record.get("retry_available", True)
                                      and REQUEST_FIELDS <= record.keys()
                                      and all(record.get(key) is not None for key in (
                                          "required_claims", "required_source_types",
                                          "minimum_distinct_sources", "require_current_version",
-                                         "max_deep_calls", "requirement_id"))),
+                                         "max_deep_calls", "requirement_id", "source_mode"))),
                 )
                 if task.status in {"queued", "running"}:
                     task.status = "failed"
@@ -177,7 +180,8 @@ class TaskService:
 
     def create(self, query, knowledge_base_ids, *, requirements=None,
                as_of=None, max_deep_calls=1, output_language="Chinese",
-               research_depth="medium", claims_source="explicit", retry_of=None):
+               research_depth="medium", claims_source="explicit", retry_of=None,
+               source_mode="web"):
         if requirements is None:
             # Keep the existing query-only MCP contract usable while ensuring
             # ResearchEngine never receives an implicit None requirement.
@@ -195,7 +199,7 @@ class TaskService:
             require_current_version=requirements.require_current_version,
             as_of=as_of.isoformat() if as_of is not None else None,
             max_deep_calls=max_deep_calls, requirement_id=requirements.id,
-            retry_of=retry_of, retry_available=True)
+            retry_of=retry_of, retry_available=True, source_mode=source_mode)
         self.tasks[task.id] = task
         self._persist()
         background = asyncio.create_task(self._run(
@@ -239,7 +243,7 @@ class TaskService:
                     requirements=requirements, output_dir=folder,
                     as_of=as_of, max_deep_calls=max_deep_calls,
                     progress=progress, output_language=output_language,
-                    research_depth=research_depth, **options)
+                    research_depth=research_depth, source_mode=task.source_mode, **options)
                 if result.get("metrics", {}).get("status") == "failed":
                     # A failed result has no exception type; retain its existing API message.
                     task.status = task.phase = "failed"
@@ -297,7 +301,7 @@ class TaskService:
             as_of=datetime.fromisoformat(task.as_of) if task.as_of is not None else None,
             max_deep_calls=task.max_deep_calls, output_language=task.output_language,
             research_depth=task.research_depth, claims_source=task.claims_source,
-            retry_of=task.id)
+            retry_of=task.id, source_mode=task.source_mode)
 
     def get(self, task_id):
         if task_id not in self.tasks:

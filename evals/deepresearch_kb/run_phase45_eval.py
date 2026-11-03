@@ -175,7 +175,7 @@ async def run_adaptive(case, store, kb, folder):
     result = await engine.run(
         case["question"], knowledge_base_ids=[kb.id],
         requirements={case["subquestion"]: req},
-        output_dir=folder)
+        output_dir=folder, source_mode="hybrid")
     metrics = result["metrics"]
     metrics["fixture_calls"] = {"internal": 1 if case.get("internal_versions") else 0,
                                  "quick": len(quick_calls), "deep": len(deep_calls)}

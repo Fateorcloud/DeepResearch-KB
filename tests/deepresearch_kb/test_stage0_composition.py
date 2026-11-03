@@ -23,8 +23,9 @@ def _research_body(kb_id=None):
     return {
         "query": "Which storage decision is current?",
         "knowledge_base_ids": [kb_id] if kb_id else [],
+        "source_mode": "hybrid" if kb_id else "web",
         "required_claims": ["SQLite is the current storage decision"],
-        "required_source_types": ["web_upload", "external_web"],
+        "required_source_types": ["web_upload", "external_web"] if kb_id else ["external_web"],
         "minimum_distinct_sources": 2,
         "require_current_version": True,
         "as_of": "2026-09-15T10:00:00+08:00",

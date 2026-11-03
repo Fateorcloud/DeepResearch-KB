@@ -6,6 +6,8 @@ const state = {
   cloudKbs: [],
   tasks: [],
   selectedKbs: new Set(),
+  sourceMode: "web",
+  generatingClaims: false,
   currentTaskId: null,
   pollingTaskId: null,
   sources: [],
@@ -79,7 +81,7 @@ function statusLabel(status) {
 function phaseLabel(phase) {
   return {
     queued: "等待执行", starting: "正在启动", planning: "正在规划研究问题",
-    retrieval: "正在检索知识库", quick_research: "正在补充 Web Research",
+    retrieval: "正在准备检索", standard_research: "正在执行标准搜索", quick_research: "正在执行快速搜索",
     deep_research: "正在执行 Deep Research", sufficiency: "正在检查证据充分性",
     synthesis: "正在撰写报告", finalizing: "正在保存研究结果",
     completed: "研究已完成", failed: "研究未完成",
@@ -103,7 +105,11 @@ function taskKbTags(task) {
   const ids = task.knowledge_base_ids || [];
   return ids.length
     ? ids.map((id) => `<span class="kb-tag">${escapeHtml(kbName(id))}</span>`).join("")
-    : '<span class="kb-tag">本地知识库</span>';
+    : `<span class="kb-tag">${escapeHtml(sourceModeLabel(task.source_mode))}</span>`;
+}
+
+function sourceModeLabel(mode) {
+  return { web: "仅网页", local: "仅本地", hybrid: "混合" }[mode] || "来源模式未记录";
 }
 
 function taskRows(tasks) {
@@ -134,15 +140,16 @@ function renderTasks() {
 
 function renderKbChips() {
   const target = byId("composer-kbs");
+  const disabled = state.sourceMode === "web";
+  if (disabled) state.selectedKbs.clear();
+  state.selectedKbs = new Set([...state.selectedKbs].filter((id) => state.kbs.some((kb) => kb.id === id)));
+  target.setAttribute("aria-disabled", String(disabled));
   if (!state.kbs.length) {
     target.innerHTML = '<span class="kb-empty">暂无本地知识库，<button type="button" data-route="knowledge">先创建一个</button></span>';
     bindRouteButtons(target);
     return;
   }
-  if (![...state.selectedKbs].some((id) => state.kbs.some((kb) => kb.id === id))) {
-    state.selectedKbs = new Set([state.kbs[0].id]);
-  }
-  target.innerHTML = state.kbs.map((kb) => `<button type="button" class="kb-chip ${state.selectedKbs.has(kb.id) ? "selected" : ""}" data-kb-id="${escapeHtml(kb.id)}" aria-pressed="${state.selectedKbs.has(kb.id)}">${escapeHtml(kb.name)}</button>`).join("");
+  target.innerHTML = state.kbs.map((kb) => `<button type="button" class="kb-chip ${state.selectedKbs.has(kb.id) ? "selected" : ""}" data-kb-id="${escapeHtml(kb.id)}" aria-pressed="${state.selectedKbs.has(kb.id)}" ${disabled ? "disabled" : ""}>${escapeHtml(kb.name)}</button>`).join("");
   target.querySelectorAll("[data-kb-id]").forEach((button) => button.addEventListener("click", () => {
     if (state.selectedKbs.has(button.dataset.kbId)) state.selectedKbs.delete(button.dataset.kbId);
     else state.selectedKbs.add(button.dataset.kbId);
@@ -249,13 +256,64 @@ window.addEventListener("hashchange", () => {
 
 byId("research-query").addEventListener("input", (event) => {
   byId("query-count").textContent = `${event.target.value.length} / 5000`;
+  updateSuggestButton();
+});
+
+function updateSuggestButton() {
+  const button = byId("suggest-claims");
+  button.disabled = state.generatingClaims || !byId("research-query").value.trim();
+  button.setAttribute("aria-busy", String(state.generatingClaims));
+}
+
+byId("suggest-claims").addEventListener("click", async () => {
+  const query = byId("research-query").value.trim();
+  const textarea = byId("required-claims");
+  if (!query || state.generatingClaims) return;
+  if (textarea.value.trim() && !window.confirm("已有研究要点，是否用 AI 生成的要点覆盖？")) return;
+  state.generatingClaims = true;
+  updateSuggestButton();
+  textarea.readOnly = true;
+  byId("claims-feedback").hidden = true;
+  try {
+    const result = await request("/api/research/claims/suggest", {
+      method: "POST", body: JSON.stringify({ query, max_claims: 4 }),
+    });
+    textarea.value = result.claims.join("\n");
+    notify("已生成研究要点，可继续编辑。");
+  } catch (error) {
+    byId("claims-feedback").textContent = error.message;
+    byId("claims-feedback").hidden = false;
+  } finally {
+    textarea.readOnly = false;
+    state.generatingClaims = false;
+    updateSuggestButton();
+  }
+});
+
+function updateSourceMode() {
+  state.sourceMode = document.querySelector('input[name="source-mode"]:checked').value;
+  document.querySelectorAll('input[name="source-type"]').forEach((input) => {
+    input.disabled = (state.sourceMode === "web" && input.value !== "external_web") ||
+      (state.sourceMode === "local" && input.value === "external_web");
+    if (input.disabled) input.checked = false;
+  });
+  byId("source-mode-hint").textContent = {
+    web: "仅使用网页来源，并注明来源",
+    local: "仅检索所选知识库，不调用网页搜索",
+    hybrid: "先检索知识库，证据不足时再搜索网页",
+  }[state.sourceMode];
+  renderKbChips();
+}
+
+document.querySelectorAll('input[name="source-mode"]').forEach((input) => {
+  input.addEventListener("change", updateSourceMode);
 });
 
 byId("research").addEventListener("click", async () => {
   const query = byId("research-query").value.trim();
   const knowledgeBaseIds = [...state.selectedKbs];
   if (!query) return notify("请先填写研究问题。", "error");
-  if (!knowledgeBaseIds.length) return notify("请至少选择一个本地知识库。", "error");
+  if (state.sourceMode !== "web" && !knowledgeBaseIds.length) return notify("仅本地和混合模式请至少选择一个本地知识库。", "error");
   const button = byId("research");
   setBusy(button, true, "正在提交…");
   try {
@@ -264,6 +322,7 @@ byId("research").addEventListener("click", async () => {
     const asOf = byId("research-as-of").value;
     const payload = {
       query,
+      source_mode: state.sourceMode,
       knowledge_base_ids: knowledgeBaseIds,
       required_claims: requiredClaims,
       required_source_types: sourceTypes,
@@ -275,7 +334,7 @@ byId("research").addEventListener("click", async () => {
     };
     if (asOf) payload.as_of = new Date(asOf).toISOString();
     const task = await request("/api/local/research", { method: "POST", body: JSON.stringify(payload) });
-    state.tasks.unshift({ id: task.task_id, query, knowledge_base_ids: knowledgeBaseIds, status: task.status, phase: "queued", progress_percent: 0, evidence_count: 0, created_at: new Date().toISOString() });
+    state.tasks.unshift({ id: task.task_id, query, knowledge_base_ids: knowledgeBaseIds, source_mode: state.sourceMode, status: task.status, phase: "queued", progress_percent: 0, evidence_count: 0, created_at: new Date().toISOString() });
     renderTasks();
     showResult(task.task_id);
   } catch (error) { notify(error.message, "error"); }
@@ -304,6 +363,9 @@ async function openResult(taskId) {
 function resetResult() {
   state.sources = [];
   state.trace = [];
+  byId("result-claims").replaceChildren();
+  byId("result-claims-source").textContent = "";
+  byId("result-source-mode").textContent = "";
   byId("result-loading").hidden = false;
   byId("report-content").hidden = true;
   byId("report-content").replaceChildren();
@@ -327,6 +389,14 @@ function resetResult() {
 
 function renderResultTask(task) {
   byId("result-title").textContent = task.query;
+  byId("result-source-mode").textContent = sourceModeLabel(task.source_mode);
+  const claimsSourceLabels = { explicit: "用户确认", generated: "系统自动生成", query_fallback: "生成失败，使用研究问题" };
+  byId("result-claims-source").textContent = `${claimsSourceLabels[task.claims_source] || "来源未记录"} (${task.claims_source || "unknown"})`;
+  byId("result-claims").replaceChildren(...(task.required_claims || []).map((claim) => {
+    const item = document.createElement("li");
+    item.textContent = claim;
+    return item;
+  }));
   const badge = byId("result-status");
   badge.className = `status-badge ${task.status}`;
   badge.textContent = statusLabel(task.status);
@@ -531,13 +601,14 @@ function selectSource(index, switchTab = true) {
 
 function renderTrace() {
   const finalRoute = state.trace.at(-1)?.final_route;
-  const hasQuick = state.trace.some((step) => (step.quick_evidence || []).length);
-  const hasDeep = state.trace.some((step) => (step.deep_evidence || []).length);
+  const hasQuick = state.trace.some((step) => step.retrieval_calls?.quick || (step.quick_evidence || []).length);
+  const hasDeep = state.trace.some((step) => step.retrieval_calls?.deep || (step.deep_evidence || []).length);
+  const quickLabel = state.trace.some((step) => step.source_mode === "web") ? "标准搜索" : "快速搜索";
   const steps = [
     ["Plan", state.trace.length ? "已生成研究计划" : "研究计划已接收"],
     ["Retrieve", `${state.sources.length} 条最终证据`],
     ["Sufficiency Check", state.trace.length ? "已执行证据充分性判断" : "未提供详细轨迹"],
-    ["Quick / Deep Research", hasDeep ? "执行 Deep Research" : hasQuick ? "执行 Quick Research" : finalRoute === "stop" ? "已有证据充分，停止扩展" : "未触发外部扩展"],
+    [`${quickLabel} / 深度搜索`, hasDeep ? `已执行${hasQuick ? quickLabel + "及" : ""}深度搜索` : hasQuick ? `已执行${quickLabel}` : finalRoute === "stop" ? "未调用网页搜索" : "未触发外部扩展"],
     ["Synthesis", "已生成研究报告"],
     ["Completed", "研究任务完成"],
   ];
@@ -775,6 +846,8 @@ byId("download-pdf").addEventListener("click", () => downloadReport("pdf"));
 
 async function initialize() {
   bindRouteButtons();
+  updateSourceMode();
+  updateSuggestButton();
   let reportWidth = "standard";
   try { reportWidth = localStorage.getItem("drkb-report-width") || reportWidth; } catch (_error) { /* optional */ }
   setReportWidth(reportWidth);

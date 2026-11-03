@@ -26,6 +26,7 @@
       <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m-4 4 4-4 4 4M4 20h16"/></symbol>
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12m-4-4 4 4 4-4M4 20h16"/></symbol>
       <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+      <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3 2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4L12 3ZM20 2v4M18 4h4"/></symbol>
     </svg>
 
     <header class="app-header">
@@ -57,17 +58,18 @@
       <section class="view active" data-view="research">
         <div class="research-home">
           <section class="composer-panel">
-            <header class="composer-heading"><span class="heading-icon"><svg><use href="#i-edit" /></svg></span><div><h1>开始新的研究</h1><p>基于你的知识库，进行深入、可靠、有据可查的研究。</p></div></header>
+            <header class="composer-heading"><span class="heading-icon"><svg><use href="#i-edit" /></svg></span><div><h1>开始新的研究</h1><p>选择网页、本地知识库或混合来源，开展有据可查的研究。</p></div></header>
             <label class="query-field"><span class="sr-only">研究问题</span><textarea id="research-query" maxlength="5000" placeholder="你想研究什么？"></textarea><span id="query-count">0 / 5000</span></label>
+            <fieldset class="source-mode-picker"><legend>来源模式</legend><label><input type="radio" name="source-mode" value="web" checked />仅网页</label><label><input type="radio" name="source-mode" value="local" />仅本地</label><label><input type="radio" name="source-mode" value="hybrid" />混合</label></fieldset>
             <div class="knowledge-picker-row"><div class="field-title"><svg><use href="#i-book" /></svg><span>选择知识库</span></div><div id="composer-kbs" class="kb-chips" aria-label="选择一个或多个本地知识库"></div></div>
             <details class="evidence-contract">
-              <summary><span><svg><use href="#i-list" /></svg><strong>证据要求</strong><small>默认优先使用所选知识库，并注明来源</small></span><svg class="chevron"><use href="#i-chevron" /></svg></summary>
+              <summary><span><svg><use href="#i-list" /></svg><strong>证据要求</strong><small id="source-mode-hint">仅使用网页来源，并注明来源</small></span><svg class="chevron"><use href="#i-chevron" /></svg></summary>
               <div class="evidence-grid">
-                <label class="wide">报告必须回答什么<textarea id="required-claims" rows="3" placeholder="每行一个必须回答的要点；留空时使用研究问题"></textarea></label>
+                <div class="wide claims-field"><div class="claims-heading"><label for="required-claims">报告必须回答什么</label><button id="suggest-claims" type="button" class="suggest-claims" aria-label="AI 生成要点" aria-busy="false" disabled><svg aria-hidden="true"><use href="#i-sparkles" /></svg><span class="suggest-tooltip" role="tooltip">AI 生成要点</span></button></div><textarea id="required-claims" rows="3" placeholder="每行一个必须回答的要点；可点击‘AI 生成要点’，留空时系统会自动生成"></textarea><p id="claims-feedback" role="alert" hidden></p></div>
                 <label>报告语言<select id="output-language"><option value="Chinese" selected>中文（默认）</option><option value="English">English</option></select></label>
                 <label>研究深度<select id="research-depth"><option value="low">low</option><option value="medium" selected>medium（默认）</option><option value="high">high</option></select></label>
                 <label>最少独立来源数<input id="minimum-sources" type="number" min="1" value="1" /></label>
-                <fieldset class="source-options"><legend>允许哪些来源</legend><div><label><input type="checkbox" name="source-type" value="local_import" />Local KB</label><label><input type="checkbox" name="source-type" value="web_upload" />Cloud KB</label><label><input type="checkbox" name="source-type" value="external_web" />Web Research</label></div></fieldset>
+                <fieldset class="source-options"><legend>必须包含哪些来源类型</legend><div><label><input type="checkbox" name="source-type" value="local_import" />本地导入</label><label><input type="checkbox" name="source-type" value="web_upload" />上传文档</label><label><input type="checkbox" name="source-type" value="external_web" />网页</label></div></fieldset>
                 <label>截止时间（可选）<input id="research-as-of" type="datetime-local" /></label>
                 <label>Deep Research 调用上限（高级）<input id="max-deep-calls" type="number" min="0" max="20" value="1" /><small>仅限制外部深研最多执行几次，不代表思考深度。</small></label>
                 <label class="check-label current-version-option"><input id="require-current" type="checkbox" /><span><strong>只允许知识库当前版本</strong><small>排除已被新版本替代的历史内容。</small></span></label>
@@ -89,6 +91,7 @@
         <div class="result-layout">
           <aside class="report-outline"><h2>报告目录</h2><nav id="report-outline"></nav></aside>
           <article id="report-reader" class="report-reader width-standard">
+            <section class="task-claims"><h2>实际研究要点</h2><p><span id="result-source-mode"></span> · <span id="result-claims-source"></span></p><ol id="result-claims"></ol></section>
             <div class="report-toolbar">
               <div class="report-width-control" role="group" aria-label="报告阅读宽度"><span>阅读宽度</span><button data-report-width="narrow" aria-pressed="false">窄</button><button class="active" data-report-width="standard" aria-pressed="true">标准</button><button data-report-width="wide" aria-pressed="false">宽</button></div>
               <div class="report-downloads"><button id="download-md" disabled>下载 MD</button><button id="download-pdf" disabled>下载 PDF</button></div>

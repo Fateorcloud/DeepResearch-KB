@@ -103,7 +103,8 @@ def test_local_control_records_claims_source_in_run_and_trace(tmp_path, fail, ex
         claims_suggester=ClaimSuggester(llm))
     with TestClient(app, headers={"X-Local-Control-Token": "test-token"}) as client:
         response = client.post("/api/local/research", json={
-            "query": query, "knowledge_base_ids": [kb.id], "max_deep_calls": 0})
+            "query": query, "knowledge_base_ids": [kb.id], "max_deep_calls": 0,
+            "source_mode": "hybrid"})
         assert response.status_code == 200
         assert response.json()["claims_source"] == expected_source
         assert response.json()["claims"] == ([query] if fail else ["支持异步函数"])

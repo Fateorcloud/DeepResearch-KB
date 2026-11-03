@@ -26,6 +26,7 @@ from .knowledge import KnowledgeStore
 from .services.research import ResearchService
 from .services.tasks import TaskService
 from .sufficiency import EvidenceRequirement
+from .source_modes import SourceMode, SourceModeError, validate_source_mode
 from .claim_suggestions import ClaimSuggester, ClaimsGenerationError, ClaimsSuggestRequest
 
 
@@ -75,7 +76,8 @@ class ResearchInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     query: str = Field(min_length=1)
-    knowledge_base_ids: list[str] = Field(min_length=1)
+    knowledge_base_ids: list[str] = Field(default_factory=list)
+    source_mode: SourceMode = "web"
     required_claims: list[str] = Field(default_factory=list)
     required_source_types: list[Literal[
         "local_import", "web_upload", "external_web"]] = Field(default_factory=list)
@@ -866,8 +868,10 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
     async def invalid_request(_request, exc):
         errors = [{"location": list(item["loc"]), "type": item["type"],
                    "message": item["msg"]} for item in exc.errors()]
+        code = ("invalid_source_mode" if any(item["location"] == ["body", "source_mode"]
+                                            for item in errors) else "invalid_request")
         return JSONResponse(status_code=422, content={"detail": {
-            **_error("invalid_request", "Request validation failed"),
+            **_error(code, "Request validation failed"),
             "errors": errors}})
 
     @app.get("/", response_class=HTMLResponse)
@@ -994,6 +998,9 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
             "id": task.id,
             "query": task.query,
             "knowledge_base_ids": list(task.knowledge_base_ids),
+            "source_mode": task.source_mode,
+            "required_claims": list(task.required_claims or ()),
+            "claims_source": task.claims_source,
             "status": task.status,
             "created_at": task.created_at,
             "started_at": task.started_at,
@@ -1015,6 +1022,10 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
 
     @app.post("/api/local/research")
     async def local_research(body: ResearchInput):
+        try:
+            validate_source_mode(body.source_mode, body.knowledge_base_ids, body.required_source_types)
+        except SourceModeError as exc:
+            raise LocalControlError(exc.code, str(exc), 422) from None
         known_ids = {kb.id for kb in service.store.list_knowledge_bases()}
         if any(kb_id not in known_ids for kb_id in body.knowledge_base_ids):
             raise LocalControlError(
@@ -1039,7 +1050,8 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
                 max_deep_calls=body.max_deep_calls,
                 output_language=body.output_language,
                 research_depth=body.research_depth,
-                claims_source=claims_source)
+                claims_source=claims_source,
+                source_mode=body.source_mode)
         except ValueError:
             raise LocalControlError(
                 "invalid_requirement", "Evidence requirement is invalid", 422) from None
@@ -1055,6 +1067,9 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
         return {
             "id": task.id, "query": task.query, "status": task.status,
             "knowledge_base_ids": list(task.knowledge_base_ids),
+            "source_mode": task.source_mode,
+            "required_claims": list(task.required_claims or ()),
+            "claims_source": task.claims_source,
             "created_at": task.created_at, "started_at": task.started_at,
             "completed_at": task.completed_at,
             "updated_at": task.updated_at, "phase": task.phase,

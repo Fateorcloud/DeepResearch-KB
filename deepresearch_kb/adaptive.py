@@ -56,9 +56,18 @@ class AdaptiveResearchRouter:
             return Sufficiency("deep", "conflict review unknown", len(evidence), False, "unknown")
         return verdict
 
-    async def run(self, query, *, internal, conflict=False, conflict_checker=None):
+    async def run(self, query, *, internal, conflict=False, conflict_checker=None,
+                  source_mode=None):
         decisions=[await self._reviewed_evaluate(internal, conflict=conflict, checker=conflict_checker)]
-        if ((conflict_checker is not None and decisions[0].route == "deep") or
+        if source_mode == "local":
+            if decisions[0].route != "stop":
+                verdict = decisions[0]
+                decisions.append(Sufficiency(
+                    "stop", "local evidence insufficient; web research disabled", len(internal),
+                    verdict.has_conflict, verdict.terminal_status or "insufficient"))
+            return "stop", list(internal), decisions
+        # Standalone callers retain the existing conflict-first routing contract.
+        if source_mode is None and ((conflict_checker is not None and decisions[0].route == "deep") or
                 decisions[0].terminal_status == "conflict"):
             combined = list(internal)
             if self.max_deep_calls:
@@ -67,13 +76,14 @@ class AdaptiveResearchRouter:
                 decisions.append(Sufficiency("deep", final.reason, len(combined), final.has_conflict,
                     final.terminal_status or ("sufficient" if final.route == "stop" else "insufficient")))
             return "deep", combined, decisions
-        if conflict:
+        if conflict and source_mode is None:
             if self.max_deep_calls < 1:
                 return "deep", list(internal), [Sufficiency("deep", "conflict requires deep but deep budget is zero", len(internal), True, "unknown")]
             deep=await self.deep_research(query); combined=list(internal)+list(deep)
             decisions.append(Sufficiency("deep", "deep executed; conflict remains unresolved without reassessment", len(combined), True, "conflict"))
             return "deep", combined, decisions
-        if decisions[0].route == "stop": return decisions[0].route, internal, decisions
+        if decisions[0].route == "stop" and source_mode != "web":
+            return decisions[0].route, internal, decisions
         quick=await self.quick_search(query); combined=list(internal)+list(quick)
         decisions.append(await self._reviewed_evaluate(combined, depth=1, checker=conflict_checker))
         if self.claim_reviewer is None and self.judge is not None and self.requirements and decisions[-1].route == "deep" and decisions[-1].terminal_status is None:

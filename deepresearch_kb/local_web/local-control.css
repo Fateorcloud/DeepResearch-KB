@@ -116,6 +116,25 @@ input:focus, textarea:focus, select:focus { border-color: var(--blue); outline: 
 .kb-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1px solid #8c959f; background: var(--white); }
 .kb-chip.selected { color: #0550ae; border-color: #80ccff; background: var(--blue-soft); }
 .kb-chip.selected::before { border-color: var(--blue); background: var(--blue); box-shadow: inset 0 0 0 2px var(--white); }
+.kb-chip:disabled { opacity: .45; cursor: not-allowed; }
+.source-mode-picker { display: flex; flex-wrap: wrap; gap: 20px; margin: 16px 2px 0; padding: 0; border: 0; }
+.source-mode-picker legend { float: left; margin-right: 16px; font-size: 12px; font-weight: 700; }
+.source-mode-picker label { display: inline-flex; align-items: center; gap: 6px; }
+.source-mode-picker input { width: 15px; min-height: 15px; margin: 0; accent-color: var(--blue); }
+.claims-field { display: grid; gap: 7px; }
+.claims-heading { display: flex; align-items: center; justify-content: space-between; }
+.suggest-claims { position: relative; display: inline-grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 7px; color: var(--blue); background: var(--white); }
+.suggest-claims svg { width: 18px; height: 18px; }
+.suggest-claims:disabled { opacity: .45; cursor: not-allowed; }
+.suggest-claims[aria-busy="true"] { cursor: wait; }
+.suggest-claims[aria-busy="true"] svg { animation: spin 1s linear infinite; }
+.suggest-tooltip { position: absolute; right: 0; bottom: calc(100% + 7px); z-index: 2; padding: 6px 9px; border-radius: 5px; background: #24292f; color: white; font-size: 11px; white-space: nowrap; opacity: 0; pointer-events: none; }
+.suggest-claims:hover .suggest-tooltip, .suggest-claims:focus-visible .suggest-tooltip { opacity: 1; }
+#claims-feedback { margin: 0; color: var(--red); font-size: 12px; }
+.task-claims { margin: 0 0 18px; padding: 14px 18px; border: 1px solid var(--border); border-radius: 7px; background: var(--canvas); }
+.task-claims h2 { margin: 0; font-size: 14px; }
+.task-claims p { margin: 7px 0; color: var(--muted); font-size: 12px; }
+.task-claims ol { margin: 0; padding-left: 20px; font-size: 12px; line-height: 1.8; }
 .kb-empty { color: var(--muted); font-size: 12px; }
 .kb-empty button { padding: 0; color: var(--blue); background: transparent; font-weight: 600; }
 

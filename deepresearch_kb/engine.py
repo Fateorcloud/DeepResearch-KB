@@ -1,6 +1,6 @@
 """Thin unified execution seam for the Phase 1-4 components."""
 import json, time, uuid
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 
 from .adaptive import AdaptiveResearchRouter
@@ -8,6 +8,7 @@ from .governance import GovernedKnowledge
 from .planning import RuleBasedSourcePlanner
 from .research import render_evidence_context
 from .sufficiency import EvidenceRequirement
+from .source_modes import validate_source_mode
 from .semantic_claims import SemanticClaimReviewer
 from .metrics import UsageCollector, attach_usage
 from .research import UpstreamExternalResearch
@@ -51,8 +52,10 @@ class ResearchEngine:
     async def run(self, query, *, knowledge_base_ids, requirements=None,
                   subquestions=None, output_dir=None, limit=5, as_of=None,
                   max_deep_calls=None, progress=None,
-                  output_language="Chinese", research_depth="medium", claims_source="explicit"):
+                  output_language="Chinese", research_depth="medium", claims_source="explicit",
+                  source_mode="web"):
         started = time.perf_counter()
+        validate_source_mode(source_mode, knowledge_base_ids)
         usage = UsageCollector()
         claim_reviewer = self.claim_reviewer or SemanticClaimReviewer(usage=usage)
         if claims_source not in {"explicit", "generated", "query_fallback"}:
@@ -113,6 +116,10 @@ class ResearchEngine:
             researcher = tracked_factory(query)
             subquestions = await researcher.research_conductor.plan_research(query)
         plan = self.planner.plan(query, subquestions)
+        policy = {"web": "external", "local": "internal", "hybrid": "hybrid"}[source_mode]
+        plan = replace(plan, questions=tuple(
+            replace(question, source_policy=policy, rationale=f"Explicit source mode: {source_mode}")
+            for question in plan.questions))
         emit_progress("retrieval", 15)
         governed = GovernedKnowledge(self.store, as_of=task_as_of,
             include_superseded=self.include_superseded,
@@ -131,39 +138,44 @@ class ResearchEngine:
         if len(requirements) != len(plan.questions) or not all(
                 isinstance(req, EvidenceRequirement) for req in requirements):
             raise ValueError("An explicit EvidenceRequirement is required for every planned question")
+        for requirement in requirements:
+            validate_source_mode(source_mode, knowledge_base_ids, requirement.required_source_types)
         traces, final_evidence = [], []
-        quick_calls = deep_calls = 0
+        local_calls = quick_calls = deep_calls = 0
+        quick_search_label = "标准搜索" if source_mode == "web" else "快速搜索"
         for index, planned in enumerate(plan.questions):
             question_start = 20 + round(50 * index / max(1, len(plan.questions)))
             question_done = 20 + round(50 * (index + 1) / max(1, len(plan.questions)))
             req = requirements[index]
             quick_evidence, deep_evidence = [], []
             blocked_calls = []
-            source_types = set(req.required_source_types)
-            internal_allowed = not source_types or bool(
-                source_types & {"local_import", "web_upload"})
-            external_allowed = not source_types or "external_web" in source_types
-            use_internal = internal_allowed and (
-                planned.source_policy != "external" or not external_allowed)
+            internal_allowed = source_mode in {"local", "hybrid"}
+            external_allowed = source_mode in {"web", "hybrid"}
+            use_internal = internal_allowed
+            retrieval_calls = {"local": int(use_internal), "quick": 0, "deep": 0}
+            local_calls += retrieval_calls["local"]
             internal = governed.retrieve(
                 knowledge_base_ids, planned.question, limit=limit) if use_internal else []
             emit_progress("retrieval", question_start, internal)
             async def quick(question, _q=quick_search):
                 nonlocal quick_calls
-                if planned.source_policy == "internal" or not external_allowed:
+                if not external_allowed:
                     blocked_calls.append("quick")
                     return []
                 quick_calls += 1
+                retrieval_calls["quick"] += 1
                 entries = list(await _q(question))
                 quick_evidence.extend(entries)
-                emit_progress("quick_research", min(question_done - 1, question_start + 12), entries)
+                emit_progress("standard_research" if source_mode == "web" else "quick_research",
+                              min(question_done - 1, question_start + 12), entries)
                 return entries
             async def deep(question, _d=deep_research):
                 nonlocal deep_calls
-                if planned.source_policy == "internal" or not external_allowed:
+                if not external_allowed:
                     blocked_calls.append("deep")
                     return []
                 deep_calls += 1
+                retrieval_calls["deep"] += 1
                 entries = list(await _d(question))
                 deep_evidence.extend(entries)
                 emit_progress("deep_research", min(question_done - 1, question_start + 24), entries)
@@ -180,10 +192,12 @@ class ResearchEngine:
                     conflict_reviews.append({"evidence_ids": [e.chunk_id for e in evidence], "result": review})
                     return review
             route, evidence, decisions = await router.run(planned.question, internal=internal,
-                                                          conflict_checker=TracedChecker())
+                conflict_checker=TracedChecker(), source_mode=source_mode)
             final_evidence.extend(evidence)
             emit_progress("sufficiency", question_done, evidence)
             traces.append({"question": planned.question, "source_policy": planned.source_policy,
+                "source_mode": source_mode, "retrieval_calls": retrieval_calls,
+                "quick_search_label": quick_search_label,
                 "rationale": planned.rationale, "requirement": asdict(req) if req else None,
                 "source_constraint": {
                     "internal_allowed": internal_allowed,
@@ -211,6 +225,8 @@ class ResearchEngine:
             context += ("\n\nResearch limitations: these questions remain unresolved. "
                         "Do not treat tool completion as evidence sufficiency; preserve uncertainty.\n"
                         + json.dumps(unresolved, ensure_ascii=False))
+            if not final_evidence:
+                report += "\n\nResearch limitations: " + json.dumps(unresolved, ensure_ascii=False)
         if final_evidence:
             emit_progress("synthesis", 85, final_evidence)
             try:
@@ -223,6 +239,13 @@ class ResearchEngine:
                 report = "Report synthesis failed; see run.json. Collected evidence is preserved."
         result = {"run_id": uuid.uuid4().hex, "query": query, "status": "completed",
             "claims_source": claims_source,
+            "source_mode": source_mode,
+            "quick_search_label": quick_search_label,
+            "question_retrieval": [{
+                "question": trace["question"], "source_mode": trace["source_mode"],
+                "retrieval_calls": trace["retrieval_calls"],
+                "quick_search_label": trace["quick_search_label"],
+            } for trace in traces],
             "planning_source": planning_source,
             "requirement_origin": requirement_origin,
             "knowledge_base_ids": list(knowledge_base_ids),
@@ -230,7 +253,7 @@ class ResearchEngine:
                 "include_superseded": self.include_superseded,
                 "include_deprecated": self.include_deprecated},
             "final_route_summary": [t["final_route"] for t in traces],
-            "quick_calls": quick_calls, "deep_calls": deep_calls,
+            "local_calls": local_calls, "quick_calls": quick_calls, "deep_calls": deep_calls,
             "max_deep_calls": task_max_deep_calls,
             "output_language": output_language,
             "research_depth": research_depth,
