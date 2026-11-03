@@ -62,3 +62,37 @@ class RetrievalV2Tests(unittest.TestCase):
     def test_gold_spans_exist_in_fetched_corpus(self):
         data, _ = load_cases()
         self.assertEqual(validate_labels(data["cases"], DEFAULT_CORPUS), [])
+
+
+class AllVersionsControlTests(unittest.TestCase):
+    def test_control_index_keeps_superseded_chunks_that_product_set_excludes(self):
+        import asyncio
+        import tempfile
+        from pathlib import Path
+
+        from deepresearch_kb.knowledge import KnowledgeStore
+        from evals.deepresearch_kb.retrieval_v2.retrievers import Workbench
+
+        async def build(root):
+            pages = {}
+
+            async def loader(file):
+                return [{"raw_content": pages[file.name], "url": file.name}]
+
+            store = KnowledgeStore(Path(root) / "kb.sqlite", loader=loader)
+            kb = store.create_knowledge_base("control").id
+            for text in ("依赖注入旧版说明。", "依赖注入新版说明。"):
+                page = Path(root) / "page.md"
+                pages[page.name] = text
+                page.write_text(text, encoding="utf-8")
+                await store.ingest(kb, page, logical_path="page.md")
+            return store, kb
+
+        with tempfile.TemporaryDirectory() as root:
+            store, kb = asyncio.run(build(root))
+            bench = Workbench(store, kb, Path(root) / "cache")
+            self.assertEqual({hit.version for hit in bench.chunks}, {2})
+            self.assertEqual({hit.version for hit in bench.all_version_chunks}, {1, 2})
+            found = bench.bigram_all_versions().search("依赖注入", 10)
+            self.assertEqual({hit.version for hit in found}, {1, 2})
+

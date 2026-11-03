@@ -155,6 +155,23 @@ class Workbench:
             self._chunks = [Hit(*row) for row in rows]
         return self._chunks
 
+    @property
+    def all_version_chunks(self):
+        """Control set: every version's chunks, including superseded ones."""
+        if "all-versions" not in self._built:
+            with closing(self.store._connect()) as db:
+                rows = db.execute("""
+                    SELECT c.id, d.logical_path, c.version, c.text FROM chunk c
+                    JOIN document d ON d.id = c.document_id
+                    WHERE d.knowledge_base_id = ?
+                    ORDER BY d.logical_path, c.version, c.ordinal""", (self.kb,)).fetchall()
+            self._built["all-versions"] = [Hit(*row) for row in rows]
+        return self._built["all-versions"]
+
+    def bigram_all_versions(self):
+        return self._once("bigram-all-versions", lambda: LexicalIndex(
+            self.all_version_chunks, index_text=lambda t: " ".join(bigrams(t)), query_terms=bigrams))
+
     def chunk_set(self, small=False):
         if not small:
             return self.chunks
@@ -204,6 +221,7 @@ RETRIEVERS = {
     "fts5": lambda bench: lambda q, k: bench.store.retrieve([bench.kb], q, limit=k),
     "trigram": lambda bench: bench.trigram().search,
     "bigram": lambda bench: bench.bigram().search,
+    "bigram_all_versions": lambda bench: bench.bigram_all_versions().search,
     "jieba": lambda bench: bench.jieba().search,
     "vector": lambda bench: bench.vector().search,
     "hybrid": lambda bench: bench.hybrid_search,

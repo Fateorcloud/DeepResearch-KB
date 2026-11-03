@@ -115,3 +115,33 @@ from the benchmark-only `bigram` analyser.
 
 The test split was re-run only to verify the implementation; nothing was
 tuned on it. p50 latency of `retrieve()` is ~2.7 ms on this corpus.
+
+## Control: retrieval without version filtering (2026-11-03)
+
+How large is the problem that version filtering solves? The control
+retriever `bigram_all_versions` uses the same benchmark bigram analyser as
+`bigram`, but indexes the chunks of every version, including the 59
+superseded pages (745 chunks instead of 512). Everything else is identical:
+same 85 cases, top 10, same grading.
+
+| retriever | stale share of top-10 results | cases with a stale chunk in top 10 | dev R@5 | test R@5 | version-type R@5 |
+|---|---|---|---|---|---|
+| `bigram` (current versions only) | 0 / 850 (0.0%) | 0 / 85 | 0.800 | 0.838 | 0.875 |
+| `bigram_all_versions` (control) | 287 / 850 (33.8%) | 81 / 85 | 0.800 | 0.730 | 0.750 |
+
+Without filtering, a third of returned chunks come from superseded pages and
+almost every query sees at least one; test R@5 drops by 10.8 points because
+old near-duplicates take ranks from current answers. This quantifies the
+premise behind filtering before retrieval. The product's `retrieve()` reports
+0 stale chunks (see above); that number is a correctness check of the filter,
+and this control shows what it prevents. The control was added after the test
+run and tunes nothing.
+
+```bash
+uv run python -m evals.deepresearch_kb.retrieval_v2.run --retriever bigram \
+  --retriever bigram_all_versions --split all \
+  --output data/evals/retrieval_v2/results-all-versions-control.json
+```
+
+The case count with a stale chunk is computed from `rows[].stale` in the output.
+
