@@ -36,6 +36,7 @@ class ResearchTask:
     updated_at: str = ""
     output_language: str = "Chinese"
     research_depth: str = "medium"
+    claims_source: str = "explicit"
 
 
 class TaskService:
@@ -75,6 +76,7 @@ class TaskService:
                     updated_at=str(record.get("updated_at", record.get("completed_at") or
                                            record.get("started_at") or record.get("created_at", ""))),
                     output_language=str(record.get("output_language", "Chinese")),
+                    claims_source=str(record.get("claims_source", "explicit")),
                     research_depth={"quick": "low", "standard": "medium", "deep": "high"}.get(
                         str(record.get("research_depth", "medium")),
                         str(record.get("research_depth", "medium"))),
@@ -109,7 +111,7 @@ class TaskService:
 
     def create(self, query, knowledge_base_ids, *, requirements=None,
                as_of=None, max_deep_calls=1, output_language="Chinese",
-               research_depth="medium"):
+               research_depth="medium", claims_source="explicit"):
         if requirements is None:
             # Keep the existing query-only MCP contract usable while ensuring
             # ResearchEngine never receives an implicit None requirement.
@@ -119,7 +121,8 @@ class TaskService:
         task = ResearchTask(
             uuid.uuid4().hex, query, knowledge_base_ids,
             created_at=created_at, updated_at=created_at,
-            output_language=output_language, research_depth=research_depth)
+            output_language=output_language, research_depth=research_depth,
+            claims_source=claims_source)
         self.tasks[task.id] = task
         self._persist()
         asyncio.create_task(self._run(task, knowledge_base_ids, requirements,
@@ -148,12 +151,13 @@ class TaskService:
             self._persist()
 
         try:
+            options = {"claims_source": task.claims_source} if task.claims_source != "explicit" else {}
             result = await self.research.run(
                 task.query, knowledge_base_ids=knowledge_base_ids,
                 requirements=requirements, output_dir=folder,
                 as_of=as_of, max_deep_calls=max_deep_calls,
                 progress=progress, output_language=output_language,
-                research_depth=research_depth)
+                research_depth=research_depth, **options)
             if result.get("metrics", {}).get("status") == "failed":
                 raise RuntimeError("research engine reported failure")
             task.status = "completed"

@@ -23,6 +23,7 @@ from .services.research import ResearchService
 from .services.tasks import TaskService
 from .directory import SUPPORTED
 from .sufficiency import EvidenceRequirement
+from .claim_suggestions import ClaimSuggester, ClaimsGenerationError, ClaimsSuggestRequest
 
 
 class KBCreate(BaseModel):
@@ -142,7 +143,7 @@ def _generated_artifact_dto(artifact, id_field):
 
 def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=None,
                research=None, engine=None, auth=None, backup=None,
-               backup_root="data/backups"):
+               backup_root="data/backups", claims_suggester=None):
     store = store or KnowledgeStore(database)
     knowledge = KnowledgeService(store)
     if research is not None and engine is not None:
@@ -153,6 +154,7 @@ def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=N
     backup = backup or BackupService(
         store.database, artifact_root=artifact_root, backup_root=backup_root)
     app = FastAPI(title="DeepResearch-KB API")
+    claims_suggester = claims_suggester or ClaimSuggester()
 
     @app.middleware("http")
     async def authentication(request, call_next):
@@ -384,6 +386,14 @@ def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=N
         return Response(
             raw, media_type="application/octet-stream",
             headers={"X-Content-Hash": item.content_hash})
+
+    @app.post("/api/research/claims/suggest")
+    async def suggest_claims(body: ClaimsSuggestRequest):
+        try:
+            return await claims_suggester.suggest(body.query, body.max_claims)
+        except ClaimsGenerationError:
+            raise HTTPException(503, detail=_error(
+                "claims_generation_failed", "Claim generation failed; confirm claims manually")) from None
 
     @app.post("/api/research")
     async def create_research(body: ResearchCreate):

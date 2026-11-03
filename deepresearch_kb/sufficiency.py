@@ -10,7 +10,7 @@ def _claim_supported(claim: str, text: str) -> bool:
     pattern = re.escape(claim)
     if not re.search(pattern, text, re.IGNORECASE):
         return False
-    match = re.search(r"(?:not|no|never|false|isn't|doesn't|don't)\s+(?:that\s+)?" + pattern, text, re.IGNORECASE)
+    match = re.search(r"(?:(?:not|no|never|false|isn't|doesn't|don't)\s+(?:that\s+)?|(?:不支持|不是|并非|没有|不能|不|非|未|无)\s*)" + pattern, text, re.IGNORECASE)
     return match is None
 
 @dataclass(frozen=True)
@@ -95,15 +95,8 @@ class SufficiencyJudge:
 
 def configured_sufficiency_judge(usage=None):
     """Construct the optional judge through upstream's configured LLM provider."""
-    from gpt_researcher.config import Config
-    from gpt_researcher.llm_provider import GenericLLMProvider
-    cfg = Config(); options = dict(cfg.llm_kwargs)
-    options.update(model=cfg.smart_llm_model, temperature=0, max_tokens=1800, timeout=60, max_retries=0)
-    if usage is not None: options["callbacks"] = [usage]
-    provider = GenericLLMProvider.from_provider(cfg.smart_llm_provider, **options)
-    async def reviewer(prompt):
-        return await provider.get_chat_response([{"role":"user","content":prompt}], stream=False)
-    return SufficiencyJudge(reviewer)
+    from .semantic_claims import configured_claim_reviewer
+    return SufficiencyJudge(configured_claim_reviewer(usage))
 
 def assess_requirements(requirements: list[EvidenceRequirement], evidence: list[Evidence]):
     results = []

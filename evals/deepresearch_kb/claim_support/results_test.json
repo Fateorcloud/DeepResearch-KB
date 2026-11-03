@@ -1,0 +1,503 @@
+{
+  "llm": {
+    "status": "ran",
+    "provider": "openai",
+    "model": "deepseek-flash",
+    "reviewed_claims": 14,
+    "unknown_claims": 1
+  },
+  "metrics": {
+    "lexical": {
+      "paraphrase_support_recall": 0.0,
+      "negation_false_support_rate": 0.0,
+      "accuracy": 0.47368421052631576,
+      "counts": {
+        "total": 19,
+        "paraphrase": 8,
+        "negation": 2
+      },
+      "prediction_counts": {
+        "not_found": 15,
+        "supported": 4
+      }
+    },
+    "vector_only": {
+      "paraphrase_support_recall": 1.0,
+      "negation_false_support_rate": 1.0,
+      "accuracy": 0.6842105263157895,
+      "counts": {
+        "total": 19,
+        "paraphrase": 8,
+        "negation": 2
+      },
+      "prediction_counts": {
+        "supported": 18,
+        "not_found": 1
+      }
+    },
+    "lexical_vector_llm": {
+      "paraphrase_support_recall": 1.0,
+      "negation_false_support_rate": 0.0,
+      "accuracy": 0.9473684210526315,
+      "counts": {
+        "total": 19,
+        "paraphrase": 8,
+        "negation": 2
+      },
+      "prediction_counts": {
+        "supported": 12,
+        "not_found": 4,
+        "contradicted": 2,
+        "unknown": 1
+      }
+    }
+  },
+  "predictions": {
+    "lexical": {
+      "paraphrase_02": "not_found",
+      "related_02": "not_found",
+      "paraphrase_03": "not_found",
+      "literal_04": "supported",
+      "paraphrase_04": "not_found",
+      "paraphrase_06": "not_found",
+      "literal_07": "supported",
+      "paraphrase_07": "not_found",
+      "related_07": "not_found",
+      "literal_08": "supported",
+      "related_08": "not_found",
+      "paraphrase_09": "not_found",
+      "related_11": "not_found",
+      "paraphrase_12": "not_found",
+      "literal_14": "supported",
+      "paraphrase_15": "not_found",
+      "related_15": "not_found",
+      "negation_07": "not_found",
+      "negation_13": "not_found"
+    },
+    "vector_only": {
+      "paraphrase_02": "supported",
+      "related_02": "supported",
+      "paraphrase_03": "supported",
+      "literal_04": "supported",
+      "paraphrase_04": "supported",
+      "paraphrase_06": "supported",
+      "literal_07": "supported",
+      "paraphrase_07": "supported",
+      "related_07": "supported",
+      "literal_08": "supported",
+      "related_08": "supported",
+      "paraphrase_09": "supported",
+      "related_11": "not_found",
+      "paraphrase_12": "supported",
+      "literal_14": "supported",
+      "paraphrase_15": "supported",
+      "related_15": "supported",
+      "negation_07": "supported",
+      "negation_13": "supported"
+    },
+    "lexical_vector_llm": {
+      "literal_04": "supported",
+      "related_02": "not_found",
+      "paraphrase_02": "supported",
+      "literal_07": "supported",
+      "paraphrase_04": "supported",
+      "paraphrase_07": "supported",
+      "literal_08": "supported",
+      "paraphrase_06": "supported",
+      "paraphrase_03": "supported",
+      "related_11": "not_found",
+      "paraphrase_09": "supported",
+      "literal_14": "supported",
+      "related_07": "not_found",
+      "paraphrase_12": "supported",
+      "related_15": "not_found",
+      "negation_13": "contradicted",
+      "paraphrase_15": "supported",
+      "negation_07": "contradicted",
+      "related_08": "unknown"
+    }
+  },
+  "claim_reviews": {
+    "literal_04": {
+      "claim_id": "literal_04:0",
+      "claim": "我们会使用 `yield` 创建一个 FastAPI **依赖项**，为每个请求提供一个新的 `Session`。",
+      "stage": "lexical",
+      "candidates": [],
+      "result": "supported",
+      "citation_ids": [
+        "literal_04:0"
+      ],
+      "evidence_ids": [
+        "literal_04"
+      ]
+    },
+    "related_02": {
+      "claim_id": "related_02:0",
+      "claim": "pwdlib 默认采用 SHA-1 哈希密码。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "related_02:0",
+          "evidence_id": "related_02",
+          "text": "pwdlib 是一个用于处理密码哈希的优秀 Python 包。",
+          "similarity": 0.7282017956597324
+        }
+      ],
+      "result": "not_found",
+      "citation_ids": [],
+      "evidence_ids": []
+    },
+    "paraphrase_02": {
+      "claim_id": "paraphrase_02:0",
+      "claim": "pwdlib 提供口令散列处理功能。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "paraphrase_02:0",
+          "evidence_id": "paraphrase_02",
+          "text": "pwdlib 是一个用于处理密码哈希的优秀 Python 包。",
+          "similarity": 0.6095546594544583
+        }
+      ],
+      "result": "supported",
+      "citation_ids": [
+        "paraphrase_02:0"
+      ],
+      "evidence_ids": [
+        "paraphrase_02"
+      ]
+    },
+    "literal_07": {
+      "claim_id": "literal_07:0",
+      "claim": "但现在把 `Query(max_length=50)` 放到 `Annotated` 里，我们就在告诉 FastAPI，这个值需要**额外校验**，最大长度为 50 个字符。",
+      "stage": "lexical",
+      "candidates": [],
+      "result": "supported",
+      "citation_ids": [
+        "literal_07:0"
+      ],
+      "evidence_ids": [
+        "literal_07"
+      ]
+    },
+    "paraphrase_04": {
+      "claim_id": "paraphrase_04:0",
+      "claim": "每次请求都能通过带 yield 的 FastAPI 依赖得到新数据库会话。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "paraphrase_04:0",
+          "evidence_id": "paraphrase_04",
+          "text": "我们会使用 `yield` 创建一个 FastAPI **依赖项**，为每个请求提供一个新的 `Session`。",
+          "similarity": 0.7544463253787823
+        }
+      ],
+      "result": "supported",
+      "citation_ids": [
+        "paraphrase_04:0"
+      ],
+      "evidence_ids": [
+        "paraphrase_04"
+      ]
+    },
+    "paraphrase_07": {
+      "claim_id": "paraphrase_07:0",
+      "claim": "这个 Query 校验将文本限制在五十个字符以内。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "paraphrase_07:0",
+          "evidence_id": "paraphrase_07",
+          "text": "但现在把 `Query(max_length=50)` 放到 `Annotated` 里，我们就在告诉 FastAPI，这个值需要**额外校验**，最大长度为 50 个字符。",
+          "similarity": 0.6399638425918636
+        }
+      ],
+      "result": "supported",
+      "citation_ids": [
+        "paraphrase_07:0"
+      ],
+      "evidence_ids": [
+        "paraphrase_07"
+      ]
+    },
+    "literal_08": {
+      "claim_id": "literal_08:0",
+      "claim": "这意味着，在 Python 中从环境变量读取的任何值都是 `str` 类型，任何到不同类型的转换或任何验证都必须在代码中完成。",
+      "stage": "lexical",
+      "candidates": [],
+      "result": "supported",
+      "citation_ids": [
+        "literal_08:0"
+      ],
+      "evidence_ids": [
+        "literal_08"
+      ]
+    },
+    "paraphrase_06": {
+      "claim_id": "paraphrase_06:0",
+      "claim": "局部更新可以只传待改字段，其他数据维持原值。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "paraphrase_06:0",
+          "evidence_id": "paraphrase_06",
+          "text": "也就是说，你只需发送想要更新的数据，其余数据保持不变。",
+          "similarity": 0.6600177311757749
+        }
+      ],
+      "result": "supported",
+      "citation_ids": [
+        "paraphrase_06:0"
+      ],
+      "evidence_ids": [
+        "paraphrase_06"
+      ]
+    },
+    "paraphrase_03": {
+      "claim_id": "paraphrase_03:0",
+      "claim": "JWT 是 JSON Web Tokens 的缩写。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "paraphrase_03:0",
+          "evidence_id": "paraphrase_03",
+          "text": "JWT 意为 “JSON Web Tokens”。",
+          "similarity": 0.6424832618309861
+        }
+      ],
+      "result": "supported",
+      "citation_ids": [
+        "paraphrase_03:0"
+      ],
+      "evidence_ids": [
+        "paraphrase_03"
+      ]
+    },
+    "related_11": {
+      "claim_id": "related_11:0",
+      "claim": "File 会默认拦截所有 exe 扩展名的文件。",
+      "stage": "semantic",
+      "candidates": [],
+      "result": "not_found",
+      "citation_ids": [],
+      "evidence_ids": []
+    },
+    "paraphrase_09": {
+      "claim_id": "paraphrase_09:0",
+      "claim": "同时指定返回注解和响应模型时，FastAPI 优先采用响应模型。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "paraphrase_09:0",
+          "evidence_id": "paraphrase_09",
+          "text": "如果你同时声明了返回类型和 `response_model`，`response_model` 会具有优先级并由 FastAPI 使用。",
+          "similarity": 0.6921873659832424
+        }
+      ],
+      "result": "supported",
+      "citation_ids": [
+        "paraphrase_09:0"
+      ],
+      "evidence_ids": [
+        "paraphrase_09"
+      ]
+    },
+    "literal_14": {
+      "claim_id": "literal_14:0",
+      "claim": "你可以在 **FastAPI** 应用中使用 `CORSMiddleware` 来配置它。",
+      "stage": "lexical",
+      "candidates": [],
+      "result": "supported",
+      "citation_ids": [
+        "literal_14:0"
+      ],
+      "evidence_ids": [
+        "literal_14"
+      ]
+    },
+    "related_07": {
+      "claim_id": "related_07:0",
+      "claim": "Query 会自动截断超过长度上限的输入。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "related_07:0",
+          "evidence_id": "related_07",
+          "text": "但现在把 `Query(max_length=50)` 放到 `Annotated` 里，我们就在告诉 FastAPI，这个值需要**额外校验**，最大长度为 50 个字符。",
+          "similarity": 0.5135838943214703
+        }
+      ],
+      "result": "not_found",
+      "citation_ids": [],
+      "evidence_ids": []
+    },
+    "paraphrase_12": {
+      "claim_id": "paraphrase_12:0",
+      "claim": "使用测试客户端前需要装好 httpx。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "paraphrase_12:0",
+          "evidence_id": "paraphrase_12",
+          "text": "要使用 `TestClient`，先要安装 [`httpx`](https://www.python-httpx.org)。",
+          "similarity": 0.6357165077335942
+        }
+      ],
+      "result": "supported",
+      "citation_ids": [
+        "paraphrase_12:0"
+      ],
+      "evidence_ids": [
+        "paraphrase_12"
+      ]
+    },
+    "related_15": {
+      "claim_id": "related_15:0",
+      "claim": "后台任务失败后默认会持久化并重试三次。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "related_15:0",
+          "evidence_id": "related_15",
+          "text": "你可以定义在返回响应后运行的后台任务。",
+          "similarity": 0.5489099783665231
+        }
+      ],
+      "result": "not_found",
+      "citation_ids": [],
+      "evidence_ids": []
+    },
+    "negation_13": {
+      "claim_id": "negation_13:0",
+      "claim": "查询参数是路径的固定内容。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "negation_13:0",
+          "evidence_id": "negation_13",
+          "text": "查询参数不是路径的固定内容，它是可选的，还支持默认值。",
+          "similarity": 0.7780650382429369
+        }
+      ],
+      "result": "contradicted",
+      "citation_ids": [
+        "negation_13:0"
+      ],
+      "evidence_ids": [
+        "negation_13"
+      ]
+    },
+    "paraphrase_15": {
+      "claim_id": "paraphrase_15:0",
+      "claim": "可以让后台工作在响应已发回后执行。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "paraphrase_15:0",
+          "evidence_id": "paraphrase_15",
+          "text": "你可以定义在返回响应后运行的后台任务。",
+          "similarity": 0.7767618610057327
+        }
+      ],
+      "result": "supported",
+      "citation_ids": [
+        "paraphrase_15:0"
+      ],
+      "evidence_ids": [
+        "paraphrase_15"
+      ]
+    },
+    "negation_07": {
+      "claim_id": "negation_07:0",
+      "claim": "lifespan 可以和全部启动关闭事件配置共用。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "negation_07:0",
+          "evidence_id": "negation_07",
+          "text": "要么使用 `lifespan`，要么配置所有事件，两者不能共用。",
+          "similarity": 0.6966199774955023
+        }
+      ],
+      "result": "contradicted",
+      "citation_ids": [
+        "negation_07:0"
+      ],
+      "evidence_ids": [
+        "negation_07"
+      ]
+    },
+    "related_08": {
+      "claim_id": "related_08:0",
+      "claim": "Python 读取环境变量时自动解码 Base64。",
+      "stage": "semantic",
+      "candidates": [
+        {
+          "sentence_id": "related_08:0",
+          "evidence_id": "related_08",
+          "text": "这意味着，在 Python 中从环境变量读取的任何值都是 `str` 类型，任何到不同类型的转换或任何验证都必须在代码中完成。",
+          "similarity": 0.5879339332221543
+        }
+      ],
+      "result": "unknown",
+      "citation_ids": [],
+      "evidence_ids": []
+    }
+  },
+  "cosine_scores": {
+    "paraphrase_02": 0.6095546594544583,
+    "related_02": 0.7282017956597324,
+    "paraphrase_03": 0.6424832618309861,
+    "literal_04": 0.942845172474318,
+    "paraphrase_04": 0.7544463253787823,
+    "paraphrase_06": 0.6600177311757749,
+    "literal_07": 0.9676244810975362,
+    "paraphrase_07": 0.6399638425918636,
+    "related_07": 0.5135838943214703,
+    "literal_08": 0.9646371665977594,
+    "related_08": 0.5879339332221543,
+    "paraphrase_09": 0.6921873659832424,
+    "related_11": 0.38724529536937863,
+    "paraphrase_12": 0.6357165077335942,
+    "literal_14": 0.864382268712955,
+    "paraphrase_15": 0.7767618610057327,
+    "related_15": 0.5489099783665231,
+    "negation_07": 0.6966199774955023,
+    "negation_13": 0.7780650382429369
+  },
+  "split": "test",
+  "threshold": 0.47,
+  "top_k": 5,
+  "embedding_model": "BAAI/bge-small-zh-v1.5",
+  "fastembed_version": "0.7.3",
+  "dataset_sha256": "35a878e433f7731f403e1e7ad980ffa401c1113c4dd9fa78516167e2a5db132d",
+  "split_rule": "sha256(id) % 5 < 2 => test; otherwise dev",
+  "case_ids": [
+    "paraphrase_02",
+    "related_02",
+    "paraphrase_03",
+    "literal_04",
+    "paraphrase_04",
+    "paraphrase_06",
+    "literal_07",
+    "paraphrase_07",
+    "related_07",
+    "literal_08",
+    "related_08",
+    "paraphrase_09",
+    "related_11",
+    "paraphrase_12",
+    "literal_14",
+    "paraphrase_15",
+    "related_15",
+    "negation_07",
+    "negation_13"
+  ],
+  "types": {
+    "paraphrase": 8,
+    "related": 5,
+    "literal": 4,
+    "negation": 2
+  },
+  "timestamp_utc": "2026-11-03T09:32:13.343131+00:00"
+}

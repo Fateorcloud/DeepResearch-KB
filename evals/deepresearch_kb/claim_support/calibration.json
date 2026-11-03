@@ -1,0 +1,313 @@
+{
+  "threshold": 0.47,
+  "objective": "highest threshold with supported dev candidate recall >= 0.95",
+  "dev_ids": [
+    "literal_01",
+    "paraphrase_01",
+    "related_01",
+    "literal_02",
+    "literal_03",
+    "related_03",
+    "related_04",
+    "literal_05",
+    "paraphrase_05",
+    "related_05",
+    "literal_06",
+    "related_06",
+    "paraphrase_08",
+    "literal_09",
+    "related_09",
+    "literal_10",
+    "paraphrase_10",
+    "related_10",
+    "literal_11",
+    "paraphrase_11",
+    "literal_12",
+    "related_12",
+    "literal_13",
+    "paraphrase_13",
+    "related_13",
+    "paraphrase_14",
+    "related_14",
+    "literal_15",
+    "negation_01",
+    "negation_02",
+    "negation_03",
+    "negation_04",
+    "negation_05",
+    "negation_06",
+    "negation_08",
+    "negation_09",
+    "negation_10",
+    "negation_11",
+    "negation_12",
+    "negation_14",
+    "negation_15"
+  ],
+  "trials": [
+    {
+      "threshold": 0.3,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.31,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.32,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.33,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.34,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.35,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.36,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.37,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.38,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.39,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.4,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.41,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.42,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.43,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.44,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.45,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.46,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.47,
+      "supported_candidate_recall": 1.0
+    },
+    {
+      "threshold": 0.48,
+      "supported_candidate_recall": 0.9444444444444444
+    },
+    {
+      "threshold": 0.49,
+      "supported_candidate_recall": 0.9444444444444444
+    },
+    {
+      "threshold": 0.5,
+      "supported_candidate_recall": 0.9444444444444444
+    },
+    {
+      "threshold": 0.51,
+      "supported_candidate_recall": 0.9444444444444444
+    },
+    {
+      "threshold": 0.52,
+      "supported_candidate_recall": 0.9444444444444444
+    },
+    {
+      "threshold": 0.53,
+      "supported_candidate_recall": 0.9444444444444444
+    },
+    {
+      "threshold": 0.54,
+      "supported_candidate_recall": 0.9444444444444444
+    },
+    {
+      "threshold": 0.55,
+      "supported_candidate_recall": 0.8888888888888888
+    },
+    {
+      "threshold": 0.56,
+      "supported_candidate_recall": 0.8888888888888888
+    },
+    {
+      "threshold": 0.57,
+      "supported_candidate_recall": 0.8888888888888888
+    },
+    {
+      "threshold": 0.58,
+      "supported_candidate_recall": 0.8888888888888888
+    },
+    {
+      "threshold": 0.59,
+      "supported_candidate_recall": 0.8888888888888888
+    },
+    {
+      "threshold": 0.6,
+      "supported_candidate_recall": 0.8888888888888888
+    },
+    {
+      "threshold": 0.61,
+      "supported_candidate_recall": 0.8888888888888888
+    },
+    {
+      "threshold": 0.62,
+      "supported_candidate_recall": 0.8333333333333334
+    },
+    {
+      "threshold": 0.63,
+      "supported_candidate_recall": 0.8333333333333334
+    },
+    {
+      "threshold": 0.64,
+      "supported_candidate_recall": 0.8333333333333334
+    },
+    {
+      "threshold": 0.65,
+      "supported_candidate_recall": 0.8333333333333334
+    },
+    {
+      "threshold": 0.66,
+      "supported_candidate_recall": 0.8333333333333334
+    },
+    {
+      "threshold": 0.67,
+      "supported_candidate_recall": 0.8333333333333334
+    },
+    {
+      "threshold": 0.68,
+      "supported_candidate_recall": 0.8333333333333334
+    },
+    {
+      "threshold": 0.69,
+      "supported_candidate_recall": 0.8333333333333334
+    },
+    {
+      "threshold": 0.7,
+      "supported_candidate_recall": 0.8333333333333334
+    },
+    {
+      "threshold": 0.71,
+      "supported_candidate_recall": 0.8333333333333334
+    },
+    {
+      "threshold": 0.72,
+      "supported_candidate_recall": 0.7777777777777778
+    },
+    {
+      "threshold": 0.73,
+      "supported_candidate_recall": 0.7222222222222222
+    },
+    {
+      "threshold": 0.74,
+      "supported_candidate_recall": 0.7222222222222222
+    },
+    {
+      "threshold": 0.75,
+      "supported_candidate_recall": 0.7222222222222222
+    },
+    {
+      "threshold": 0.76,
+      "supported_candidate_recall": 0.7222222222222222
+    },
+    {
+      "threshold": 0.77,
+      "supported_candidate_recall": 0.6111111111111112
+    },
+    {
+      "threshold": 0.78,
+      "supported_candidate_recall": 0.6111111111111112
+    },
+    {
+      "threshold": 0.79,
+      "supported_candidate_recall": 0.5555555555555556
+    },
+    {
+      "threshold": 0.8,
+      "supported_candidate_recall": 0.5555555555555556
+    },
+    {
+      "threshold": 0.81,
+      "supported_candidate_recall": 0.5555555555555556
+    },
+    {
+      "threshold": 0.82,
+      "supported_candidate_recall": 0.5555555555555556
+    },
+    {
+      "threshold": 0.83,
+      "supported_candidate_recall": 0.5555555555555556
+    },
+    {
+      "threshold": 0.84,
+      "supported_candidate_recall": 0.5555555555555556
+    },
+    {
+      "threshold": 0.85,
+      "supported_candidate_recall": 0.5555555555555556
+    },
+    {
+      "threshold": 0.86,
+      "supported_candidate_recall": 0.5555555555555556
+    },
+    {
+      "threshold": 0.87,
+      "supported_candidate_recall": 0.5555555555555556
+    },
+    {
+      "threshold": 0.88,
+      "supported_candidate_recall": 0.5555555555555556
+    },
+    {
+      "threshold": 0.89,
+      "supported_candidate_recall": 0.4444444444444444
+    },
+    {
+      "threshold": 0.9,
+      "supported_candidate_recall": 0.4444444444444444
+    },
+    {
+      "threshold": 0.91,
+      "supported_candidate_recall": 0.3888888888888889
+    },
+    {
+      "threshold": 0.92,
+      "supported_candidate_recall": 0.2777777777777778
+    },
+    {
+      "threshold": 0.93,
+      "supported_candidate_recall": 0.16666666666666666
+    },
+    {
+      "threshold": 0.94,
+      "supported_candidate_recall": 0.05555555555555555
+    },
+    {
+      "threshold": 0.95,
+      "supported_candidate_recall": 0.05555555555555555
+    }
+  ]
+}

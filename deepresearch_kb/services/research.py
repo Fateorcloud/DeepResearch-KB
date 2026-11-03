@@ -9,7 +9,7 @@ class ResearchService:
     async def run(self, query, *, knowledge_base_ids,
                   requirements: EvidenceRequirement, output_dir,
                   as_of=None, max_deep_calls=1, progress=None,
-                  output_language=None, research_depth=None):
+                  output_language=None, research_depth=None, claims_source=None):
         if not isinstance(requirements, EvidenceRequirement):
             raise ValueError("requirements must be an EvidenceRequirement")
         options = dict(
@@ -21,4 +21,6 @@ class ResearchService:
             options["output_language"] = output_language
         if research_depth is not None:
             options["research_depth"] = research_depth
+        if claims_source is not None:
+            options["claims_source"] = claims_source
         return await self.engine.run(query, **options)

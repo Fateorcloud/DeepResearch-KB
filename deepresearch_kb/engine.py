@@ -8,6 +8,7 @@ from .governance import GovernedKnowledge
 from .planning import RuleBasedSourcePlanner
 from .research import render_evidence_context
 from .sufficiency import EvidenceRequirement
+from .semantic_claims import SemanticClaimReviewer
 from .metrics import UsageCollector, attach_usage
 from .research import UpstreamExternalResearch
 from .deep_adapter import UpstreamDeepResearch, default_deep_factory
@@ -28,7 +29,8 @@ class ResearchEngine:
     """Orchestrate planning, governed retrieval, adaptive routing and synthesis."""
     def __init__(self, *, store, quick_search=None, deep_research=None, researcher_factory=None,
                  planner=None, as_of=None, include_superseded=False,
-                 include_deprecated=False, conflict_checker=None, max_deep_calls=1):
+                 include_deprecated=False, conflict_checker=None, max_deep_calls=1,
+                 claim_reviewer=None):
         self.store = store
         self.quick_search = quick_search
         self.deep_research = deep_research
@@ -41,6 +43,7 @@ class ResearchEngine:
         self.include_superseded = include_superseded
         self.include_deprecated = include_deprecated
         self.conflict_checker = conflict_checker
+        self.claim_reviewer = claim_reviewer
         if type(max_deep_calls) is not int or max_deep_calls < 0:
             raise ValueError("max_deep_calls must be a non-negative task budget")
         self.max_deep_calls = max_deep_calls
@@ -48,9 +51,12 @@ class ResearchEngine:
     async def run(self, query, *, knowledge_base_ids, requirements=None,
                   subquestions=None, output_dir=None, limit=5, as_of=None,
                   max_deep_calls=None, progress=None,
-                  output_language="Chinese", research_depth="medium"):
+                  output_language="Chinese", research_depth="medium", claims_source="explicit"):
         started = time.perf_counter()
         usage = UsageCollector()
+        claim_reviewer = self.claim_reviewer or SemanticClaimReviewer(usage=usage)
+        if claims_source not in {"explicit", "generated", "query_fallback"}:
+            raise ValueError("invalid claims_source")
         if output_language not in {"Chinese", "English"}:
             raise ValueError("output_language must be Chinese or English")
         research_depth = RESEARCH_DEPTH_ALIASES.get(research_depth, research_depth)
@@ -163,7 +169,8 @@ class ResearchEngine:
                 emit_progress("deep_research", min(question_done - 1, question_start + 24), entries)
                 return entries
             router = AdaptiveResearchRouter(quick_search=quick, deep_research=deep,
-                requirements=[req], max_deep_calls=max(0, task_max_deep_calls - deep_calls))
+                requirements=[req], max_deep_calls=max(0, task_max_deep_calls - deep_calls),
+                claim_reviewer=claim_reviewer)
             conflict_reviews = []
             checker = self.conflict_checker
             class TracedChecker:
@@ -187,6 +194,8 @@ class ResearchEngine:
                 "deep_evidence": [asdict(e) for e in deep_evidence],
                 "policy_blocked_calls": blocked_calls,
                 "conflict_reviews": conflict_reviews,
+                "claim_reviews": router.claim_reviews,
+                "claims_source": claims_source,
                 "requirement_propagation": {"task_requirement_index": index,
                     "requirement_id": req.id, "method": requirement_origin},
                 "decisions": [asdict(d) for d in decisions], "final_route": route,
@@ -213,6 +222,7 @@ class ResearchEngine:
                 synthesis_error = exc
                 report = "Report synthesis failed; see run.json. Collected evidence is preserved."
         result = {"run_id": uuid.uuid4().hex, "query": query, "status": "completed",
+            "claims_source": claims_source,
             "planning_source": planning_source,
             "requirement_origin": requirement_origin,
             "knowledge_base_ids": list(knowledge_base_ids),

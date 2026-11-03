@@ -1,0 +1,786 @@
+{
+  "schema_version": 1,
+  "label_origin": "hand-authored; no LLM labels",
+  "cases": [
+    {
+      "id": "literal_01",
+      "type": "literal",
+      "claim": "我们需要安装 `PyJWT`，以便在 Python 中生成和校验 JWT 令牌。",
+      "evidence": "我们需要安装 `PyJWT`，以便在 Python 中生成和校验 JWT 令牌。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/security/oauth2-jwt.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f82b640cc186469fe377c0b4747379e0a0272d681830c126f8639628473b528f"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_01",
+      "type": "paraphrase",
+      "claim": "PyJWT 可用来创建并验证 JWT。",
+      "evidence": "我们需要安装 `PyJWT`，以便在 Python 中生成和校验 JWT 令牌。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/security/oauth2-jwt.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f82b640cc186469fe377c0b4747379e0a0272d681830c126f8639628473b528f"
+      },
+      "rationale": "生成和校验分别改写为创建和验证；对象仍是 JWT。"
+    },
+    {
+      "id": "related_01",
+      "type": "related",
+      "claim": "PyJWT 默认每小时轮换一次签名密钥。",
+      "evidence": "我们需要安装 `PyJWT`，以便在 Python 中生成和校验 JWT 令牌。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/security/oauth2-jwt.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f82b640cc186469fe377c0b4747379e0a0272d681830c126f8639628473b528f"
+      },
+      "rationale": "原句只说明“PyJWT 可用来创建并验证 JWT。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_02",
+      "type": "literal",
+      "claim": "pwdlib 是一个用于处理密码哈希的优秀 Python 包。",
+      "evidence": "pwdlib 是一个用于处理密码哈希的优秀 Python 包。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/security/oauth2-jwt.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f82b640cc186469fe377c0b4747379e0a0272d681830c126f8639628473b528f"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_02",
+      "type": "paraphrase",
+      "claim": "pwdlib 提供口令散列处理功能。",
+      "evidence": "pwdlib 是一个用于处理密码哈希的优秀 Python 包。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/security/oauth2-jwt.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f82b640cc186469fe377c0b4747379e0a0272d681830c126f8639628473b528f"
+      },
+      "rationale": "密码哈希改写为口令散列，没有增加算法或安全性结论。"
+    },
+    {
+      "id": "related_02",
+      "type": "related",
+      "claim": "pwdlib 默认采用 SHA-1 哈希密码。",
+      "evidence": "pwdlib 是一个用于处理密码哈希的优秀 Python 包。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/security/oauth2-jwt.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f82b640cc186469fe377c0b4747379e0a0272d681830c126f8639628473b528f"
+      },
+      "rationale": "原句只说明“pwdlib 提供口令散列处理功能。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_03",
+      "type": "literal",
+      "claim": "JWT 意为 “JSON Web Tokens”。",
+      "evidence": "JWT 意为 “JSON Web Tokens”。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/security/oauth2-jwt.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f82b640cc186469fe377c0b4747379e0a0272d681830c126f8639628473b528f"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_03",
+      "type": "paraphrase",
+      "claim": "JWT 是 JSON Web Tokens 的缩写。",
+      "evidence": "JWT 意为 “JSON Web Tokens”。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/security/oauth2-jwt.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f82b640cc186469fe377c0b4747379e0a0272d681830c126f8639628473b528f"
+      },
+      "rationale": "意为改写为缩写展开，保留原英文全称。"
+    },
+    {
+      "id": "related_03",
+      "type": "related",
+      "claim": "JWT 的载荷默认使用 AES 加密。",
+      "evidence": "JWT 意为 “JSON Web Tokens”。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/security/oauth2-jwt.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f82b640cc186469fe377c0b4747379e0a0272d681830c126f8639628473b528f"
+      },
+      "rationale": "原句只说明“JWT 是 JSON Web Tokens 的缩写。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_04",
+      "type": "literal",
+      "claim": "我们会使用 `yield` 创建一个 FastAPI **依赖项**，为每个请求提供一个新的 `Session`。",
+      "evidence": "我们会使用 `yield` 创建一个 FastAPI **依赖项**，为每个请求提供一个新的 `Session`。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/sql-databases.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "61e1eaa5a62386a7bd496caa0d4e6073fd4ad342f793bd1c93db5cf31fc3251c"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_04",
+      "type": "paraphrase",
+      "claim": "每次请求都能通过带 yield 的 FastAPI 依赖得到新数据库会话。",
+      "evidence": "我们会使用 `yield` 创建一个 FastAPI **依赖项**，为每个请求提供一个新的 `Session`。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/sql-databases.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "61e1eaa5a62386a7bd496caa0d4e6073fd4ad342f793bd1c93db5cf31fc3251c"
+      },
+      "rationale": "新的 Session 改写为新数据库会话，保留逐请求和 yield 条件。"
+    },
+    {
+      "id": "related_04",
+      "type": "related",
+      "claim": "每个 Session 默认采用可串行化事务隔离级别。",
+      "evidence": "我们会使用 `yield` 创建一个 FastAPI **依赖项**，为每个请求提供一个新的 `Session`。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/sql-databases.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "61e1eaa5a62386a7bd496caa0d4e6073fd4ad342f793bd1c93db5cf31fc3251c"
+      },
+      "rationale": "原句只说明“每次请求都能通过带 yield 的 FastAPI 依赖得到新数据库会话。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_05",
+      "type": "literal",
+      "claim": "配置**启动**和**关闭**的推荐方法是使用 `FastAPI` 应用的 `lifespan` 参数，如前所示。",
+      "evidence": "配置**启动**和**关闭**的推荐方法是使用 `FastAPI` 应用的 `lifespan` 参数，如前所示。",
+      "label": "supported",
+      "source": {
+        "path": "advanced/events.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "b130151017b6f461fdbac29d1b9ed0901b9d2ca428cd0f7fb6f9baad85e7701e"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_05",
+      "type": "paraphrase",
+      "claim": "建议用应用的 lifespan 设置启动与关闭逻辑。",
+      "evidence": "配置**启动**和**关闭**的推荐方法是使用 `FastAPI` 应用的 `lifespan` 参数，如前所示。",
+      "label": "supported",
+      "source": {
+        "path": "advanced/events.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "b130151017b6f461fdbac29d1b9ed0901b9d2ca428cd0f7fb6f9baad85e7701e"
+      },
+      "rationale": "推荐方法改写为建议，保留 lifespan 与两个生命周期阶段。"
+    },
+    {
+      "id": "related_05",
+      "type": "related",
+      "claim": "lifespan 关闭处理的默认超时为三十秒。",
+      "evidence": "配置**启动**和**关闭**的推荐方法是使用 `FastAPI` 应用的 `lifespan` 参数，如前所示。",
+      "label": "not_found",
+      "source": {
+        "path": "advanced/events.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "b130151017b6f461fdbac29d1b9ed0901b9d2ca428cd0f7fb6f9baad85e7701e"
+      },
+      "rationale": "原句只说明“建议用应用的 lifespan 设置启动与关闭逻辑。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_06",
+      "type": "literal",
+      "claim": "也就是说，你只需发送想要更新的数据，其余数据保持不变。",
+      "evidence": "也就是说，你只需发送想要更新的数据，其余数据保持不变。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/body-updates.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "4af1c32131bab41d92af36be55103f5d046fd77acc953fd8cd2f14d4c1edaeef"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_06",
+      "type": "paraphrase",
+      "claim": "局部更新可以只传待改字段，其他数据维持原值。",
+      "evidence": "也就是说，你只需发送想要更新的数据，其余数据保持不变。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/body-updates.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "4af1c32131bab41d92af36be55103f5d046fd77acc953fd8cd2f14d4c1edaeef"
+      },
+      "rationale": "发送更新数据改写为只传待改字段；保留其余不变。"
+    },
+    {
+      "id": "related_06",
+      "type": "related",
+      "claim": "局部更新发生并发冲突时自动返回 409。",
+      "evidence": "也就是说，你只需发送想要更新的数据，其余数据保持不变。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/body-updates.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "4af1c32131bab41d92af36be55103f5d046fd77acc953fd8cd2f14d4c1edaeef"
+      },
+      "rationale": "原句只说明“局部更新可以只传待改字段，其他数据维持原值。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_07",
+      "type": "literal",
+      "claim": "但现在把 `Query(max_length=50)` 放到 `Annotated` 里，我们就在告诉 FastAPI，这个值需要**额外校验**，最大长度为 50 个字符。",
+      "evidence": "但现在把 `Query(max_length=50)` 放到 `Annotated` 里，我们就在告诉 FastAPI，这个值需要**额外校验**，最大长度为 50 个字符。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/query-params-str-validations.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "9adc2b8e4119b200be79ecfbd079203210f469a29ad12ad3ff937a35e9f285a0"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_07",
+      "type": "paraphrase",
+      "claim": "这个 Query 校验将文本限制在五十个字符以内。",
+      "evidence": "但现在把 `Query(max_length=50)` 放到 `Annotated` 里，我们就在告诉 FastAPI，这个值需要**额外校验**，最大长度为 50 个字符。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/query-params-str-validations.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "9adc2b8e4119b200be79ecfbd079203210f469a29ad12ad3ff937a35e9f285a0"
+      },
+      "rationale": "最大长度 50 改写为五十以内，没有推断如何处理超限。"
+    },
+    {
+      "id": "related_07",
+      "type": "related",
+      "claim": "Query 会自动截断超过长度上限的输入。",
+      "evidence": "但现在把 `Query(max_length=50)` 放到 `Annotated` 里，我们就在告诉 FastAPI，这个值需要**额外校验**，最大长度为 50 个字符。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/query-params-str-validations.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "9adc2b8e4119b200be79ecfbd079203210f469a29ad12ad3ff937a35e9f285a0"
+      },
+      "rationale": "原句只说明“这个 Query 校验将文本限制在五十个字符以内。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_08",
+      "type": "literal",
+      "claim": "这意味着，在 Python 中从环境变量读取的任何值都是 `str` 类型，任何到不同类型的转换或任何验证都必须在代码中完成。",
+      "evidence": "这意味着，在 Python 中从环境变量读取的任何值都是 `str` 类型，任何到不同类型的转换或任何验证都必须在代码中完成。",
+      "label": "supported",
+      "source": {
+        "path": "advanced/settings.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f22d6f508d0657cd0b7ae001213e57d000461531b9484b620a20d5bf4868c30a"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_08",
+      "type": "paraphrase",
+      "claim": "Python 读出的环境变量值一开始都是字符串。",
+      "evidence": "这意味着，在 Python 中从环境变量读取的任何值都是 `str` 类型，任何到不同类型的转换或任何验证都必须在代码中完成。",
+      "label": "supported",
+      "source": {
+        "path": "advanced/settings.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f22d6f508d0657cd0b7ae001213e57d000461531b9484b620a20d5bf4868c30a"
+      },
+      "rationale": "str 改写为字符串；限定读取时而非转换之后。"
+    },
+    {
+      "id": "related_08",
+      "type": "related",
+      "claim": "Python 读取环境变量时自动解码 Base64。",
+      "evidence": "这意味着，在 Python 中从环境变量读取的任何值都是 `str` 类型，任何到不同类型的转换或任何验证都必须在代码中完成。",
+      "label": "not_found",
+      "source": {
+        "path": "advanced/settings.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "f22d6f508d0657cd0b7ae001213e57d000461531b9484b620a20d5bf4868c30a"
+      },
+      "rationale": "原句只说明“Python 读出的环境变量值一开始都是字符串。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_09",
+      "type": "literal",
+      "claim": "如果你同时声明了返回类型和 `response_model`，`response_model` 会具有优先级并由 FastAPI 使用。",
+      "evidence": "如果你同时声明了返回类型和 `response_model`，`response_model` 会具有优先级并由 FastAPI 使用。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/response-model.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "e7f676287101cd3097a27186d8d5921f5a6a78f9bbd60c301605c404ddc0dd4a"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_09",
+      "type": "paraphrase",
+      "claim": "同时指定返回注解和响应模型时，FastAPI 优先采用响应模型。",
+      "evidence": "如果你同时声明了返回类型和 `response_model`，`response_model` 会具有优先级并由 FastAPI 使用。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/response-model.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "e7f676287101cd3097a27186d8d5921f5a6a78f9bbd60c301605c404ddc0dd4a"
+      },
+      "rationale": "保留同时声明的条件，将返回类型改写为返回注解。"
+    },
+    {
+      "id": "related_09",
+      "type": "related",
+      "claim": "response_model 会自动加密敏感响应字段。",
+      "evidence": "如果你同时声明了返回类型和 `response_model`，`response_model` 会具有优先级并由 FastAPI 使用。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/response-model.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "e7f676287101cd3097a27186d8d5921f5a6a78f9bbd60c301605c404ddc0dd4a"
+      },
+      "rationale": "原句只说明“同时指定返回注解和响应模型时，FastAPI 优先采用响应模型。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_10",
+      "type": "literal",
+      "claim": "OAuth2 规范要求使用“密码流”（也就是我们正在使用的流程）时，客户端或用户必须以表单数据形式发送 `username` 和 `password` 字段。",
+      "evidence": "OAuth2 规范要求使用“密码流”（也就是我们正在使用的流程）时，客户端或用户必须以表单数据形式发送 `username` 和 `password` 字段。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/security/simple-oauth2.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "8b767925aa34623a0ff14afd70c4071810d48c6321beebe8abc66171613c3bb6"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_10",
+      "type": "paraphrase",
+      "claim": "OAuth2 密码模式要求以表单提交用户名和口令。",
+      "evidence": "OAuth2 规范要求使用“密码流”（也就是我们正在使用的流程）时，客户端或用户必须以表单数据形式发送 `username` 和 `password` 字段。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/security/simple-oauth2.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "8b767925aa34623a0ff14afd70c4071810d48c6321beebe8abc66171613c3bb6"
+      },
+      "rationale": "密码流改写为密码模式，username/password 改写为用户名/口令。"
+    },
+    {
+      "id": "related_10",
+      "type": "related",
+      "claim": "OAuth2 密码流会自动把用户名转成小写。",
+      "evidence": "OAuth2 规范要求使用“密码流”（也就是我们正在使用的流程）时，客户端或用户必须以表单数据形式发送 `username` 和 `password` 字段。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/security/simple-oauth2.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "8b767925aa34623a0ff14afd70c4071810d48c6321beebe8abc66171613c3bb6"
+      },
+      "rationale": "原句只说明“OAuth2 密码模式要求以表单提交用户名和口令。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_11",
+      "type": "literal",
+      "claim": "`File` 是直接继承自 `Form` 的类。",
+      "evidence": "`File` 是直接继承自 `Form` 的类。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/request-files.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "ced54f834a1152c61e51e18646e472f7c920d7592d467406adc7a2c8ecffcade"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_11",
+      "type": "paraphrase",
+      "claim": "File 的直接父类是 Form。",
+      "evidence": "`File` 是直接继承自 `Form` 的类。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/request-files.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "ced54f834a1152c61e51e18646e472f7c920d7592d467406adc7a2c8ecffcade"
+      },
+      "rationale": "直接继承改写为直接父类，未改变类名。"
+    },
+    {
+      "id": "related_11",
+      "type": "related",
+      "claim": "File 会默认拦截所有 exe 扩展名的文件。",
+      "evidence": "`File` 是直接继承自 `Form` 的类。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/request-files.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "ced54f834a1152c61e51e18646e472f7c920d7592d467406adc7a2c8ecffcade"
+      },
+      "rationale": "原句只说明“File 的直接父类是 Form。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_12",
+      "type": "literal",
+      "claim": "要使用 `TestClient`，先要安装 [`httpx`](https://www.python-httpx.org)。",
+      "evidence": "要使用 `TestClient`，先要安装 [`httpx`](https://www.python-httpx.org)。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/testing.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "6776a5678cd7dac00fe3126875b1d2d61c55cc8920405535953a62fbb7ec5579"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_12",
+      "type": "paraphrase",
+      "claim": "使用测试客户端前需要装好 httpx。",
+      "evidence": "要使用 `TestClient`，先要安装 [`httpx`](https://www.python-httpx.org)。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/testing.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "6776a5678cd7dac00fe3126875b1d2d61c55cc8920405535953a62fbb7ec5579"
+      },
+      "rationale": "先要安装改写为使用前装好，依赖名不变。"
+    },
+    {
+      "id": "related_12",
+      "type": "related",
+      "claim": "TestClient 遇到失败请求默认重试三次。",
+      "evidence": "要使用 `TestClient`，先要安装 [`httpx`](https://www.python-httpx.org)。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/testing.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "6776a5678cd7dac00fe3126875b1d2d61c55cc8920405535953a62fbb7ec5579"
+      },
+      "rationale": "原句只说明“使用测试客户端前需要装好 httpx。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_13",
+      "type": "literal",
+      "claim": "在请求路径上，最外层的中间件先运行。",
+      "evidence": "在请求路径上，最外层的中间件先运行。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/middleware.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "c9f3029bed320eec8b8b3ad8acb4625898e7fb545864342bd65cd0ae52cc1b40"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_13",
+      "type": "paraphrase",
+      "claim": "处理请求时，会先执行最外侧的中间件。",
+      "evidence": "在请求路径上，最外层的中间件先运行。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/middleware.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "c9f3029bed320eec8b8b3ad8acb4625898e7fb545864342bd65cd0ae52cc1b40"
+      },
+      "rationale": "保留请求方向和外层先执行的顺序，未推断响应顺序。"
+    },
+    {
+      "id": "related_13",
+      "type": "related",
+      "claim": "中间件超过十毫秒就会被自动中止。",
+      "evidence": "在请求路径上，最外层的中间件先运行。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/middleware.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "c9f3029bed320eec8b8b3ad8acb4625898e7fb545864342bd65cd0ae52cc1b40"
+      },
+      "rationale": "原句只说明“处理请求时，会先执行最外侧的中间件。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_14",
+      "type": "literal",
+      "claim": "你可以在 **FastAPI** 应用中使用 `CORSMiddleware` 来配置它。",
+      "evidence": "你可以在 **FastAPI** 应用中使用 `CORSMiddleware` 来配置它。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/cors.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "292497545ee427fb1e47bf0510f9e2661f63dfd4937d154222e9da0530816142"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_14",
+      "type": "paraphrase",
+      "claim": "FastAPI 可通过 CORSMiddleware 设置跨域行为。",
+      "evidence": "你可以在 **FastAPI** 应用中使用 `CORSMiddleware` 来配置它。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/cors.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "292497545ee427fb1e47bf0510f9e2661f63dfd4937d154222e9da0530816142"
+      },
+      "rationale": "在 CORS 文档中配置它改写为设置跨域行为。"
+    },
+    {
+      "id": "related_14",
+      "type": "related",
+      "claim": "CORSMiddleware 自动校验 WebSocket 消息的业务格式。",
+      "evidence": "你可以在 **FastAPI** 应用中使用 `CORSMiddleware` 来配置它。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/cors.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "292497545ee427fb1e47bf0510f9e2661f63dfd4937d154222e9da0530816142"
+      },
+      "rationale": "原句只说明“FastAPI 可通过 CORSMiddleware 设置跨域行为。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "literal_15",
+      "type": "literal",
+      "claim": "你可以定义在返回响应后运行的后台任务。",
+      "evidence": "你可以定义在返回响应后运行的后台任务。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/background-tasks.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "ad62814e6eca0f4946e7679f9f039786c00260823d61757ea6a374f2b468f7d8"
+      },
+      "rationale": "要点逐字重述证据句；保留全部条件。"
+    },
+    {
+      "id": "paraphrase_15",
+      "type": "paraphrase",
+      "claim": "可以让后台工作在响应已发回后执行。",
+      "evidence": "你可以定义在返回响应后运行的后台任务。",
+      "label": "supported",
+      "source": {
+        "path": "tutorial/background-tasks.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "ad62814e6eca0f4946e7679f9f039786c00260823d61757ea6a374f2b468f7d8"
+      },
+      "rationale": "保留响应返回后执行这一时序，没有推断可靠性保证。"
+    },
+    {
+      "id": "related_15",
+      "type": "related",
+      "claim": "后台任务失败后默认会持久化并重试三次。",
+      "evidence": "你可以定义在返回响应后运行的后台任务。",
+      "label": "not_found",
+      "source": {
+        "path": "tutorial/background-tasks.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "ad62814e6eca0f4946e7679f9f039786c00260823d61757ea6a374f2b468f7d8"
+      },
+      "rationale": "原句只说明“可以让后台工作在响应已发回后执行。”；没有说明要点中的额外行为或参数，不能由相关性推断。"
+    },
+    {
+      "id": "negation_01",
+      "type": "negation",
+      "claim": "OpenAPI 支持声明内部包含路径的路径参数。",
+      "evidence": "OpenAPI 不支持声明内部包含*路径*的*路径参数*，因为这会导致测试和定义更加困难。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/path-params.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "a008badf3fd5a50e5cf621072ad1e7f3b90e3819e23dc65201985be73ca52ab9"
+      },
+      "rationale": "原句明确说 OpenAPI 不支持这种声明，与正向要点相反。"
+    },
+    {
+      "id": "negation_02",
+      "type": "negation",
+      "claim": "声明 File 和 Form 时可以同时用 Body 接收 JSON。",
+      "evidence": "你可以在一个*路径操作*中声明多个 `File` 和 `Form` 参数，但不能同时声明希望以 JSON 接收的 `Body` 字段，因为此时请求体会使用 `multipart/form-data` 编码，而不是 `application/json`。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/request-files.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "ced54f834a1152c61e51e18646e472f7c920d7592d467406adc7a2c8ecffcade"
+      },
+      "rationale": "原句明确否定在这种 multipart 请求中同时接收 JSON Body。"
+    },
+    {
+      "id": "negation_03",
+      "type": "negation",
+      "claim": "直接返回 Response 时 FastAPI 会用 Pydantic 转换数据。",
+      "evidence": "**FastAPI** 不会用 Pydantic 模型做任何数据转换，不会将响应内容转换成任何类型，等等。",
+      "label": "contradicted",
+      "source": {
+        "path": "advanced/response-directly.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "416c1f969e99c262cbfa871aae4e35544b9f0b25abd270a47462729ef1efae9b"
+      },
+      "rationale": "原句明确说不会用 Pydantic 做任何数据转换。"
+    },
+    {
+      "id": "negation_04",
+      "type": "negation",
+      "claim": "直接返回 Response 时会自动生成文档。",
+      "evidence": "当你直接返回 `Response` 时，它的数据既没有校验，又不会进行转换（序列化），也不会自动生成文档。",
+      "label": "contradicted",
+      "source": {
+        "path": "advanced/response-directly.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "416c1f969e99c262cbfa871aae4e35544b9f0b25abd270a47462729ef1efae9b"
+      },
+      "rationale": "原句同时否定校验、转换和自动生成文档，要点只取最后一项的反面。"
+    },
+    {
+      "id": "negation_05",
+      "type": "negation",
+      "claim": "主应用的 OpenAPI 文档包含挂载应用的内容。",
+      "evidence": "主应用的 OpenAPI 和文档不会包含已挂载应用的任何内容，等等。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/static-files.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "232b362003b418f3a63fe7d91b31a743a4a1b0968db141ecfed04468815fdf1b"
+      },
+      "rationale": "原句中的不会包含直接否定包含。"
+    },
+    {
+      "id": "negation_06",
+      "type": "negation",
+      "claim": "把依赖函数传给 Depends 时需要先加括号直接调用它。",
+      "evidence": "你不需要直接调用它（不要在末尾加括号），只需将其作为参数传给 `Depends()`。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/dependencies/index.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "dd42e7fcb786da9532f61ab9a351ac934ce0422368b884e695c8cc4fc15ba518"
+      },
+      "rationale": "原句明确要求不要在末尾加括号，只传函数。"
+    },
+    {
+      "id": "negation_07",
+      "type": "negation",
+      "claim": "lifespan 可以和全部启动关闭事件配置共用。",
+      "evidence": "要么使用 `lifespan`，要么配置所有事件，两者不能共用。",
+      "label": "contradicted",
+      "source": {
+        "path": "advanced/events.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "b130151017b6f461fdbac29d1b9ed0901b9d2ca428cd0f7fb6f9baad85e7701e"
+      },
+      "rationale": "原句使用要么以及不能共用排除了同时启用。"
+    },
+    {
+      "id": "negation_08",
+      "type": "negation",
+      "claim": "在 Annotated 中使用 Query 时仍可给 Query 传 default。",
+      "evidence": "注意，当你在 `Annotated` 中使用 `Query` 时，不能再给 `Query` 传 `default` 参数。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/query-params-str-validations.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "9adc2b8e4119b200be79ecfbd079203210f469a29ad12ad3ff937a35e9f285a0"
+      },
+      "rationale": "原句明确否定再给 Query 传 default，而不是讨论默认值的具体内容。"
+    },
+    {
+      "id": "negation_09",
+      "type": "negation",
+      "claim": "使用 GET 时 Swagger UI 会显示请求体文档。",
+      "evidence": "由于不推荐，在使用 `GET` 时，Swagger UI 的交互式文档不会显示请求体的文档，而且中间的代理可能也不支持它。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/body.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "849918c18b76c61cc335b92d389ada397655c471d213f3767b2b55120fab2ba9"
+      },
+      "rationale": "原句对 GET 请求体的文档显示作明确否定。"
+    },
+    {
+      "id": "negation_10",
+      "type": "negation",
+      "claim": "这里的测试函数应声明为 async def。",
+      "evidence": "注意测试函数是普通的 `def`，不是 `async def`。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/testing.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "6776a5678cd7dac00fe3126875b1d2d61c55cc8920405535953a62fbb7ec5579"
+      },
+      "rationale": "原句要求普通 def 并明确说不是 async def。"
+    },
+    {
+      "id": "negation_11",
+      "type": "negation",
+      "claim": "这种局部更新会用模型默认值覆盖已存储的值。",
+      "evidence": "* 这样只会更新用户实际设置的值，而不会用模型中的默认值覆盖已存储的值。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/body-updates.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "4af1c32131bab41d92af36be55103f5d046fd77acc953fd8cd2f14d4c1edaeef"
+      },
+      "rationale": "原句明确否定用默认值覆盖，且保留局部更新上下文。"
+    },
+    {
+      "id": "negation_12",
+      "type": "negation",
+      "claim": "客户端总是必须发送请求体。",
+      "evidence": "但客户端不一定总是要发送**请求体**，有时它们只请求某个路径，可能带一些查询参数，但不会发送请求体。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/body.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "849918c18b76c61cc335b92d389ada397655c471d213f3767b2b55120fab2ba9"
+      },
+      "rationale": "不一定总是及不会发送请求体给出了不发送的情况，否定全称断言。"
+    },
+    {
+      "id": "negation_13",
+      "type": "negation",
+      "claim": "查询参数是路径的固定内容。",
+      "evidence": "查询参数不是路径的固定内容，它是可选的，还支持默认值。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/query-params.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "c1f6d59f65f089e98a81678e6405a88932d88671278facb24e4e8d224231ec64"
+      },
+      "rationale": "原句直接用不是否定路径的固定内容。"
+    },
+    {
+      "id": "negation_14",
+      "type": "negation",
+      "claim": "FastAPI 会把类继承的类型规则直接用于返回数据过滤。",
+      "evidence": "FastAPI 在内部配合 Pydantic 做了多项处理，确保不会把类继承的这些规则用于返回数据的过滤，否则你可能会返回比预期多得多的数据。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/response-model.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "e7f676287101cd3097a27186d8d5921f5a6a78f9bbd60c301605c404ddc0dd4a"
+      },
+      "rationale": "原句明确保证不会用类继承规则做这种过滤。"
+    },
+    {
+      "id": "negation_15",
+      "type": "negation",
+      "claim": "这个用户名密码提交流程可以使用 JSON 对象。",
+      "evidence": "该规范要求必须以表单数据形式发送 `username` 和 `password`，因此，不能使用 JSON 对象。",
+      "label": "contradicted",
+      "source": {
+        "path": "tutorial/security/simple-oauth2.md",
+        "snapshot": "45cb2252c737906f37544f5ba6bee0295fb81468",
+        "sha256": "8b767925aa34623a0ff14afd70c4071810d48c6321beebe8abc66171613c3bb6"
+      },
+      "rationale": "原句要求表单 username 和 password 并明确排除 JSON 对象。"
+    }
+  ]
+}

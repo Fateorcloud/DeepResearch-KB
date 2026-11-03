@@ -26,6 +26,7 @@ from .knowledge import KnowledgeStore
 from .services.research import ResearchService
 from .services.tasks import TaskService
 from .sufficiency import EvidenceRequirement
+from .claim_suggestions import ClaimSuggester, ClaimsGenerationError, ClaimsSuggestRequest
 
 
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "[::1]", "::1"}
@@ -806,7 +807,9 @@ def _render_report_pdf(report_path):
 
 
 def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
-                     service=None, allowed_hosts=None, control_token=None):
+                     service=None, allowed_hosts=None, control_token=None,
+                     claims_suggester=None):
+    claims_suggester = claims_suggester or ClaimSuggester()
     allowed = AllowedRoot(root)
     database_path = Path(database)
     config = LocalConfigStore(database_path.with_suffix(".cloud.json"))
@@ -1002,6 +1005,14 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
             "error": asdict(task.error) if task.error else None,
         } for task in service.tasks.list()]
 
+    @app.post("/api/research/claims/suggest")
+    async def suggest_claims(body: ClaimsSuggestRequest):
+        try:
+            return await claims_suggester.suggest(body.query, body.max_claims)
+        except ClaimsGenerationError:
+            raise LocalControlError(
+                "claims_generation_failed", "Claim generation failed; confirm claims manually", 503) from None
+
     @app.post("/api/local/research")
     async def local_research(body: ResearchInput):
         known_ids = {kb.id for kb in service.store.list_knowledge_bases()}
@@ -1009,9 +1020,17 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
             raise LocalControlError(
                 "local_knowledge_base_not_found",
                 "One or more local knowledge bases do not exist", 404)
+        claims = body.required_claims
+        claims_source = "explicit"
+        if not claims:
+            try:
+                suggestion = await suggest_claims(ClaimsSuggestRequest(query=body.query))
+                claims, claims_source = suggestion["claims"], "generated"
+            except LocalControlError:
+                claims, claims_source = [body.query], "query_fallback"
         try:
             requirements = EvidenceRequirement(
-                "local-web", tuple(body.required_claims or [body.query]),
+                "local-web", tuple(claims),
                 tuple(body.required_source_types), body.minimum_distinct_sources,
                 body.require_current_version)
             task = service.tasks.create(
@@ -1019,11 +1038,13 @@ def create_local_app(*, root, server, token, database="data/local-kb.sqlite",
                 requirements=requirements, as_of=body.as_of,
                 max_deep_calls=body.max_deep_calls,
                 output_language=body.output_language,
-                research_depth=body.research_depth)
+                research_depth=body.research_depth,
+                claims_source=claims_source)
         except ValueError:
             raise LocalControlError(
                 "invalid_requirement", "Evidence requirement is invalid", 422) from None
-        return {"task_id": task.id, "status": task.status}
+        return {"task_id": task.id, "status": task.status,
+                "claims": claims, "claims_source": claims_source}
 
     @app.get("/api/local/research/{task_id}")
     def local_research_status(task_id: str):

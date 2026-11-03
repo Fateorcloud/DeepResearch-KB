@@ -17,9 +17,12 @@ class EvidenceSufficiency:
         if len(evidence) >= self.minimum_evidence: return Sufficiency("stop", "minimum evidence threshold met", len(evidence))
         return Sufficiency("quick" if depth == 0 else "deep", "no sufficient evidence; try quick" if depth == 0 else "quick evidence insufficient", len(evidence))
 class AdaptiveResearchRouter:
-    def __init__(self, *, quick_search, deep_research, sufficiency=None, requirements=None, judge=None, max_deep_calls=1):
+    def __init__(self, *, quick_search, deep_research, sufficiency=None, requirements=None, judge=None, max_deep_calls=1,
+                 claim_reviewer=None):
         self.quick_search, self.deep_research = quick_search, deep_research; self.sufficiency = sufficiency or EvidenceSufficiency()
         self.requirements, self.judge = tuple(requirements or ()), judge
+        self.claim_reviewer = claim_reviewer
+        self.claim_reviews = []
         if type(max_deep_calls) is not int or max_deep_calls < 0: raise ValueError("max_deep_calls must be non-negative")
         self.max_deep_calls = max_deep_calls
     def _evaluate(self, evidence, *, conflict=False, depth=0):
@@ -31,11 +34,23 @@ class AdaptiveResearchRouter:
         return self.sufficiency.evaluate(evidence, conflict=conflict, depth=depth)
     async def _reviewed_evaluate(self, evidence, *, conflict=False, depth=0, checker=None):
         verdict = self._evaluate(evidence, conflict=conflict, depth=depth)
+        if self.claim_reviewer is not None and self.requirements:
+            reviews = [await self.claim_reviewer.assess(req, evidence) for req in self.requirements]
+            self.claim_reviews.append({"depth": depth, "evidence_ids": [e.chunk_id for e in evidence],
+                                       "requirements": reviews})
+            if any(r["conflict_detected"] for r in reviews):
+                verdict = Sufficiency("deep", "claim review detected conflict", len(evidence), True, "conflict")
+            elif not conflict and all(r["satisfied"] for r in reviews):
+                verdict = Sufficiency("stop", "all lexical/semantic claim requirements satisfied", len(evidence))
+            elif depth == 2 and any(c["result"] == "unknown" for r in reviews for c in r["claims"]):
+                verdict = Sufficiency("deep", "claim review unknown", len(evidence), False, "unknown")
         if checker is None:
             return verdict
         review = await checker.check(evidence)
         if review.get("conflict_detected"):
             return Sufficiency("deep", "review detected conflict", len(evidence), True, "conflict")
+        if verdict.has_conflict:
+            return verdict
         if (review.get("status") not in ("reviewed", "not_applicable") or
                 any(pair.get("verdict") == "unknown" for pair in review.get("pairs", []))):
             return Sufficiency("deep", "conflict review unknown", len(evidence), False, "unknown")
@@ -43,7 +58,8 @@ class AdaptiveResearchRouter:
 
     async def run(self, query, *, internal, conflict=False, conflict_checker=None):
         decisions=[await self._reviewed_evaluate(internal, conflict=conflict, checker=conflict_checker)]
-        if conflict_checker is not None and decisions[0].route == "deep":
+        if ((conflict_checker is not None and decisions[0].route == "deep") or
+                decisions[0].terminal_status == "conflict"):
             combined = list(internal)
             if self.max_deep_calls:
                 combined.extend(await self.deep_research(query))
@@ -60,7 +76,7 @@ class AdaptiveResearchRouter:
         if decisions[0].route == "stop": return decisions[0].route, internal, decisions
         quick=await self.quick_search(query); combined=list(internal)+list(quick)
         decisions.append(await self._reviewed_evaluate(combined, depth=1, checker=conflict_checker))
-        if self.judge is not None and self.requirements and decisions[-1].route == "deep" and decisions[-1].terminal_status is None:
+        if self.claim_reviewer is None and self.judge is not None and self.requirements and decisions[-1].route == "deep" and decisions[-1].terminal_status is None:
             reviews = [await self.judge.judge(req, combined) for req in self.requirements]
             if all(grounded_judge_sufficient(req, combined, review)
                    for req, review in zip(self.requirements, reviews)):
