@@ -9,6 +9,8 @@ class ReviewMatrixTests(unittest.TestCase):
         with __import__("tempfile").TemporaryDirectory() as directory:
             root = Path(directory)
             source = Path("data/evals/effect-v2-reports-1")
+            if not (source / "dataset.json").is_file():
+                self.skipTest("live evaluation dataset not present in a clean checkout")
             target = root / "matrix.json"
             payload = build(source, target)
             self.assertEqual(len(payload["rows"]), 24)

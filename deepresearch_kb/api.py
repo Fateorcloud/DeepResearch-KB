@@ -20,7 +20,7 @@ from .services.auth import (
     SESSION_COOKIE, AuthService, AuthenticationFailed, LoginRateLimited)
 from .services.backup import BackupService
 from .services.research import ResearchService
-from .services.tasks import TaskService
+from .services.tasks import TaskActionError, TaskService
 from .directory import SUPPORTED
 from .sufficiency import EvidenceRequirement
 from .claim_suggestions import ClaimSuggester, ClaimsGenerationError, ClaimsSuggestRequest
@@ -143,13 +143,15 @@ def _generated_artifact_dto(artifact, id_field):
 
 def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=None,
                research=None, engine=None, auth=None, backup=None,
-               backup_root="data/backups", claims_suggester=None):
+               backup_root="data/backups", claims_suggester=None,
+               max_concurrent_research=None):
     store = store or KnowledgeStore(database)
     knowledge = KnowledgeService(store)
     if research is not None and engine is not None:
         raise ValueError("pass research or engine, not both")
     research = research or ResearchService(engine or ResearchEngine(store=store))
-    tasks = TaskService(research, artifact_root)
+    tasks = TaskService(research, artifact_root,
+                        max_concurrent_research=max_concurrent_research)
     auth = auth or AuthService.from_env(store.database)
     backup = backup or BackupService(
         store.database, artifact_root=artifact_root, backup_root=backup_root)
@@ -425,6 +427,27 @@ def create_app(database="data/kb.sqlite", artifact_root="data/tasks", *, store=N
         try: return _task_dto(tasks.get(task_id))
         except KeyError: raise HTTPException(404, detail=_error(
             "task_not_found", "Research task does not exist"))
+
+    @app.post("/api/research/{task_id}/cancel")
+    async def cancel_research(task_id: str):
+        try:
+            return _task_dto(await tasks.cancel(task_id))
+        except KeyError:
+            raise HTTPException(404, detail=_error(
+                "task_not_found", "Research task does not exist")) from None
+        except TaskActionError as exc:
+            raise HTTPException(exc.status_code, detail=_error(exc.code, exc.message)) from None
+
+    @app.post("/api/research/{task_id}/retry")
+    async def retry_research(task_id: str):
+        try:
+            task = tasks.retry(task_id, known_knowledge_base_ids={kb.id for kb in knowledge.list()})
+        except KeyError:
+            raise HTTPException(404, detail=_error(
+                "task_not_found", "Research task does not exist")) from None
+        except TaskActionError as exc:
+            raise HTTPException(exc.status_code, detail=_error(exc.code, exc.message)) from None
+        return {"task_id": task.id}
 
     def artifact(task_id, name):
         try: task = tasks.get(task_id)
